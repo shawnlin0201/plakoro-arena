@@ -459,8 +459,11 @@ export function useSoloRun(charactersRef, movesRef) {
       p.level += 1
       queue.push({ kind: "levelUp" })
     }
-    if (state.floor % MOVES_BONUS_EVERY_N_FLOORS === 0 && p.moveIds.length < 4 && buildLearnMoveChoices().length > 0) {
-      queue.push({ kind: "learnMove" })
+    if (state.floor % MOVES_BONUS_EVERY_N_FLOORS === 0) {
+      p.energyDiceCount += 1
+      if (p.moveIds.length < 4 && buildLearnMoveChoices().length > 0) {
+        queue.push({ kind: "learnMove" })
+      }
     }
     state.pendingChoiceQueue = queue
     advanceChoiceQueue()
