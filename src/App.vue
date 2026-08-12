@@ -29,8 +29,7 @@ const mode = ref(null)
 const appVersion = __APP_VERSION__
 
 const stageRef = ref(null)
-const { stageSize } = useStageLayout(stageRef)
-provide('stageSize', stageSize)
+useStageLayout(stageRef)
 
 const inBattleBoard = computed(() => ['moveSelect', 'diceRoll', 'resolve', 'effectPrompt'].includes(state.phase))
 

@@ -1,12 +1,6 @@
-import { onMounted, onUnmounted, reactive } from 'vue'
+import { onMounted, onUnmounted } from 'vue'
 
 export function useStageLayout(stageEl) {
-  // The logical (pre-rotation) pixel size of the game canvas, kept in sync with the stage
-  // element itself — descendants that need to size themselves to "the actual visible screen"
-  // (rather than trusting a DOM ancestor's resolved flex height, which can be indirect and
-  // timing-sensitive) can inject and read this instead.
-  const stageSize = reactive({ width: 0, height: 0 })
-
   function layoutStage() {
     const stage = stageEl.value
     if (!stage) return
@@ -24,8 +18,6 @@ export function useStageLayout(stageEl) {
     stage.style.width = stageW + 'px'
     stage.style.height = stageH + 'px'
     stage.style.transform = isPortrait ? 'translate(-50%,-50%) rotate(90deg)' : 'translate(-50%,-50%)'
-    stageSize.width = stageW
-    stageSize.height = stageH
   }
 
   onMounted(() => {
@@ -37,6 +29,4 @@ export function useStageLayout(stageEl) {
     window.removeEventListener('resize', layoutStage)
     window.removeEventListener('orientationchange', layoutStage)
   })
-
-  return { stageSize }
 }

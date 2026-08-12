@@ -7,12 +7,12 @@
 export const EVENT_POOL = [
   { id: "pokemonCenter", effectKind: "heal", amount: 30 },
   { id: "berryBush", effectKind: "heal", amount: 20 },
-  { id: "oldMaster", effectKind: "atk", amount: 3 },
+  { id: "oldMaster", effectKind: "atk", amount: 10 },
   { id: "hotSpring", effectKind: "heal", amount: 40 },
-  { id: "ironWill", effectKind: "def", amount: 3 },
+  { id: "ironWill", effectKind: "def", amount: 10 },
   { id: "treasureChest", effectKind: "maxHp", amount: 15 },
-  { id: "windyHill", effectKind: "atk", amount: 2 },
-  { id: "rainyDay", effectKind: "def", amount: 2 },
+  { id: "windyHill", effectKind: "atk", amount: 5 },
+  { id: "rainyDay", effectKind: "def", amount: 5 },
   { id: "campfireSong", effectKind: "heal", amount: 25 },
   { id: "secretTraining", effectKind: "maxHp", amount: 10 }
 ]

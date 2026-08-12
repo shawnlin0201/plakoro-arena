@@ -108,12 +108,12 @@
     "events": {
       "pokemonCenter": { "text": "你經過了一間寶可夢中心，遇到善良的{name}給了你一顆蘋果。", "effect": "立刻回復30點HP。" },
       "berryBush": { "text": "你在路邊發現一叢樹果，{name}教你分辨哪些可以吃。", "effect": "立刻回復20點HP。" },
-      "oldMaster": { "text": "一位神秘的訓練家{name}指導了你一些戰鬥技巧。", "effect": "攻擊力永久+3。" },
+      "oldMaster": { "text": "一位神秘的訓練家{name}指導了你一些戰鬥技巧。", "effect": "攻擊力永久+10。" },
       "hotSpring": { "text": "你們一起泡了溫泉，{name}也在旁邊放鬆。", "effect": "立刻回復40點HP。" },
-      "ironWill": { "text": "看著{name}沉穩應戰的樣子，你獲得了信心。", "effect": "防禦力永久+3。" },
+      "ironWill": { "text": "看著{name}沉穩應戰的樣子，你獲得了信心。", "effect": "防禦力永久+10。" },
       "treasureChest": { "text": "你發現一個寶箱，裡面有{name}留下的訓練道具。", "effect": "最大HP永久+15，並回復相同HP。" },
-      "windyHill": { "text": "在山丘上，{name}陪你一起特訓揮拳。", "effect": "攻擊力永久+2。" },
-      "rainyDay": { "text": "下雨天，{name}教你如何用身體擋雨保護隊友。", "effect": "防禦力永久+2。" },
+      "windyHill": { "text": "在山丘上，{name}陪你一起特訓揮拳。", "effect": "攻擊力永久+5。" },
+      "rainyDay": { "text": "下雨天，{name}教你如何用身體擋雨保護隊友。", "effect": "防禦力永久+5。" },
       "campfireSong": { "text": "{name}在營火旁唱了一首歌，讓你放鬆不少。", "effect": "立刻回復25點HP。" },
       "secretTraining": { "text": "跟著{name}做了一趟秘密特訓。", "effect": "最大HP永久+10，並回復相同HP。" }
     },

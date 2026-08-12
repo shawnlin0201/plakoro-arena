@@ -1,66 +1,31 @@
 <script setup>
-import { computed, inject, onMounted, onUnmounted, ref } from 'vue'
+import { computed, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
 import dagre from 'dagre'
 
 const solo = inject('solo')
 const { t } = useI18n()
 const state = solo.state
-const stageSize = inject('stageSize')
 
 const TYPE_ICON = { monster: '⚔️', event: '❓', campfire: '🔥', boss: '👑' }
 
-const BASE_NODE_SIZE = 96
-const BASE_NODE_SEP = 42
+const NODE_SIZE = 96
+const NODE_SEP = 42
 const RANK_SEP = 78
 const MARGIN = 20
-// .board's own CSS (padding: 2px top / 6px bottom, plus a 4px flex gap before the node area).
-const BOARD_CHROME = 2 + 6 + 4
-
-// Node count per layer is random (2-5). Only the vertical extent has to fit on screen — the
-// map can be as wide as it needs since the viewport scrolls horizontally — so node size and
-// vertical spacing shrink (together, so nodes stay circular) only as much as needed for the
-// tallest layer in THIS map to fit the available height, and never shrink below what height
-// actually requires. Sized off the actual game canvas (stageSize, provided by App.vue from
-// useStageLayout) rather than a DOM ancestor's resolved flex height, so other UI on screen
-// can't throw the calculation off.
-const headerEl = ref(null)
-const viewportEl = ref(null)
-const headerHeight = ref(0)
-let headerObserver = null
-
-onMounted(() => {
-  headerObserver = new ResizeObserver(entries => {
-    headerHeight.value = entries[0].contentRect.height
-  })
-  headerObserver.observe(headerEl.value)
-})
-onUnmounted(() => {
-  if (headerObserver) headerObserver.disconnect()
-})
-
-const viewportHeight = computed(() => Math.max(0, stageSize.height - headerHeight.value - BOARD_CHROME))
-
-const maxLayerCount = computed(() => Math.max(...state.map.layers.map(l => l.length)))
-
-const sizeFactor = computed(() => {
-  const desiredTotal = maxLayerCount.value * BASE_NODE_SIZE + (maxLayerCount.value - 1) * BASE_NODE_SEP + MARGIN * 2
-  if (!viewportHeight.value) return 1
-  return Math.min(1, viewportHeight.value / desiredTotal)
-})
-const nodeSize = computed(() => BASE_NODE_SIZE * sizeFactor.value)
-const nodeSep = computed(() => BASE_NODE_SEP * sizeFactor.value)
 
 // Real layered-graph layout (same family of algorithm d3-dag's sugiyama layout and
 // graphviz's `dot` use): dagre assigns each node a non-overlapping x/y and routes each
 // edge as a point path that reserves lanes between nodes, so lines never cross through
-// another node's icon even though layer widths vary node-to-node.
+// another node's icon even though layer widths vary node-to-node. Node count per layer is
+// random (2-5), so the map can end up taller or wider than the screen — rather than shrink
+// things to force a fit, the viewport just scrolls in both directions.
 const layout = computed(() => {
   const g = new dagre.graphlib.Graph()
-  g.setGraph({ rankdir: 'LR', nodesep: nodeSep.value, ranksep: RANK_SEP, marginx: MARGIN, marginy: MARGIN * sizeFactor.value })
+  g.setGraph({ rankdir: 'LR', nodesep: NODE_SEP, ranksep: RANK_SEP, marginx: MARGIN, marginy: MARGIN })
   g.setDefaultEdgeLabel(() => ({}))
   const allNodes = Object.values(state.map.nodes)
-  allNodes.forEach(n => g.setNode(n.id, { width: nodeSize.value, height: nodeSize.value }))
+  allNodes.forEach(n => g.setNode(n.id, { width: NODE_SIZE, height: NODE_SIZE }))
   allNodes.forEach(n => n.edges.forEach(targetId => g.setEdge(n.id, targetId)))
   dagre.layout(g)
   return g
@@ -71,7 +36,7 @@ const layoutH = computed(() => layout.value.graph().height)
 
 function topLeftOf(nodeId) {
   const gn = layout.value.node(nodeId)
-  return { left: (gn.x - nodeSize.value / 2) + 'px', top: (gn.y - nodeSize.value / 2) + 'px' }
+  return { left: (gn.x - NODE_SIZE / 2) + 'px', top: (gn.y - NODE_SIZE / 2) + 'px' }
 }
 
 const edgePaths = computed(() => {
@@ -97,11 +62,11 @@ function pick(node) {
 
 <template>
   <div class="board" style="display:flex; flex-direction:column; min-height:0;">
-    <div ref="headerEl" style="flex-shrink:0;">
+    <div style="flex-shrink:0;">
       <div class="modal-title" style="margin:8px 0 4px;">{{ t('solo.map.title', { act: state.act }) }}</div>
       <div class="center-hint" style="padding-bottom:6px;">{{ t('solo.map.hint') }}</div>
     </div>
-    <div ref="viewportEl" style="flex:1; min-height:0; overflow-x:auto; overflow-y:hidden;">
+    <div style="flex:1; min-height:0; overflow:auto;">
       <div style="position:relative;" :style="{ width: layoutW + 'px', height: layoutH + 'px' }">
         <svg :width="layoutW" :height="layoutH" style="position:absolute; left:0; top:0; pointer-events:none;">
           <path
@@ -120,8 +85,8 @@ function pick(node) {
           :style="{
             position: 'absolute',
             ...topLeftOf(node.id),
-            width: nodeSize + 'px',
-            height: nodeSize + 'px',
+            width: NODE_SIZE + 'px',
+            height: NODE_SIZE + 'px',
             padding: '2px',
             gap: '2px',
             justifyContent: 'center',
@@ -133,8 +98,8 @@ function pick(node) {
           }"
           @click="pick(node)"
         >
-          <div :style="{ fontSize: (nodeSize * 0.37) + 'px', lineHeight: 1 }">{{ TYPE_ICON[node.type] }}</div>
-          <div :style="{ fontSize: (nodeSize * 0.135) + 'px', lineHeight: 1.1, fontWeight: 800, textAlign: 'center', whiteSpace: 'nowrap' }">{{ t('solo.node.' + node.type) }}</div>
+          <div style="font-size:35px; line-height:1;">{{ TYPE_ICON[node.type] }}</div>
+          <div style="font-size:13px; line-height:1.1; font-weight:800; text-align:center; white-space:nowrap;">{{ t('solo.node.' + node.type) }}</div>
         </div>
       </div>
     </div>
