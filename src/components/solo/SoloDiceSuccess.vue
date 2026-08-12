@@ -3,6 +3,7 @@ import { computed, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { typeBgColor } from '../../data/constants'
 import { isCharaColorConditionMet } from '../../game/damage'
+import { asset } from '../../data/assetPath'
 
 const solo = inject('solo')
 const { t } = useI18n()
@@ -60,10 +61,10 @@ function goBack() {
     <div class="dr-top-row">
       <div
         class="dr-move-card"
-        :style="{ backgroundColor: typeBgColor(mv.type), backgroundImage: `url('/image/BACK/back_${mv.type}.png')` }"
+        :style="{ backgroundColor: typeBgColor(mv.type), backgroundImage: `url('${asset(`image/BACK/back_${mv.type}.png`)}')` }"
       >
         <div class="dr-cost-row">
-          <div v-for="(costType, i) in displayCost" :key="i" class="cost-dot"><img :src="`/image/ICON/${costType}.png`" class="img-icon" :alt="costType"></div>
+          <div v-for="(costType, i) in displayCost" :key="i" class="cost-dot"><img :src="asset(`image/ICON/${costType}.png`)" class="img-icon" :alt="costType"></div>
         </div>
         <div class="dr-move-name mc-name-big">{{ mv.name }}</div>
       </div>
@@ -77,7 +78,7 @@ function goBack() {
         <div class="dr-btn-list">
           <button class="dr-success-only-btn" @click="pickSuccessOnly">
             <div class="dr-success-only-left">
-              <div class="dr-type-icon"><img :src="`/image/ICON/${displayType}.png`" class="img-icon" :alt="displayType"></div>
+              <div class="dr-type-icon"><img :src="asset(`image/ICON/${displayType}.png`)" class="img-icon" :alt="displayType"></div>
               <div class="dr-chara-btn-text">{{ t('dice.successOnly') }}</div>
             </div>
             <div class="mc-dmg dr-success-only-dmg" :class="successDmgClass">{{ dmgInfo.display }}</div>
@@ -91,7 +92,7 @@ function goBack() {
             @click="pickChara(ce)"
           >
             <div class="dr-chara-btn-icons">
-              <div v-for="(ori, j) in ce.orientations" :key="j" class="oi"><img :src="`/image/ICON/${ori}.png`" class="img-icon" :alt="ori"></div>
+              <div v-for="(ori, j) in ce.orientations" :key="j" class="oi"><img :src="asset(`image/ICON/${ori}.png`)" class="img-icon" :alt="ori"></div>
             </div>
             <div class="dr-chara-btn-text" :style="charaHighlighted(ce) ? 'color:#F5F842;' : ''">{{ ce.text }}</div>
           </button>

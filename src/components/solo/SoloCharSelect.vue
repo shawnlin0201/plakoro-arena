@@ -3,6 +3,7 @@ import { computed, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { typeBgColor } from '../../data/constants'
 import MoveCard from '../MoveCard.vue'
+import { asset } from '../../data/assetPath'
 
 const solo = inject('solo')
 const { characters, moves } = inject('characterData')
@@ -32,8 +33,8 @@ function back() {
       <div class="grid-2">
         <div v-for="c in characters" :key="c.id" class="pick-card" @click="pickCharacter(c)">
           <div class="pick-top" :style="{ background: typeBgColor(c.type) }">
-            <div class="pick-type-icon"><img :src="`/image/ICON/${c.type}.png`" class="img-icon" :alt="c.type"></div>
-            <div class="ic"><img :src="c.imageUrl || `/image/CHARA/${c.name}.png`" class="img-icon" :alt="c.name"></div>
+            <div class="pick-type-icon"><img :src="asset(`image/ICON/${c.type}.png`)" class="img-icon" :alt="c.type"></div>
+            <div class="ic"><img :src="c.imageUrl || asset(`image/CHARA/${c.name}.png`)" class="img-icon" :alt="c.name"></div>
           </div>
           <div class="pick-bottom">
             <div class="nm-row"><span class="nm">{{ c.name }}</span></div>

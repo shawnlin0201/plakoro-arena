@@ -2,6 +2,7 @@
 import { computed, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { typeBgColor, CARD_BOTTOM_DARK } from '../../data/constants'
+import { asset } from '../../data/assetPath'
 
 const props = defineProps({
   who: { type: String, required: true } // 'player' | 'ai'
@@ -18,7 +19,7 @@ const label = computed(() => props.who === 'player' ? t('solo.you') : t('solo.op
 const charPicSrc = computed(() => {
   const ch = c.value.character
   if (!ch) return ''
-  return ch.imageUrl || `/image/CHARA/${ch.name}.png`
+  return ch.imageUrl || asset(`image/CHARA/${ch.name}.png`)
 })
 
 const statBadges = computed(() => [
@@ -47,7 +48,7 @@ const showDiceHint = computed(() => isActiveTurn.value && ['moveSelect', 'diceSu
         </div>
         <div class="pc-name-hp">
           <div class="pc-name-wrap">
-            <div class="pc-type-icon"><img :src="`/image/ICON/${c.character.type}.png`" class="img-icon" :alt="c.character.type"></div>
+            <div class="pc-type-icon"><img :src="asset(`image/ICON/${c.character.type}.png`)" class="img-icon" :alt="c.character.type"></div>
             <div class="pc-name">{{ c.character.name }}</div>
             <div v-if="who === 'ai'" style="font-size:11px; font-weight:800; color:var(--sub); flex-shrink:0;">Lv.{{ c.tier }}</div>
           </div>

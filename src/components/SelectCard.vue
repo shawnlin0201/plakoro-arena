@@ -1,6 +1,7 @@
 <script setup>
 import { computed, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { asset } from '../data/assetPath'
 
 const props = defineProps({
   playerKey: { type: String, required: true }
@@ -32,13 +33,13 @@ function startFirst() {
     <div class="select-card-title">{{ trainerName }}</div>
     <div v-if="!p.locked" class="select-box pick-btn" @click="pickChar">
       <div class="null-ball-wrap">
-        <img :src="'/image/ICON/モンスターボールNull.png'" class="ball-icon null-ball" alt="">
+        <img :src="asset('image/ICON/モンスターボールNull.png')" class="ball-icon null-ball" alt="">
         <div class="null-ball-label" v-html="t('select.pickPokemon')"></div>
       </div>
     </div>
     <div v-else class="select-box ball-wrap" @click="reopenMoveSelect">
       <div class="null-ball-wrap">
-        <img :src="`/image/ICON/モンスターボール${playerKey}.png`" class="ball-icon wiggle" :class="`wiggle-${playerKey}`" alt="モンスターボール">
+        <img :src="asset(`image/ICON/モンスターボール${playerKey}.png`)" class="ball-icon wiggle" :class="`wiggle-${playerKey}`" alt="モンスターボール">
         <div class="null-ball-label">{{ t('common.selected') }}</div>
       </div>
     </div>

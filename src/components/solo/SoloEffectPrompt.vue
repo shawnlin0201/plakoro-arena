@@ -2,6 +2,7 @@
 import { computed, inject, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import MoveCard from '../MoveCard.vue'
+import { asset } from '../../data/assetPath'
 
 const solo = inject('solo')
 const { moves } = inject('characterData')
@@ -107,7 +108,7 @@ function pickBindMove(mid) {
 
     <template v-else-if="ep.kind === 'charaDiceEnemyManual'">
       <div class="overlay-title">
-        {{ t('effectPrompt.charaDiceEnemyPrefix') }}<img v-for="(ori, i) in ep.orientations" :key="i" :src="`/image/ICON/${ori}.png`" :alt="ori" style="height:1em; width:1em; object-fit:contain; vertical-align:-0.15em; margin:0 1px;">{{ t('effectPrompt.charaDiceEnemySuffix') }}
+        {{ t('effectPrompt.charaDiceEnemyPrefix') }}<img v-for="(ori, i) in ep.orientations" :key="i" :src="asset(`image/ICON/${ori}.png`)" :alt="ori" style="height:1em; width:1em; object-fit:contain; vertical-align:-0.15em; margin:0 1px;">{{ t('effectPrompt.charaDiceEnemySuffix') }}
       </div>
       <div style="width:100%; max-width:300px; margin:10px auto 0;">
         <MoveCard :mv="ep.mv" :dmg-info="ep.dmgInfo" :owner="ep.mover" :opponent="ep.opp" :clickable="false" style="min-height:172px;" />

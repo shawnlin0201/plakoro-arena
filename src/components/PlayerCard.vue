@@ -2,6 +2,7 @@
 import { computed, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { typeBgColor, CARD_BOTTOM_DARK } from '../data/constants'
+import { asset } from '../data/assetPath'
 
 const props = defineProps({
   playerKey: { type: String, required: true },
@@ -28,7 +29,7 @@ const row1Background = computed(() => {
 const charPicSrc = computed(() => {
   const c = p.value.character
   if (!c) return ''
-  return c.imageUrl || `/image/CHARA/${c.name}.png`
+  return c.imageUrl || asset(`image/CHARA/${c.name}.png`)
 })
 
 const incomingDamageText = computed(() => {
@@ -56,11 +57,11 @@ function onTap() {
         <div class="pc-status">{{ incomingDamageText }}</div>
         <div class="pc-name-hp">
           <div class="pc-name-wrap">
-            <div v-if="showAsSelected" class="pc-type-icon"><img :src="`/image/ICON/${p.character.type}.png`" class="img-icon" :alt="p.character.type"></div>
+            <div v-if="showAsSelected" class="pc-type-icon"><img :src="asset(`image/ICON/${p.character.type}.png`)" class="img-icon" :alt="p.character.type"></div>
             <div class="pc-name">{{ showAsSelected ? p.character.name : trainerName }}</div>
             <div v-if="showAsSelected" class="wk-inline">
               <span>{{ t('common.weaknessColon') }}</span>
-              <div class="tw-icon"><img :src="`/image/ICON/${p.character.weakness}.png`" class="img-icon" :alt="p.character.weakness"></div>
+              <div class="tw-icon"><img :src="asset(`image/ICON/${p.character.weakness}.png`)" class="img-icon" :alt="p.character.weakness"></div>
             </div>
           </div>
           <div class="pc-hp-num" :class="showAsSelected ? battle.hpBarClass(p) : ''">{{ showAsSelected ? Math.max(0, p.hp) : '' }}</div>

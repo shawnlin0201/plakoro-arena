@@ -2,6 +2,7 @@
 import { inject } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { typeBgColor } from '../data/constants'
+import { asset } from '../data/assetPath'
 
 const battle = inject('battle')
 const { characters } = inject('characterData')
@@ -21,13 +22,13 @@ function pick(c) {
   <div v-else class="grid-2">
     <div v-for="c in characters" :key="c.id" class="pick-card" @click="pick(c)">
       <div class="pick-top" :style="{ background: typeBgColor(c.type) }">
-        <div class="pick-type-icon"><img :src="`/image/ICON/${c.type}.png`" class="img-icon" :alt="c.type"></div>
-        <div class="ic"><img :src="c.imageUrl || `/image/CHARA/${c.name}.png`" class="img-icon" :alt="c.name"></div>
+        <div class="pick-type-icon"><img :src="asset(`image/ICON/${c.type}.png`)" class="img-icon" :alt="c.type"></div>
+        <div class="ic"><img :src="c.imageUrl || asset(`image/CHARA/${c.name}.png`)" class="img-icon" :alt="c.name"></div>
       </div>
       <div class="pick-bottom">
         <div class="nm-row">
           <span class="nm">{{ c.name }}</span>
-          <span class="nm-wk">{{ t('charSelect.weaknessPrefix') }}<img :src="`/image/ICON/${c.weakness}.png`" class="img-icon nm-wk-icon" :alt="c.weakness">)</span>
+          <span class="nm-wk">{{ t('charSelect.weaknessPrefix') }}<img :src="asset(`image/ICON/${c.weakness}.png`)" class="img-icon nm-wk-icon" :alt="c.weakness">)</span>
         </div>
       </div>
     </div>
