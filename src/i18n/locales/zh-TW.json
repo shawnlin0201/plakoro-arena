@@ -1,0 +1,103 @@
+{
+  "appTitle": "普拉可羅對戰",
+  "common": {
+    "selected": "已選擇",
+    "confirm": "確定",
+    "back": "返回",
+    "success": "成功",
+    "fail": "失敗",
+    "weaknessColon": "弱點：",
+    "and": "和"
+  },
+  "app": {
+    "loading": "載入中...",
+    "loadErrorTitle": "載入失敗",
+    "retry": "重新載入"
+  },
+  "dataErrors": {
+    "network": "發生連線錯誤：{message}",
+    "generic": "資料讀取失敗。",
+    "noData": "找不到任何寶可夢或招式資料，請確認資料庫內容。"
+  },
+  "player": {
+    "trainerA": "訓練家A",
+    "trainerB": "訓練家B",
+    "notSelected": "未選擇",
+    "incomingDamageEffect": "效果：下次受到的傷害{sign}{value}"
+  },
+  "select": {
+    "pickPokemon": "選擇<br>寶可夢",
+    "startFirst": "先攻開始",
+    "credit": "圖片來源：官方網站「Pokémon圖鑑」"
+  },
+  "charSelect": {
+    "title": "選擇寶可夢",
+    "empty": "沒有可選擇的寶可夢，請確認資料庫中已登錄角色資料。",
+    "weaknessPrefix": "（弱點："
+  },
+  "moveSelect": {
+    "title": "為{name}選擇4個招式",
+    "confirm": "以所選招式確定"
+  },
+  "moveCard": {
+    "usedLastTurn": "上回合已使用",
+    "unusable": "無法使用"
+  },
+  "dice": {
+    "firstTurnBadge": "先攻首回合",
+    "rollSuffix": "來擲骰吧！",
+    "moveSuccess": "招式成功",
+    "charaDiceCheck": "角色骰判定",
+    "successOnly": "僅使用招式（無角色骰效果）",
+    "energyShortage": "能量不足",
+    "moveFail": "招式失敗"
+  },
+  "effectPrompt": {
+    "diceRollLabel": "{n}個",
+    "enemyRollTitle": "對手要擲{label}能量骰",
+    "diceSubSingle": "請選擇擲出的能量數量。",
+    "diceSubMulti": "請選擇擲出最多的能量類型的數量。",
+    "charaDiceCountTitle": "共擲{n}次角色骰，選擇成功的次數。",
+    "charaDiceRepeatTitle": "選擇角色骰連續成功的次數。",
+    "bindWazaTitle": "請選擇下回合無法使用的招式",
+    "bindWazaRemaining": "還要選{remaining}個",
+    "eneCountTitle": "選擇目標能量數量",
+    "charaDiceEnemyPrefix": "讓對手擲角色骰，出現",
+    "charaDiceEnemySuffix": "則成功"
+  },
+  "win": {
+    "victorySuffix": "獲勝！",
+    "playAgain": "再玩一次"
+  },
+  "mode": {
+    "duel": "對戰模式",
+    "solo": "單人爬塔"
+  },
+  "solo": {
+    "you": "你",
+    "opponent": "對手",
+    "statDice": "骰",
+    "statAtk": "攻",
+    "statDef": "防",
+    "diceHint": "擲{n}顆能量骰！",
+    "charSelect": {
+      "title": "選擇寶可夢",
+      "pickMove": "為{name}選擇2個初始招式",
+      "confirm": "以此設定開始"
+    },
+    "upgrade": {
+      "title": "升到第{level}級！選擇一項強化",
+      "hp": "最大HP +{amount}",
+      "atk": "攻擊力 +{amount}",
+      "def": "防禦力 +{amount}"
+    },
+    "learnMoveBonus": {
+      "title": "第{floor}層通關獎勵：學習一個新招式"
+    },
+    "gameOver": {
+      "title": "遊戲結束",
+      "floorReached": "抵達樓層：第{floor}層",
+      "retry": "再次挑戰"
+    }
+  }
+}

@@ -1,0 +1,75 @@
+<script setup>
+import { computed, onMounted, provide, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useCharacterData } from './composables/useCharacterData'
+import { useBattleState } from './composables/useBattleState'
+import { useStageLayout } from './composables/useStageLayout'
+import Board from './components/Board.vue'
+import SelectBoard from './components/SelectBoard.vue'
+import MoveSelectPanel from './components/MoveSelectPanel.vue'
+import DiceOverlay from './components/DiceOverlay.vue'
+import EffectPromptOverlay from './components/EffectPromptOverlay.vue'
+import WinScreen from './components/WinScreen.vue'
+import Modal from './components/Modal.vue'
+import TurnCutIn from './components/TurnCutIn.vue'
+import LanguageSwitcher from './components/LanguageSwitcher.vue'
+import ModeSelect from './components/ModeSelect.vue'
+import SoloApp from './components/solo/SoloApp.vue'
+
+const { t } = useI18n()
+const characterData = useCharacterData()
+const battle = useBattleState(characterData.moves)
+provide('battle', battle)
+provide('characterData', characterData)
+
+const state = battle.state
+const { isLoading, loadError } = characterData
+
+const mode = ref(null)
+
+const stageRef = ref(null)
+useStageLayout(stageRef)
+
+const inBattleBoard = computed(() => ['moveSelect', 'diceRoll', 'resolve', 'effectPrompt'].includes(state.phase))
+
+watch(() => t('appTitle'), (title) => {
+  document.title = title
+}, { immediate: true })
+
+onMounted(() => {
+  characterData.loadData()
+})
+</script>
+
+<template>
+  <div id="stage" ref="stageRef">
+    <div id="app">
+      <LanguageSwitcher />
+
+      <div v-if="isLoading" style="display:flex; height:100%; align-items:center; justify-content:center; font-weight:800; font-size:16px; color:var(--sub);">{{ t('app.loading') }}</div>
+
+      <div v-else-if="loadError" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:14px; padding:24px; text-align:center;">
+        <div style="font-weight:800; font-size:14px; color:var(--ink); line-height:1.6;">{{ t('app.loadErrorTitle') }}</div>
+        <div style="font-size:12px; color:var(--sub); max-width:320px; line-height:1.6;">{{ loadError }}</div>
+        <button class="btn" @click="characterData.loadData()">{{ t('app.retry') }}</button>
+      </div>
+
+      <ModeSelect v-else-if="mode === null" @pick="mode = $event" />
+
+      <template v-else-if="mode === 'duel'">
+        <SelectBoard v-if="state.phase === 'select'" />
+        <Board v-else :turn-mode="inBattleBoard" />
+
+        <MoveSelectPanel v-if="state.phase === 'moveSelect'" />
+        <DiceOverlay v-if="state.phase === 'diceRoll'" />
+        <MoveSelectPanel v-if="state.phase === 'resolve' || state.phase === 'effectPrompt'" resolve-phase />
+        <EffectPromptOverlay v-if="state.phase === 'effectPrompt'" />
+        <WinScreen v-if="state.phase === 'win'" />
+        <Modal v-if="state.modal" />
+        <TurnCutIn v-if="state.turnCutIn" />
+      </template>
+
+      <SoloApp v-else />
+    </div>
+  </div>
+</template>

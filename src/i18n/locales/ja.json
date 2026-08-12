@@ -1,0 +1,103 @@
+{
+  "appTitle": "プラコロバトル",
+  "common": {
+    "selected": "選択済み",
+    "confirm": "確定",
+    "back": "戻る",
+    "success": "成功",
+    "fail": "失敗",
+    "weaknessColon": "弱点:",
+    "and": "と"
+  },
+  "app": {
+    "loading": "NOW LOADING...",
+    "loadErrorTitle": "LOADINGに失敗しました",
+    "retry": "もう一度読み込む"
+  },
+  "dataErrors": {
+    "network": "通信エラーが発生しました: {message}",
+    "generic": "データの取得に失敗しました。",
+    "noData": "ポケモンまたはワザのデータが1件も見つかりませんでした。データベースの登録内容をご確認ください。"
+  },
+  "player": {
+    "trainerA": "トレーナーA",
+    "trainerB": "トレーナーB",
+    "notSelected": "未選択",
+    "incomingDamageEffect": "効果: 次に受けるダメージ{sign}{value}"
+  },
+  "select": {
+    "pickPokemon": "ポケモンを<br>選ぶ",
+    "startFirst": "先攻で開始",
+    "credit": "画像出典：公式サイト「ポケモンずかん」"
+  },
+  "charSelect": {
+    "title": "ポケモンを選択",
+    "empty": "選択できるポケモンがありません。データベースにキャラクターが登録されているかご確認ください。",
+    "weaknessPrefix": "(弱点:"
+  },
+  "moveSelect": {
+    "title": "{name} のワザを4つ選択",
+    "confirm": "選択したワザで確定"
+  },
+  "moveCard": {
+    "usedLastTurn": "前ターン使用",
+    "unusable": "使用不可"
+  },
+  "dice": {
+    "firstTurnBadge": "先攻初回",
+    "rollSuffix": "を振ろう！",
+    "moveSuccess": "ワザ成功",
+    "charaDiceCheck": "キャラコロチェック",
+    "successOnly": "ワザのみ（キャラコロ効果なし）",
+    "energyShortage": "エネ不足",
+    "moveFail": "ワザ失敗"
+  },
+  "effectPrompt": {
+    "diceRollLabel": "{n}個",
+    "enemyRollTitle": "相手はエネコロを{label}振る",
+    "diceSubSingle": "出たエネルギーの数を選んで下さい。",
+    "diceSubMulti": "一番多く出たタイプのエネルギーの数を選んで下さい。",
+    "charaDiceCountTitle": "合計{n}回キャラコロを振り、成功した数を選択。",
+    "charaDiceRepeatTitle": "キャラコロが連続で成功した数を選択。",
+    "bindWazaTitle": "次のターン使用できなくするワザを選択して下さい",
+    "bindWazaRemaining": "あと{remaining}個選んで下さい",
+    "eneCountTitle": "対象エネルギー数を選択",
+    "charaDiceEnemyPrefix": "相手のキャラコロを振り、",
+    "charaDiceEnemySuffix": "が出たなら成功"
+  },
+  "win": {
+    "victorySuffix": "勝利！",
+    "playAgain": "もう一度遊ぶ"
+  },
+  "mode": {
+    "duel": "対戦モード",
+    "solo": "ソロタワー"
+  },
+  "solo": {
+    "you": "あなた",
+    "opponent": "相手",
+    "statDice": "ダイス",
+    "statAtk": "攻撃",
+    "statDef": "防御",
+    "diceHint": "エネコロを{n}個振ろう！",
+    "charSelect": {
+      "title": "ポケモンを選択",
+      "pickMove": "{name} の最初のワザを2つ選択",
+      "confirm": "この内容で開始"
+    },
+    "upgrade": {
+      "title": "レベル{level}に上がった！強化を1つ選択",
+      "hp": "最大HP +{amount}",
+      "atk": "攻撃力 +{amount}",
+      "def": "防御力 +{amount}"
+    },
+    "learnMoveBonus": {
+      "title": "第{floor}層クリア報酬：新しいワザを1つ習得"
+    },
+    "gameOver": {
+      "title": "ゲームオーバー",
+      "floorReached": "到達した階層: 第{floor}層",
+      "retry": "もう一度挑戦する"
+    }
+  }
+}

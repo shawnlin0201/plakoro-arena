@@ -1,0 +1,103 @@
+{
+  "appTitle": "Plakoro Battle",
+  "common": {
+    "selected": "Selected",
+    "confirm": "Confirm",
+    "back": "Back",
+    "success": "Success",
+    "fail": "Fail",
+    "weaknessColon": "Weakness:",
+    "and": "and"
+  },
+  "app": {
+    "loading": "NOW LOADING...",
+    "loadErrorTitle": "Failed to load",
+    "retry": "Retry"
+  },
+  "dataErrors": {
+    "network": "A network error occurred: {message}",
+    "generic": "Failed to fetch data.",
+    "noData": "No Pokémon or move data was found. Please check the database records."
+  },
+  "player": {
+    "trainerA": "Trainer A",
+    "trainerB": "Trainer B",
+    "notSelected": "Not selected",
+    "incomingDamageEffect": "Effect: next damage taken {sign}{value}"
+  },
+  "select": {
+    "pickPokemon": "Pick a<br>Pokémon",
+    "startFirst": "Go First",
+    "credit": "Image source: official \"Pokémon Zukan\" site"
+  },
+  "charSelect": {
+    "title": "Choose a Pokémon",
+    "empty": "No Pokémon available to choose. Please check that characters are registered in the database.",
+    "weaknessPrefix": "(Weak:"
+  },
+  "moveSelect": {
+    "title": "Choose 4 moves for {name}",
+    "confirm": "Confirm selected moves"
+  },
+  "moveCard": {
+    "usedLastTurn": "Used last turn",
+    "unusable": "Unavailable"
+  },
+  "dice": {
+    "firstTurnBadge": "First turn",
+    "rollSuffix": "Roll it!",
+    "moveSuccess": "Move Success",
+    "charaDiceCheck": "Character Die Check",
+    "successOnly": "Move only (no character die effect)",
+    "energyShortage": "Not Enough Energy",
+    "moveFail": "Move Fails"
+  },
+  "effectPrompt": {
+    "diceRollLabel": "{n}",
+    "enemyRollTitle": "Opponent rolls {label} energy dice",
+    "diceSubSingle": "Choose the number of energy shown.",
+    "diceSubMulti": "Choose the count of the most-rolled energy type.",
+    "charaDiceCountTitle": "Roll the character die {n} times total, then choose the number of successes.",
+    "charaDiceRepeatTitle": "Choose how many times in a row the character die succeeded.",
+    "bindWazaTitle": "Choose the move(s) that can't be used next turn",
+    "bindWazaRemaining": "Choose {remaining} more",
+    "eneCountTitle": "Choose the target energy count",
+    "charaDiceEnemyPrefix": "Roll the opponent's character die — success if it lands on",
+    "charaDiceEnemySuffix": "."
+  },
+  "win": {
+    "victorySuffix": " Wins!",
+    "playAgain": "Play Again"
+  },
+  "mode": {
+    "duel": "Duel Mode",
+    "solo": "Solo Tower"
+  },
+  "solo": {
+    "you": "You",
+    "opponent": "Opponent",
+    "statDice": "DICE",
+    "statAtk": "ATK",
+    "statDef": "DEF",
+    "diceHint": "Roll {n} energy dice!",
+    "charSelect": {
+      "title": "Choose a Pokémon",
+      "pickMove": "Choose 2 starting moves for {name}",
+      "confirm": "Start with this"
+    },
+    "upgrade": {
+      "title": "Level {level}! Choose an upgrade",
+      "hp": "Max HP +{amount}",
+      "atk": "Attack +{amount}",
+      "def": "Defense +{amount}"
+    },
+    "learnMoveBonus": {
+      "title": "Floor {floor} clear bonus: learn a new move"
+    },
+    "gameOver": {
+      "title": "Game Over",
+      "floorReached": "Floor reached: {floor}",
+      "retry": "Try Again"
+    }
+  }
+}

@@ -1,0 +1,491 @@
+{
+  "chara": {
+    "STC04-001": {
+      "name": "Pikachu"
+    },
+    "EBC01-001": {
+      "name": "Pinsir"
+    },
+    "EBC01-002": {
+      "name": "Moltres"
+    },
+    "EBC01-003": {
+      "name": "Articuno"
+    },
+    "EBC01-004": {
+      "name": "Zapdos"
+    },
+    "EBC01-005": {
+      "name": "Onix"
+    },
+    "EBC01-006": {
+      "name": "Grimer"
+    },
+    "STC01-001": {
+      "name": "Bulbasaur"
+    },
+    "STC02-001": {
+      "name": "Charmander"
+    },
+    "STC03-001": {
+      "name": "Squirtle"
+    },
+    "STC05-001": {
+      "name": "Eevee"
+    },
+    "STC06-001": {
+      "name": "Mew"
+    }
+  },
+  "waza": {
+    "STW04-006": {
+      "name": "Volt Tackle",
+      "effect": "Also deals 30 damage to this Pokémon.",
+      "chara_effect1": "Adds 40 damage."
+    },
+    "STW06-006": {
+      "name": "Psychic",
+      "chara_effect1": "The opponent rolls 3 energy dice. Adds damage equal to 10 × the count of the most-common energy type rolled."
+    },
+    "STW05-001": {
+      "name": "Tail Slap",
+      "chara_effect1": "Adds 10 damage."
+    },
+    "STW06-004": {
+      "name": "Memory Skip",
+      "chara_effect1": "Choose 1 of the opponent's moves. On the opponent's next turn, that move can't be used."
+    },
+    "STW04-005": {
+      "name": "Thunder",
+      "chara_effect1": "Adds 60 damage."
+    },
+    "STW05-007": {
+      "name": "Bite",
+      "chara_effect1": "Adds 20 damage."
+    },
+    "STW05-005": {
+      "name": "Full-Power Dash",
+      "chara_effect1": "Adds 40 damage."
+    },
+    "STW04-002": {
+      "name": "Thunder Shock",
+      "chara_effect1": "Adds 20 damage."
+    },
+    "STW04-003": {
+      "name": "Electro Rush",
+      "effect": "This move ignores weakness.",
+      "chara_effect1": "Use \"Electro Rush\" again. (Can repeat until it fails.)"
+    },
+    "STW05-002\n": {
+      "name": "Tackle",
+      "chara_effect1": "Adds 20 damage."
+    },
+    "STW05-003": {
+      "name": "Take Down",
+      "chara_effect1": "Adds 20 damage.",
+      "chara_effect2": "Also deals 20 damage to this Pokémon."
+    },
+    "STW06-001": {
+      "name": "Confusion",
+      "chara_effect1": "Adds 20 damage."
+    },
+    "STW06-002": {
+      "name": "Psybeam",
+      "chara_effect1": "Adds 30 damage."
+    },
+    "STW06-003": {
+      "name": "Barrier",
+      "effect": "On the opponent's next turn, damage taken by this Pokémon is reduced by 20."
+    },
+    "STW04-007": {
+      "name": "Iron Tail",
+      "chara_effect1": "On the opponent's next turn, damage taken by this Pokémon is reduced by 10."
+    },
+    "STW05-004": {
+      "name": "Bounce Around",
+      "chara_effect1": "Deals 70 damage.",
+      "chara_effect2": "Deals 40 damage.",
+      "chara_effect3": "Deals 20 damage."
+    },
+    "STW06-005": {
+      "name": "Psyshock",
+      "chara_effect1": "Adds 20 damage."
+    },
+    "EBW01-022": {
+      "name": "Frost Blade",
+      "chara_effect1": "On the opponent's next turn, they can't roll the character die."
+    },
+    "STW06-007": {
+      "name": "Reflect",
+      "effect": "Deals damage to the opponent equal to the last move they used. (Ignores that move's character die effect.)",
+      "chara_effect1": "The damage dealt by this move is doubled."
+    },
+    "EBW01-023": {
+      "name": "Blizzard Storm",
+      "chara_effect1": "Adds 30 damage."
+    },
+    "EBW01-027": {
+      "name": "Ice Shot",
+      "chara_effect1": "Adds 20 damage."
+    },
+    "STW04-001": {
+      "name": "Gnaw",
+      "chara_effect1": "Adds 30 damage."
+    },
+    "EBW01-030": {
+      "name": "Fly",
+      "chara_effect1": "On the opponent's next turn, this Pokémon takes no move damage.",
+      "chara_effect2": "This move fails."
+    },
+    "STW04-004": {
+      "name": "Thunderbolt",
+      "chara_effect1": "Adds 30 damage.",
+      "chara_effect2": "On your next turn, roll 2 fewer energy dice."
+    },
+    "EBW01-032": {
+      "name": "Thunder Shock",
+      "chara_effect1": "Adds 10 damage."
+    },
+    "EBW01-031": {
+      "name": "Electromagnetic Flash",
+      "chara_effect1": "Adds 30 damage."
+    },
+    "EBW01-021": {
+      "name": "Ice Wing",
+      "chara_effect1": "On the opponent's next turn, they roll 1 fewer energy die."
+    },
+    "EBW01-024": {
+      "name": "Air Cutter",
+      "chara_effect1": "Adds 30 damage."
+    },
+    "EBW01-025": {
+      "name": "Roost",
+      "effect": "Heals 20 HP for this Pokémon.",
+      "chara_effect1": "Heals an additional 20."
+    },
+    "EBW01-026": {
+      "name": "Freeze Dive",
+      "chara_effect1": "Adds 20 damage."
+    },
+    "EBW01-028": {
+      "name": "Cold Breath",
+      "chara_effect1": "On the opponent's next turn, they roll 2 fewer energy dice."
+    },
+    "EBW01-029": {
+      "name": "Sheer Cold",
+      "chara_effect1": "On the opponent's next turn, they roll 2 fewer energy dice, and also can't roll the character die."
+    },
+    "STW05-006": {
+      "name": "Charm",
+      "chara_effect1": "On the opponent's next turn, they roll 2 fewer energy dice."
+    },
+    "EBW01-034": {
+      "name": "Aerial Ace",
+      "chara_effect1": "Adds 20 damage."
+    },
+    "EBW01-036": {
+      "name": "Double Thunder",
+      "effect": "This move rolls the character die a total of 2 times.",
+      "chara_effect1": "Each time the character die succeeds on this move, adds 20 damage."
+    },
+    "EBW01-039": {
+      "name": "Thunder Chain",
+      "chara_effect1": "Adds 30 damage. Roll the character die again. (Can repeat until it fails.)"
+    },
+    "EBW01-037": {
+      "name": "Electric Arrow",
+      "chara_effect1": "Adds 40 damage."
+    },
+    "EBW01-038": {
+      "name": "Discharge",
+      "chara_effect1": "Adds 20 damage."
+    },
+    "EBW01-035": {
+      "name": "Crackling Wing",
+      "chara_effect1": "Adds 40 damage."
+    },
+    "EBW01-040": {
+      "name": "Fly",
+      "chara_effect1": "On the opponent's next turn, this Pokémon takes no move damage.",
+      "chara_effect2": "This move fails."
+    },
+    "EBW01-033": {
+      "name": "Volt Rush",
+      "effect": "This move rolls the character die a total of 3 times.",
+      "chara_effect1": "Each time the character die succeeds on this move, adds 30 damage."
+    },
+    "EBW01-012": {
+      "name": "Heat Wave",
+      "chara_effect1": "Adds 20 damage."
+    },
+    "EBW01-013": {
+      "name": "Flamethrower",
+      "chara_effect1": "Adds 40 damage.",
+      "chara_effect2": "On your next turn, roll 2 fewer energy dice."
+    },
+    "EBW01-014": {
+      "name": "Flare Blitz",
+      "chara_effect1": "Adds 40 damage.",
+      "chara_effect2": "Also deals 40 damage to this Pokémon."
+    },
+    "EBW01-015": {
+      "name": "Hurricane",
+      "chara_effect1": "Adds 60 damage."
+    },
+    "EBW01-016": {
+      "name": "Fire Spin",
+      "chara_effect1": "Adds 40 damage.",
+      "chara_effect2": "On your next turn, roll 2 fewer energy dice."
+    },
+    "EBW01-017": {
+      "name": "Heat Breath",
+      "chara_effect1": "Adds 40 damage.",
+      "chara_effect2": "Also deals 30 damage to this Pokémon."
+    },
+    "EBW01-018": {
+      "name": "Burn Up",
+      "chara_effect1": "This move fails."
+    },
+    "EBW01-019": {
+      "name": "Wing Rush",
+      "chara_effect1": "Adds 10 damage."
+    },
+    "EBW01-020": {
+      "name": "Fly",
+      "chara_effect1": "On the opponent's next turn, this Pokémon takes no move damage.",
+      "chara_effect2": "This move fails."
+    },
+    "STW03-001": {
+      "name": "Water Gun",
+      "chara_effect1": "Adds 20 damage."
+    },
+    "STW03-002": {
+      "name": "Withdraw",
+      "effect": "On the opponent's next turn, damage taken by this Pokémon is reduced by 20.",
+      "chara_effect1": "Heals 30 HP for this Pokémon."
+    },
+    "STW03-003": {
+      "name": "Water Pulse",
+      "chara_effect1": "Adds 20 damage."
+    },
+    "STW03-004": {
+      "name": "Shell Attack",
+      "chara_effect1": "On the opponent's next turn, damage taken by this Pokémon is reduced by 20."
+    },
+    "STW03-005": {
+      "name": "Bubble Beam",
+      "chara_effect1": "On the opponent's next turn, they roll 1 fewer energy die."
+    },
+    "STW03-006": {
+      "name": "Hydro Anger",
+      "chara_effect1": "If this Pokémon's remaining HP is 40 or less, adds 60 damage."
+    },
+    "STW03-007": {
+      "name": "Mud Shot",
+      "chara_effect1": "Adds 30 damage."
+    },
+    "STW02-001": {
+      "name": "Ember",
+      "chara_effect1": "Adds 30 damage."
+    },
+    "STW02-002": {
+      "name": "Heat Up",
+      "chara_effect1": "On your next turn, roll 2 more energy dice."
+    },
+    "STW02-003": {
+      "name": "Flamethrower",
+      "chara_effect1": "Adds 20 damage.",
+      "chara_effect2": "On your next turn, roll 1 fewer energy die."
+    },
+    "STW02-004": {
+      "name": "Fire Fang",
+      "chara_effect1": "Adds 30 damage."
+    },
+    "STW02-007": {
+      "name": "Metal Claw",
+      "chara_effect1": "Adds 40 damage."
+    },
+    "STW01-001": {
+      "name": "Vine Whip",
+      "chara_effect1": "Adds 20 damage."
+    },
+    "STW01-007": {
+      "name": "Acid Bomb",
+      "chara_effect1": "Adds 20 damage."
+    },
+    "EBW01-011": {
+      "name": "Flame Wing",
+      "chara_effect1": "Adds 30 damage.",
+      "chara_effect2": "Also deals 20 damage to this Pokémon."
+    },
+    "STW02-006": {
+      "name": "Thunder Punch",
+      "chara_effect1": "Adds 20 damage."
+    },
+    "STW01-006": {
+      "name": "Giga Drain",
+      "chara_effect1": "Heals 40 HP for this Pokémon."
+    },
+    "STW01-005": {
+      "name": "Onslaught",
+      "chara_effect1": "Adds 40 damage.",
+      "chara_effect2": "Also deals 30 damage to this Pokémon."
+    },
+    "STW01-004": {
+      "name": "Grass Knot",
+      "chara_effect1": "Choose 1 of the opponent's moves. On the opponent's next turn, that move can't be used."
+    },
+    "STW01-003": {
+      "name": "Leech Seed",
+      "chara_effect1": "On the opponent's next turn, they roll 1 fewer energy die. On your next turn, you roll 1 more energy die."
+    },
+    "STW02-005": {
+      "name": "Flare Storm",
+      "chara_effect1": "Adds damage equal to 10 × the number of Fire energy rolled on the energy dice."
+    },
+    "STW01-002": {
+      "name": "Razor Leaf",
+      "chara_effect1": "Adds 20 damage."
+    },
+    "EBW01-059": {
+      "name": "Sludge Tackle",
+      "chara_effect1": "Adds 40 damage.",
+      "chara_effect2": "Also deals 20 damage to this Pokémon."
+    },
+    "EBW01-051": {
+      "name": "Poison Gas",
+      "chara_effect1": "On the opponent's next turn, they roll 1 fewer energy die."
+    },
+    "EBW01-055": {
+      "name": "Venom Punch",
+      "chara_effect1": "Adds 30 damage."
+    },
+    "EBW01-054": {
+      "name": "Sludge Wrap",
+      "chara_effect1": "Choose 1 of the opponent's moves. On the opponent's next turn, that move can't be used."
+    },
+    "EBW01-052": {
+      "name": "Sticky Throw",
+      "chara_effect1": "Adds 20 damage."
+    },
+    "EBW01-060": {
+      "name": "Spiteful Venom",
+      "chara_effect1": "If the opponent's move failed its energy dice roll on their last turn, adds 50 damage."
+    },
+    "EBW01-043": {
+      "name": "Rock Wall",
+      "chara_effect1": "On the opponent's next turn, damage taken by this Pokémon is reduced by 30."
+    },
+    "EBW01-058": {
+      "name": "Toxic Bomber",
+      "chara_effect1": "If \"Poison Gas\"'s energy dice succeeded on your last turn, adds 30 damage."
+    },
+    "EBW01-044": {
+      "name": "Hard Impact",
+      "chara_effect1": "Adds 30 damage.",
+      "chara_effect2": "On your next turn, roll 1 fewer energy die."
+    },
+    "EBW01-053": {
+      "name": "Toxic Heal",
+      "chara_effect1": "If \"Poison Gas\"'s energy dice succeeded on your last turn, heals 30 HP for this Pokémon."
+    },
+    "EBW01-046": {
+      "name": "Collide",
+      "chara_effect1": "Adds 10 damage."
+    },
+    "EBW01-057": {
+      "name": "Venom Slip",
+      "chara_effect1": "Roll the opponent's character die; if it shows Upright, Inverted, Left, or Right, adds 20 damage."
+    },
+    "EBW01-041": {
+      "name": "Boulder Tackle",
+      "effect": "On the opponent's next turn, damage taken by this Pokémon is reduced by 10.",
+      "chara_effect1": "Reduces damage taken by an additional 20."
+    },
+    "EBW01-042": {
+      "name": "Rock Tomb",
+      "chara_effect1": "Adds 30 damage."
+    },
+    "EBW01-047": {
+      "name": "Rock Slide",
+      "chara_effect1": "Adds 20 damage."
+    },
+    "EBW01-048": {
+      "name": "Wild Tackle",
+      "chara_effect1": "Adds 20 damage.",
+      "chara_effect2": "Also deals 20 damage to this Pokémon."
+    },
+    "EBW01-001": {
+      "name": "Focus",
+      "chara_effect1": "On your next turn, roll 2 more energy dice."
+    },
+    "EBW01-050": {
+      "name": "Iron Tail",
+      "chara_effect1": "On the opponent's next turn, damage taken by this Pokémon is reduced by 10."
+    },
+    "EBW01-049": {
+      "name": "Boulder Barrier",
+      "chara_effect1": "On the opponent's next turn, damage taken by this Pokémon is reduced by 50."
+    },
+    "EBW01-002": {
+      "name": "Endure",
+      "effect": "On the opponent's next turn, damage taken by this Pokémon is reduced by 20.",
+      "chara_effect1": "Reduces damage taken by an additional 20."
+    },
+    "EBW01-003": {
+      "name": "Horn Attack",
+      "chara_effect1": "Adds 30 damage."
+    },
+    "EBW01-004": {
+      "name": "Guillotine",
+      "chara_effect1": "Deals 150 damage."
+    },
+    "EBW01-005": {
+      "name": "Karate Chop",
+      "chara_effect1": "Adds 20 damage."
+    },
+    "EBW01-006": {
+      "name": "Charge Pincer",
+      "chara_effect1": "On your next turn, roll 1 more energy die."
+    },
+    "EBW01-045": {
+      "name": "Gyro Ball",
+      "chara_effect1": "Roll the opponent's character die; if it shows Inverted or Backward, adds 60 damage."
+    },
+    "EBW01-008": {
+      "name": "Onslaught",
+      "chara_effect1": "Adds 20 damage.",
+      "chara_effect2": "Also deals 20 damage to this Pokémon."
+    },
+    "EBW01-009": {
+      "name": "Finishing Pincer",
+      "chara_effect1": "Adds 80 damage."
+    },
+    "EBW01-010": {
+      "name": "Submission",
+      "effect": "Also deals 20 damage to this Pokémon.",
+      "chara_effect1": "Adds 30 damage."
+    },
+    "PRW01-1-08": {
+      "name": "Aroma Storm",
+      "chara_effect1": "Heals 50 HP for this Pokémon."
+    },
+    "PRW01-2-08": {
+      "name": "Flame Up",
+      "chara_effect1": "On your next turn, roll 2 more energy dice.",
+      "chara_effect2": "On your next turn, roll 2 fewer energy dice."
+    },
+    "PRW01-3-08": {
+      "name": "Hard Shell",
+      "chara_effect1": "On the opponent's next turn, damage taken by this Pokémon is reduced by 50."
+    },
+    "PRW01-008": {
+      "name": "Critical Volt",
+      "chara_effect1": "Adds 60 damage."
+    },
+    "EBW01-007": {
+      "name": "Furious Swing",
+      "chara_effect1": "If your move's energy dice failed on your last turn, adds 40 damage."
+    }
+  }
+}
