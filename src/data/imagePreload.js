@@ -1,14 +1,15 @@
 import { TYPE_BG_COLORS } from './constants'
+import { asset } from './assetPath'
 
 export const PRELOAD_IMAGE_PATHS = [
-  "/image/ICON/キャラコロ.png",
-  "/image/ICON/エネコロ1.png",
-  "/image/ICON/エネコロ2.png",
-  "/image/ICON/エネコロ3.png",
-  "/image/ICON/エネコロ4.png",
-  "/image/ICON/エネコロ5.png",
-  "/image/ICON/エネコロ6.png",
-  ...Object.keys(TYPE_BG_COLORS).map(t => `/image/BACK/back_${t}.png`)
+  asset("image/ICON/キャラコロ.png"),
+  asset("image/ICON/エネコロ1.png"),
+  asset("image/ICON/エネコロ2.png"),
+  asset("image/ICON/エネコロ3.png"),
+  asset("image/ICON/エネコロ4.png"),
+  asset("image/ICON/エネコロ5.png"),
+  asset("image/ICON/エネコロ6.png"),
+  ...Object.keys(TYPE_BG_COLORS).map(t => asset(`image/BACK/back_${t}.png`))
 ]
 
 const IMAGE_LOAD_CACHE_KEY = "plakoro_image_load_cache_v1"

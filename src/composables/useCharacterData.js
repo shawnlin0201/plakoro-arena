@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 import { preloadEssentialImages, preloadCharacterImages } from '../data/imagePreload'
 import { i18n } from '../i18n'
+import { asset } from '../data/assetPath'
 import charaRaw from '../data/generated/chara.json'
 import wazaRaw from '../data/generated/waza.json'
 import translationsEn from '../data/translations/en.json'
@@ -62,7 +63,7 @@ const CHARACTERS_BASE = charaRaw.map(c => {
     weakness: c.weakness_type1 || c.weakness || "",
     weaknessDamage: parseInt(c.weakness_damage, 10) || 20,
     hp: parseInt(c.HP, 10) || 100,
-    imageUrl: `/image/CHARA/${c.name}.jpg`,
+    imageUrl: asset(`image/CHARA/${c.name}.jpg`),
     moves: charaMoves
   }
 })

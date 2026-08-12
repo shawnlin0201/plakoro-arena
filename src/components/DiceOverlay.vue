@@ -3,6 +3,7 @@ import { computed, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { typeBgColor } from '../data/constants'
 import { isCharaColorConditionMet } from '../game/damage'
+import { asset } from '../data/assetPath'
 
 const battle = inject('battle')
 const { moves } = inject('characterData')
@@ -55,10 +56,10 @@ function goBack() {
     <div class="dr-top-row">
       <div
         class="dr-move-card"
-        :style="{ backgroundColor: typeBgColor(mv.type), backgroundImage: `url('/image/BACK/back_${mv.type}.png')` }"
+        :style="{ backgroundColor: typeBgColor(mv.type), backgroundImage: `url('${asset(`image/BACK/back_${mv.type}.png`)}')` }"
       >
         <div class="dr-cost-row">
-          <div v-for="(costType, i) in mv.cost" :key="i" class="cost-dot"><img :src="`/image/ICON/${costType}.png`" class="img-icon" :alt="costType"></div>
+          <div v-for="(costType, i) in mv.cost" :key="i" class="cost-dot"><img :src="asset(`image/ICON/${costType}.png`)" class="img-icon" :alt="costType"></div>
         </div>
         <div class="dr-move-name mc-name-big">{{ mv.name }}</div>
       </div>
@@ -73,11 +74,11 @@ function goBack() {
           >{{ b.label }}</div>
         </div>
         <template v-if="hasChara">
-          <div class="dr-inline-icon big"><img :src="'/image/ICON/キャラコロ.png'" class="img-icon" alt="キャラコロ"></div>
+          <div class="dr-inline-icon big"><img :src="asset('image/ICON/キャラコロ.png')" class="img-icon" alt="キャラコロ"></div>
           <span v-if="energyCount > 0" class="dr-flow-word">{{ t('common.and') }}</span>
         </template>
         <div v-if="energyCount > 0" class="dr-energy-icons one-row">
-          <div v-for="(num, i) in energyIcons" :key="i" class="dr-inline-icon big"><img :src="`/image/ICON/エネコロ${num}.png`" class="img-icon" alt="エネコロ"></div>
+          <div v-for="(num, i) in energyIcons" :key="i" class="dr-inline-icon big"><img :src="asset(`image/ICON/エネコロ${num}.png`)" class="img-icon" alt="エネコロ"></div>
         </div>
         <span class="dr-flow-word">{{ t('dice.rollSuffix') }}</span>
       </div>
@@ -88,7 +89,7 @@ function goBack() {
         <div class="dr-btn-list">
           <button class="dr-success-only-btn" @click="pickSuccessOnly">
             <div class="dr-success-only-left">
-              <div class="dr-type-icon"><img :src="`/image/ICON/${mv.type}.png`" class="img-icon" :alt="mv.type"></div>
+              <div class="dr-type-icon"><img :src="asset(`image/ICON/${mv.type}.png`)" class="img-icon" :alt="mv.type"></div>
               <div class="dr-chara-btn-text">{{ t('dice.successOnly') }}</div>
             </div>
             <div class="mc-dmg dr-success-only-dmg" :class="successDmgClass">{{ dmgInfo.display }}</div>
@@ -102,7 +103,7 @@ function goBack() {
             @click="pickChara(ce)"
           >
             <div class="dr-chara-btn-icons">
-              <div v-for="(ori, j) in ce.orientations" :key="j" class="oi"><img :src="`/image/ICON/${ori}.png`" class="img-icon" :alt="ori"></div>
+              <div v-for="(ori, j) in ce.orientations" :key="j" class="oi"><img :src="asset(`image/ICON/${ori}.png`)" class="img-icon" :alt="ori"></div>
             </div>
             <div class="dr-chara-btn-text" :style="charaHighlighted(ce) ? 'color:#F5F842;' : ''">{{ ce.text }}</div>
           </button>

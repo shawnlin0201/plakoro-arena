@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { typeBgColor } from '../data/constants'
 import { isCharaColorConditionMet } from '../game/damage'
+import { asset } from '../data/assetPath'
 
 const props = defineProps({
   mv: { type: Object, required: true },
@@ -47,16 +48,16 @@ function onClick() {
   >
     <div
       class="mc-top"
-      :style="{ backgroundColor: typeBgColor(mv.type), backgroundImage: `url('/image/BACK/back_${mv.type}.png')`, backgroundSize: 'cover', backgroundPosition: 'center' }"
+      :style="{ backgroundColor: typeBgColor(mv.type), backgroundImage: `url('${asset(`image/BACK/back_${mv.type}.png`)}')`, backgroundSize: 'cover', backgroundPosition: 'center' }"
     >
       <div class="mc-top-row">
         <div class="mc-typename">
-          <div class="mc-type-icon"><img :src="`/image/ICON/${mv.type}.png`" class="img-icon" :alt="mv.type"></div>
+          <div class="mc-type-icon"><img :src="asset(`image/ICON/${mv.type}.png`)" class="img-icon" :alt="mv.type"></div>
           <div class="mc-name-big">{{ mv.name }}</div>
         </div>
         <div class="mc-right-stack">
           <div class="mc-cost">
-            <div v-for="(t, i) in mv.cost" :key="i" class="cost-dot"><img :src="`/image/ICON/${t}.png`" class="img-icon" :alt="t"></div>
+            <div v-for="(t, i) in mv.cost" :key="i" class="cost-dot"><img :src="asset(`image/ICON/${t}.png`)" class="img-icon" :alt="t"></div>
           </div>
           <div class="mc-dmg" :class="dmgClass">
             {{ dmg.display }}<span v-if="dmg.mode !== 'normal'" class="orig">({{ dmgDiffLabel }})</span>
@@ -68,7 +69,7 @@ function onClick() {
     <div class="mc-bottom">
       <div v-for="(ce, i) in mv.chara" :key="i" class="mc-chara-row">
         <div style="display:flex; gap:2px; flex-shrink:0;">
-          <div v-for="(ori, j) in ce.orientations" :key="j" class="oi"><img :src="`/image/ICON/${ori}.png`" class="img-icon" :alt="ori"></div>
+          <div v-for="(ori, j) in ce.orientations" :key="j" class="oi"><img :src="asset(`image/ICON/${ori}.png`)" class="img-icon" :alt="ori"></div>
         </div>
         <div class="txt" :style="charaHighlighted(ce) ? 'color:#F5F842;' : ''">{{ ce.text }}</div>
       </div>
