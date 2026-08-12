@@ -26,6 +26,7 @@ const state = battle.state
 const { isLoading, loadError } = characterData
 
 const mode = ref(null)
+const appVersion = __APP_VERSION__
 
 const stageRef = ref(null)
 useStageLayout(stageRef)
@@ -45,6 +46,7 @@ onMounted(() => {
   <div id="stage" ref="stageRef">
     <div id="app">
       <LanguageSwitcher />
+      <div style="position:absolute; right:6px; bottom:4px; z-index:300; font-size:10px; font-weight:700; color:rgba(58,58,58,.5); pointer-events:none;">v{{ appVersion }}</div>
 
       <div v-if="isLoading" style="display:flex; height:100%; align-items:center; justify-content:center; font-weight:800; font-size:16px; color:var(--sub);">{{ t('app.loading') }}</div>
 
