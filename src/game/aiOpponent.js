@@ -11,12 +11,6 @@
 //                                 and 2 further random moves
 export const ENERGY_PER_DIE_MAX = 2
 
-const FLOORS_PER_TIER = 5
-
-export function tierForFloor(floor) {
-  return Math.max(1, Math.ceil(floor / FLOORS_PER_TIER))
-}
-
 export function energyDiceForTier(tier) {
   return tier
 }
@@ -32,8 +26,8 @@ export function maxAffordableCostForTier(tier) {
   return tier * ENERGY_PER_DIE_MAX
 }
 
-export function damageMultiplierForFloor(floor) {
-  return 1 + (floor - 1) * 0.08
+export function damageMultiplierForTier(tier) {
+  return 1 + (tier - 1) * 0.2
 }
 
 function shuffle(arr) {
@@ -104,12 +98,13 @@ export function pickAiCharacter(characters) {
   return characters[Math.floor(Math.random() * characters.length)]
 }
 
-// Builds the full AI opponent descriptor for a given floor.
-export function buildAiOpponent(floor, characters, movesMap) {
-  const tier = tierForFloor(floor)
+// Builds a full AI opponent descriptor for an explicit tier. Regular monster nodes on
+// the map use tier = the current act number; boss nodes use tier = act + 1, so e.g. the
+// Act 3 boss lands on tier 4 (hpForTier(4) = 150).
+export function buildAiOpponentForTier(tier, characters, movesMap) {
   const character = pickAiCharacter(characters)
   const moveIds = buildAiMoveset(character, movesMap, tier)
-  const multiplier = damageMultiplierForFloor(floor)
+  const multiplier = damageMultiplierForTier(tier)
   return {
     character,
     tier,

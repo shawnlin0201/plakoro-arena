@@ -91,12 +91,49 @@
       "atk": "攻撃力 +{amount}",
       "def": "防御力 +{amount}"
     },
-    "learnMoveBonus": {
-      "title": "第{floor}層クリア報酬：新しいワザを1つ習得"
+    "map": {
+      "title": "第{act}章のマップ",
+      "hint": "進むノードを選んでください"
+    },
+    "node": {
+      "monster": "モンスター",
+      "event": "イベント",
+      "campfire": "たき火",
+      "boss": "ボス"
+    },
+    "event": {
+      "title": "特殊イベント",
+      "continue": "つづける"
+    },
+    "events": {
+      "pokemonCenter": { "text": "ポケモンセンターに立ち寄ると、優しい{name}がりんごをくれた。", "effect": "すぐにHPを30回復する。" },
+      "berryBush": { "text": "道端でキノミの木を見つけ、{name}が食べられる実を教えてくれた。", "effect": "すぐにHPを20回復する。" },
+      "oldMaster": { "text": "謎のトレーナー{name}が戦い方のコツを教えてくれた。", "effect": "攻撃力が永続的に+3される。" },
+      "hotSpring": { "text": "みんなで温泉に入り、{name}も隣でくつろいでいた。", "effect": "すぐにHPを40回復する。" },
+      "ironWill": { "text": "堂々と戦う{name}の姿を見て、自信が湧いてきた。", "effect": "防御力が永続的に+3される。" },
+      "treasureChest": { "text": "宝箱を見つけた。中には{name}が残したトレーニング道具が入っていた。", "effect": "最大HPが永続的に+15され、同じ量だけ回復する。" },
+      "windyHill": { "text": "丘の上で、{name}と一緒に特訓に励んだ。", "effect": "攻撃力が永続的に+2される。" },
+      "rainyDay": { "text": "雨の日、{name}が仲間を守るためのかばい方を教えてくれた。", "effect": "防御力が永続的に+2される。" },
+      "campfireSong": { "text": "焚き火のそばで{name}が歌ってくれて、心が和んだ。", "effect": "すぐにHPを25回復する。" },
+      "secretTraining": { "text": "{name}と一緒に、秘密の特訓に取り組んだ。", "effect": "最大HPが永続的に+10され、同じ量だけ回復する。" }
+    },
+    "campfire": {
+      "title": "たき火",
+      "description": "たき火を見つけ、ゆっくり休んだ。",
+      "effect": "HPが全回復する。",
+      "continue": "つづける"
+    },
+    "boss": {
+      "reward": "ボスを討伐！新しいワザを1つ習得し、エネコロが+1個増える。"
+    },
+    "victory": {
+      "title": "全3章クリア！",
+      "subtitle": "あなたはタワーの頂点に到達した。",
+      "playAgain": "もう一度遊ぶ"
     },
     "gameOver": {
       "title": "ゲームオーバー",
-      "floorReached": "到達した階層: 第{floor}層",
+      "actReached": "到達した章: 第{act}章",
       "retry": "もう一度挑戦する"
     }
   }

@@ -1,14 +1,16 @@
 import { reactive } from 'vue'
 import { computeDisplayDamage as computeDisplayDamagePure, isCharaColorConditionMet } from '../game/damage'
 import { runEffectQueue as runEffectQueueShared } from '../game/effectQueue'
-import { buildAiOpponent, scaleMoveForFloor, maxAffordableCostForTier } from '../game/aiOpponent'
+import { buildAiOpponentForTier, scaleMoveForFloor, maxAffordableCostForTier } from '../game/aiOpponent'
+import { generateActMap, reachableNodeIds as mapReachableNodeIds } from '../game/mapGen'
+import { drawRandomEvent } from '../game/eventPool'
 
 const STARTING_HP_FALLBACK = 100
 const UPGRADE_HP_AMOUNT = 10
 const UPGRADE_ATK_AMOUNT = 5
 const UPGRADE_DEF_AMOUNT = 5
 const STARTING_MOVE_COUNT = 2
-const MOVES_BONUS_EVERY_N_FLOORS = 5
+const TOTAL_ACTS = 3
 
 const LEVEL_UP_CHOICES = [
   { kind: "atk", amount: UPGRADE_ATK_AMOUNT },
@@ -50,17 +52,21 @@ function newCombatant() {
 function freshRunState() {
   return {
     phase: "charSelect",
-    floor: 1,
+    act: 1,
+    map: null,
+    currentNodeId: null,
+    reachableNodeIds: [],
+    currentEvent: null,
     turn: "player",
     player: newCombatant(),
     ai: newCombatant(),
     selectedMove: null,
-    pendingEnergyRoll: null,
     effectPrompt: null,
     repeatActive: false,
     upgradeChoices: null,
     learnMoveChoices: null,
     pendingChoiceQueue: [],
+    pendingAfterQueue: null,
     gameOver: null,
     charSelectTemp: null
   }
@@ -129,14 +135,48 @@ export function useSoloRun(charactersRef, movesRef) {
     p.level = 1
     p.winsSinceLevel = 0
     state.charSelectTemp = null
-    startFloor()
+    startAct(1)
   }
 
-  // --- floor setup ---
+  // --- act / map / node navigation ---
 
-  function startFloor() {
+  function startAct(actNumber) {
+    state.act = actNumber
+    state.map = generateActMap()
+    state.currentNodeId = null
+    state.reachableNodeIds = state.map.startNodeIds
+    state.currentEvent = null
+    state.phase = "map"
+  }
+
+  function pickRandomCharacterName() {
+    const list = charactersRef.value
+    return list[Math.floor(Math.random() * list.length)].name
+  }
+
+  function resetCombatantForFight(c) {
+    c.lastMoveId = null
+    c.lastMoveFailed = false
+    c.committedLastMoveId = null
+    c.committedLastMoveFailed = false
+    c.incomingDamageMod = 0
+    c.incomingDamageNullify = null
+    c.diceMod = 0
+    c.diceModBadges = []
+    c.bannedMoveIds = []
+    c.bannedMoveSourceName = ""
+    c.committedBannedMoveIds = []
+    c.committedBannedMoveSourceName = ""
+    c.charaDiceBlocked = false
+    c.attackAnim = null
+    c.hitBlink = false
+    c.dmgOverlay = null
+    c.frameOut = false
+  }
+
+  function startCombat(tier) {
     const ai = state.ai
-    const opp = buildAiOpponent(state.floor, charactersRef.value, movesRef.value)
+    const opp = buildAiOpponentForTier(tier, charactersRef.value, movesRef.value)
     ai.character = opp.character
     ai.moveIds = opp.moveIds
     ai.maxHp = opp.hp
@@ -144,47 +184,54 @@ export function useSoloRun(charactersRef, movesRef) {
     ai.energyDiceCount = opp.energyDiceCount
     ai.tier = opp.tier
     ai.multiplier = opp.multiplier
-    ai.lastMoveId = null
-    ai.lastMoveFailed = false
-    ai.committedLastMoveId = null
-    ai.committedLastMoveFailed = false
-    ai.incomingDamageMod = 0
-    ai.incomingDamageNullify = null
-    ai.diceMod = 0
-    ai.diceModBadges = []
-    ai.bannedMoveIds = []
-    ai.bannedMoveSourceName = ""
-    ai.committedBannedMoveIds = []
-    ai.committedBannedMoveSourceName = ""
-    ai.charaDiceBlocked = false
-    ai.attackAnim = null
-    ai.hitBlink = false
-    ai.dmgOverlay = null
-    ai.frameOut = false
-
-    const p = state.player
-    p.lastMoveId = null
-    p.lastMoveFailed = false
-    p.committedLastMoveId = null
-    p.committedLastMoveFailed = false
-    p.incomingDamageMod = 0
-    p.incomingDamageNullify = null
-    p.diceMod = 0
-    p.diceModBadges = []
-    p.bannedMoveIds = []
-    p.bannedMoveSourceName = ""
-    p.committedBannedMoveIds = []
-    p.committedBannedMoveSourceName = ""
-    p.charaDiceBlocked = false
-    p.attackAnim = null
-    p.hitBlink = false
-    p.dmgOverlay = null
-    p.frameOut = false
+    resetCombatantForFight(ai)
+    resetCombatantForFight(state.player)
 
     state.turn = "player"
     state.selectedMove = null
     state.upgradeChoices = null
     state.phase = "moveSelect"
+  }
+
+  function enterNode(nodeId) {
+    if (!state.reachableNodeIds.includes(nodeId)) return
+    const node = state.map.nodes[nodeId]
+    state.currentNodeId = nodeId
+
+    if (node.type === "monster") {
+      startCombat(state.act)
+    } else if (node.type === "boss") {
+      startCombat(state.act + 1)
+    } else if (node.type === "event") {
+      const ev = drawRandomEvent()
+      const characterName = pickRandomCharacterName()
+      applyEventEffect(ev)
+      state.currentEvent = { ...ev, characterName }
+      state.phase = "event"
+    } else if (node.type === "campfire") {
+      state.player.hp = state.player.maxHp
+      state.phase = "campfire"
+    }
+  }
+
+  function applyEventEffect(ev) {
+    const p = state.player
+    if (ev.effectKind === "heal") {
+      p.hp = Math.min(p.hp + ev.amount, p.maxHp)
+    } else if (ev.effectKind === "atk") {
+      p.atkBonus += ev.amount
+    } else if (ev.effectKind === "def") {
+      p.defBonus += ev.amount
+    } else if (ev.effectKind === "maxHp") {
+      p.maxHp += ev.amount
+      p.hp = Math.min(p.hp + ev.amount, p.maxHp)
+    }
+  }
+
+  function returnToMap() {
+    state.currentEvent = null
+    state.reachableNodeIds = mapReachableNodeIds(state.map, state.currentNodeId)
+    state.phase = "map"
   }
 
   // --- move selection / AI move choice ---
@@ -396,10 +443,10 @@ export function useSoloRun(charactersRef, movesRef) {
           if (mover.hp <= 0) deadKeys.push(moverKey)
           Promise.all(deadKeys.map(k => new Promise(res => frameOutDefeated(k, res)))).then(() => {
             if (state.player.hp <= 0) {
-              state.gameOver = { floor: state.floor }
+              state.gameOver = { act: state.act }
               state.phase = "gameOver"
             } else {
-              onFloorCleared()
+              onCombatWon()
             }
           })
           return
@@ -438,7 +485,7 @@ export function useSoloRun(charactersRef, movesRef) {
     }, moverKey, !!ctx.isMiss)
   }
 
-  // --- level-up (escalating win-count thresholds) + every-5-floor move bonus ---
+  // --- post-combat rewards: win-count level-up (monster nodes) or move+die (boss nodes) ---
 
   function buildLearnMoveChoices() {
     const p = state.player
@@ -450,29 +497,34 @@ export function useSoloRun(charactersRef, movesRef) {
     })
   }
 
-  function onFloorCleared() {
+  function onCombatWon() {
+    const node = state.map.nodes[state.currentNodeId]
+    const isBoss = node.type === "boss"
     const p = state.player
     const queue = []
-    p.winsSinceLevel += 1
-    if (p.winsSinceLevel >= p.level) {
-      p.winsSinceLevel = 0
-      p.level += 1
-      queue.push({ kind: "levelUp" })
-    }
-    if (state.floor % MOVES_BONUS_EVERY_N_FLOORS === 0) {
+
+    if (isBoss) {
       p.energyDiceCount += 1
       if (p.moveIds.length < 4 && buildLearnMoveChoices().length > 0) {
         queue.push({ kind: "learnMove" })
       }
+    } else {
+      p.winsSinceLevel += 1
+      if (p.winsSinceLevel >= p.level) {
+        p.winsSinceLevel = 0
+        p.level += 1
+        queue.push({ kind: "levelUp" })
+      }
     }
+
     state.pendingChoiceQueue = queue
+    state.pendingAfterQueue = isBoss ? "bossAdvance" : "mapReturn"
     advanceChoiceQueue()
   }
 
   function advanceChoiceQueue() {
     if (state.pendingChoiceQueue.length === 0) {
-      state.floor += 1
-      startFloor()
+      finishPendingResolution()
       return
     }
     const next = state.pendingChoiceQueue.shift()
@@ -482,6 +534,20 @@ export function useSoloRun(charactersRef, movesRef) {
     } else if (next.kind === "learnMove") {
       state.learnMoveChoices = buildLearnMoveChoices()
       state.phase = "learnMove"
+    }
+  }
+
+  function finishPendingResolution() {
+    const after = state.pendingAfterQueue
+    state.pendingAfterQueue = null
+    if (after === "bossAdvance") {
+      if (state.act >= TOTAL_ACTS) {
+        state.phase = "victory"
+      } else {
+        startAct(state.act + 1)
+      }
+    } else {
+      returnToMap()
     }
   }
 
@@ -520,6 +586,8 @@ export function useSoloRun(charactersRef, movesRef) {
     toggleStartingMove,
     startingAffordableMoveIds,
     confirmStartingSetup,
+    enterNode,
+    returnToMap,
     availableMoveIds,
     pickMove,
     backToMoveSelect,

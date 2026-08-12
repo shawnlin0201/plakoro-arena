@@ -1,10 +1,14 @@
 // Slay-the-Spire-style branching map generator for one Act of the solo tower-climb mode.
-// 10 regular layers of 3 nodes each, then a single boss node every node in the last
-// regular layer connects into. Edges are sparse (not fully connected) so the player has
-// to commit to a path rather than being able to reach every node.
+// 10 regular layers ending in a single boss node every node in the last regular layer
+// connects into. Each layer's width is picked independently between MIN_LAYER_SIZE and
+// MAX_LAYER_SIZE nodes. Edges are sparse (not fully connected) so the player has to commit
+// to a path rather than being able to reach every node. Exact node pixel positions and
+// non-overlapping edge routing are left to a proper layered-graph layout engine (dagre) at
+// render time — this module only decides the graph's topology.
 
 export const REGULAR_LAYER_COUNT = 10
-export const NODES_PER_LAYER = 3
+export const MIN_LAYER_SIZE = 2
+export const MAX_LAYER_SIZE = 5
 
 const TYPE_WEIGHTS = [
   ["monster", 0.6],
@@ -31,13 +35,37 @@ function pickNodeType(layerIndex) {
   return pickWeighted(TYPE_WEIGHTS)
 }
 
-function shuffle(arr) {
-  const a = arr.slice()
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[a[i], a[j]] = [a[j], a[i]]
-  }
-  return a
+function randomLayerSize() {
+  return MIN_LAYER_SIZE + Math.floor(Math.random() * (MAX_LAYER_SIZE - MIN_LAYER_SIZE + 1))
+}
+
+// Connects a layer of m nodes to the next layer of n nodes: each node gets a "primary"
+// target spread proportionally across the next layer, plus a 45% chance of a second target
+// one column over, then a pass to guarantee every next-layer node has >=1 incoming edge.
+function connectLayers(nodes, fromIds, toIds) {
+  const m = fromIds.length
+  const n = toIds.length
+  const incoming = new Set()
+
+  fromIds.forEach((fromId, i) => {
+    const primary = Math.round(i * (n - 1) / Math.max(m - 1, 1))
+    const targets = new Set([primary])
+    if (Math.random() < 0.45) {
+      const alt = primary + (Math.random() < 0.5 ? -1 : 1)
+      if (alt >= 0 && alt < n) targets.add(alt)
+    }
+    targets.forEach(col => {
+      nodes[fromId].edges.push(toIds[col])
+      incoming.add(toIds[col])
+    })
+  })
+
+  toIds.forEach(toId => {
+    if (!incoming.has(toId)) {
+      const fromId = fromIds[Math.floor(Math.random() * fromIds.length)]
+      nodes[fromId].edges.push(toId)
+    }
+  })
 }
 
 export function generateActMap() {
@@ -45,8 +73,9 @@ export function generateActMap() {
   const layers = []
 
   for (let l = 0; l < REGULAR_LAYER_COUNT; l++) {
+    const size = randomLayerSize()
     const ids = []
-    for (let i = 0; i < NODES_PER_LAYER; i++) {
+    for (let i = 0; i < size; i++) {
       const id = `L${l}N${i}`
       nodes[id] = { id, layer: l, type: pickNodeType(l), edges: [] }
       ids.push(id)
@@ -58,29 +87,14 @@ export function generateActMap() {
   nodes[bossId] = { id: bossId, layer: REGULAR_LAYER_COUNT, type: "boss", edges: [] }
   layers.push([bossId])
 
-  // Edges layer L -> L+1 (or -> boss for the last regular layer).
   for (let l = 0; l < REGULAR_LAYER_COUNT; l++) {
     const fromIds = layers[l]
     const toIds = layers[l + 1]
-    const incoming = new Set()
-
-    fromIds.forEach(fromId => {
-      const targets = toIds.length === 1
-        ? [toIds[0]]
-        : shuffle(toIds).slice(0, Math.random() < 0.5 ? 1 : 2)
-      targets.forEach(t => {
-        nodes[fromId].edges.push(t)
-        incoming.add(t)
-      })
-    })
-
-    // Make sure nothing in the next layer is unreachable.
-    toIds.forEach(toId => {
-      if (!incoming.has(toId)) {
-        const fromId = fromIds[Math.floor(Math.random() * fromIds.length)]
-        nodes[fromId].edges.push(toId)
-      }
-    })
+    if (toIds.length === 1) {
+      fromIds.forEach(fromId => nodes[fromId].edges.push(toIds[0]))
+    } else {
+      connectLayers(nodes, fromIds, toIds)
+    }
   }
 
   return { nodes, layers, startNodeIds: layers[0].slice() }
