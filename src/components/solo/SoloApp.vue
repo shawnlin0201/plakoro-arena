@@ -2,6 +2,10 @@
 import { provide, inject } from 'vue'
 import { useSoloRun } from '../../composables/useSoloRun'
 import SoloCharSelect from './SoloCharSelect.vue'
+import SoloMap from './SoloMap.vue'
+import SoloEventNode from './SoloEventNode.vue'
+import SoloCampfireNode from './SoloCampfireNode.vue'
+import SoloVictory from './SoloVictory.vue'
 import SoloBoard from './SoloBoard.vue'
 import SoloMoveSelect from './SoloMoveSelect.vue'
 import SoloDiceSuccess from './SoloDiceSuccess.vue'
@@ -19,6 +23,10 @@ const state = solo.state
 
 <template>
   <SoloCharSelect v-if="state.phase === 'charSelect'" />
+  <SoloMap v-else-if="state.phase === 'map'" />
+  <SoloEventNode v-else-if="state.phase === 'event'" />
+  <SoloCampfireNode v-else-if="state.phase === 'campfire'" />
+  <SoloVictory v-else-if="state.phase === 'victory'" />
   <template v-else>
     <SoloBoard />
     <SoloMoveSelect v-if="state.phase === 'moveSelect' && state.turn === 'player'" />

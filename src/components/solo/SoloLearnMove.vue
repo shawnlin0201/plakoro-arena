@@ -15,7 +15,7 @@ function pick(mid) {
 
 <template>
   <div class="overlay full">
-    <div class="overlay-title">{{ t('solo.learnMoveBonus.title', { floor: state.floor }) }}</div>
+    <div class="overlay-title">{{ t('solo.boss.reward') }}</div>
     <div class="move-pick-list" style="width:100%; max-width:520px; margin-top:10px;">
       <MoveCard
         v-for="mid in state.learnMoveChoices"
