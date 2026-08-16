@@ -8,6 +8,7 @@ import SoloCampfireNode from './SoloCampfireNode.vue'
 import SoloVictory from './SoloVictory.vue'
 import SoloBoard from './SoloBoard.vue'
 import SoloMoveSelect from './SoloMoveSelect.vue'
+import SoloAiSkip from './SoloAiSkip.vue'
 import SoloDiceSuccess from './SoloDiceSuccess.vue'
 import SoloEffectPrompt from './SoloEffectPrompt.vue'
 import SoloUpgradePick from './SoloUpgradePick.vue'
@@ -30,6 +31,7 @@ const state = solo.state
   <template v-else>
     <SoloBoard />
     <SoloMoveSelect v-if="state.phase === 'moveSelect' && state.turn === 'player'" />
+    <SoloAiSkip v-if="state.phase === 'aiSkip'" />
     <SoloDiceSuccess v-if="state.phase === 'diceSuccess'" />
     <SoloEffectPrompt v-if="state.phase === 'effectPrompt'" />
     <SoloUpgradePick v-if="state.phase === 'floorClear'" />
