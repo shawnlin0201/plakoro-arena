@@ -249,15 +249,20 @@ export function useSoloRun(charactersRef, movesRef) {
   }
 
   function aiTakeTurn() {
-    const pool = availableMoveIds("ai")
-    // If every one of the AI's moves is either sealed or the one it can't repeat, it has no
-    // legal move at all this turn — hand it to the player as an explicit skip rather than
-    // silently letting the AI use a move it shouldn't be able to.
-    if (pool.length === 0) {
+    const ai = state.ai
+    const notSealed = ai.moveIds.filter(mid => !(ai.committedBannedMoveIds || []).includes(mid))
+    if (notSealed.length === 0) {
+      // Every move the AI knows is actually sealed — it truly has nothing it can do.
       state.phase = "aiSkip"
       return
     }
-    const mid = pool[Math.floor(Math.random() * pool.length)]
+    // Same fallback as SoloMoveSelect.vue's `available` for the player: ruling out the move
+    // it can't immediately repeat is only meaningful if something else is left afterward —
+    // e.g. a 1-move AI must be allowed to repeat its only move once it's actually unsealed,
+    // rather than being treated as if it were still sealed.
+    const pool = notSealed.filter(mid => mid !== ai.committedLastMoveId)
+    const usable = pool.length > 0 ? pool : notSealed
+    const mid = usable[Math.floor(Math.random() * usable.length)]
     pickMove(mid)
   }
 
