@@ -135,6 +135,11 @@
       "title": "Game Over",
       "actReached": "Act reached: {act}",
       "retry": "Try Again"
+    },
+    "aiSkip": {
+      "title": "Opponent can't move",
+      "desc": "Every move the opponent has left is sealed, so it can't act.",
+      "button": "Skip Opponent's Turn"
     }
   }
 }

@@ -249,12 +249,33 @@ export function useSoloRun(charactersRef, movesRef) {
   }
 
   function aiTakeTurn() {
-    const ai = state.ai
     const pool = availableMoveIds("ai")
-    const usable = pool.length > 0 ? pool : ai.moveIds
-    if (usable.length === 0) return
-    const mid = usable[Math.floor(Math.random() * usable.length)]
+    // If every one of the AI's moves is either sealed or the one it can't repeat, it has no
+    // legal move at all this turn — hand it to the player as an explicit skip rather than
+    // silently letting the AI use a move it shouldn't be able to.
+    if (pool.length === 0) {
+      state.phase = "aiSkip"
+      return
+    }
+    const mid = pool[Math.floor(Math.random() * pool.length)]
     pickMove(mid)
+  }
+
+  function skipAiTurn() {
+    const ai = state.ai
+    ai.committedLastMoveId = null
+    ai.committedLastMoveFailed = false
+    ai.committedBannedMoveIds = []
+    ai.committedBannedMoveSourceName = ""
+    // A skipped turn never runs resolveTurn for the AI, so its live bannedMoveIds (only ever
+    // cleared at the top of resolveTurn for whoever's turn it is) would otherwise still hold
+    // the seal — and get re-committed onto the AI after every later player turn, making the
+    // seal outlast its intended one-turn duration.
+    ai.bannedMoveIds = []
+    ai.bannedMoveSourceName = ""
+    state.turn = "player"
+    state.selectedMove = null
+    state.phase = "moveSelect"
   }
 
   function backToMoveSelect() {
@@ -590,6 +611,7 @@ export function useSoloRun(charactersRef, movesRef) {
     returnToMap,
     availableMoveIds,
     pickMove,
+    skipAiTurn,
     backToMoveSelect,
     moveForTurn,
     submitEffectPrompt,
