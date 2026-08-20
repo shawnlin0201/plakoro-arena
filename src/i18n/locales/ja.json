@@ -71,7 +71,40 @@
   },
   "mode": {
     "duel": "対戦モード",
-    "solo": "ソロタワー"
+    "solo": "ソロタワー",
+    "diceBuilder": "ダイス組立シミュレーター"
+  },
+  "diceBuilder": {
+    "title": "ダイス組立シミュレーター",
+    "hint": "凸面固定：くさ・ほのお・みず・かみなり・はがね／凹面固定：あく・かくとう・ちょう・ひこう、丸ソケットは単色チップ、四角ソケットは2色チップ",
+    "die": "ダイス {n}",
+    "face": {
+      "convex": "凸面",
+      "concave": "凹面",
+      "single": "丸穴",
+      "dual": "角穴"
+    },
+    "reroll": "ランダム再生成",
+    "sameAsDie1Short": "ダイス1と同じ",
+    "rollButton": "ダイスを振る",
+    "quickApplyButton": "単色ダイスを一括適用",
+    "quickApplyTitle": "単色ダイスを一括適用",
+    "quickApplyHint": "エネルギーを1つ選ぶと、ダイス1~3の丸穴・角穴が全てそのタイプになります。凸面プールのタイプなら凸面も変わり（凹面は不変）、凹面プールのタイプなら凹面も変わります（凸面は不変）",
+    "charaDie": "キャラダイス",
+    "probButton": "確率表を見る",
+    "probTitle": "各タイプの出現確率",
+    "probHint": "3つのダイスを一緒に振り、最終的に揃うエネルギータイプの組み合わせごとに確率を集計（確率順）",
+    "probFilterLabel": "絞り込み",
+    "probGroupLabel": "個数で並び替え",
+    "picker": {
+      "convexTitle": "凸面のエネルギーを選択",
+      "concaveTitle": "凹面のエネルギーを選択",
+      "singleTitle": "単色チップを選択",
+      "dualTitle": "2色チップを選択",
+      "dualHint": "上下それぞれでエネルギータイプを選択",
+      "dualSlotLabel": "エネルギー{n}",
+      "close": "閉じる"
+    }
   },
   "solo": {
     "you": "あなた",
