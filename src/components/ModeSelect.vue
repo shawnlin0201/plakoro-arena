@@ -20,6 +20,10 @@ const { t } = useI18n()
         <div class="select-card-title" style="font-size:0.9375rem;">{{ t('mode.diceBuilder') }}</div>
         <div class="select-box" style="font-size:1.625rem;">🎲</div>
       </div>
+      <div class="select-card" style="cursor:pointer;" @click="emit('pick', 'diceBuilder')">
+        <div class="select-card-title">{{ t('mode.diceBuilder') }}</div>
+        <div class="select-box" style="font-size:34px;">🎲</div>
+      </div>
     </div>
   </div>
 </template>
