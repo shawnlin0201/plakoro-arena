@@ -71,7 +71,40 @@
   },
   "mode": {
     "duel": "Duel Mode",
-    "solo": "Solo Tower"
+    "solo": "Solo Tower",
+    "diceBuilder": "Dice Assembly Sim"
+  },
+  "diceBuilder": {
+    "title": "Dice Assembly Simulator",
+    "hint": "Convex fixed: Grass/Fire/Water/Lightning/Steel — Concave fixed: Dark/Fighting/Psychic/Flying. Round sockets hold single-type chips, square sockets hold two-tone chips.",
+    "die": "Die {n}",
+    "face": {
+      "convex": "Convex",
+      "concave": "Concave",
+      "single": "Round",
+      "dual": "Square"
+    },
+    "reroll": "Reroll",
+    "sameAsDie1Short": "Same as Die 1",
+    "rollButton": "Simulate Roll",
+    "quickApplyButton": "Quick Apply Pure Die",
+    "quickApplyTitle": "Quick Apply Pure Die",
+    "quickApplyHint": "Pick one energy type to fill Dice 1-3's round and square sockets. If it's a convex-pool type, the convex face gets it too (concave stays); if it's a concave-pool type, the concave face gets it too (convex stays)",
+    "charaDie": "Character Die",
+    "probButton": "Probability Table",
+    "probTitle": "Type Odds",
+    "probHint": "All 3 dice rolled together, tallied by the resulting energy-type combo (sorted by odds)",
+    "probFilterLabel": "Only show",
+    "probGroupLabel": "Sort by count",
+    "picker": {
+      "convexTitle": "Choose convex energy",
+      "concaveTitle": "Choose concave energy",
+      "singleTitle": "Choose single-energy chip",
+      "dualTitle": "Choose dual-energy chip",
+      "dualHint": "Pick an energy type for each half",
+      "dualSlotLabel": "Energy {n}",
+      "close": "Close"
+    }
   },
   "solo": {
     "you": "You",

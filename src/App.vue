@@ -15,6 +15,7 @@ import TurnCutIn from './components/TurnCutIn.vue'
 import LanguageSwitcher from './components/LanguageSwitcher.vue'
 import ModeSelect from './components/ModeSelect.vue'
 import SoloApp from './components/solo/SoloApp.vue'
+import DiceBuilderApp from './components/dice/DiceBuilderApp.vue'
 
 const { t } = useI18n()
 const characterData = useCharacterData()
@@ -70,6 +71,8 @@ onMounted(() => {
         <Modal v-if="state.modal" />
         <TurnCutIn v-if="state.turnCutIn" />
       </template>
+
+      <DiceBuilderApp v-else-if="mode === 'diceBuilder'" @back="mode = null" />
 
       <SoloApp v-else />
     </div>
