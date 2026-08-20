@@ -14,6 +14,6 @@ function skip() {
   <div class="overlay full">
     <div class="overlay-title">{{ t('solo.aiSkip.title') }}</div>
     <div class="overlay-sub">{{ t('solo.aiSkip.desc') }}</div>
-    <button class="btn" style="margin-top:16px;" @click="skip">{{ t('solo.aiSkip.button') }}</button>
+    <button class="btn" style="margin-top:1rem;" @click="skip">{{ t('solo.aiSkip.button') }}</button>
   </div>
 </template>

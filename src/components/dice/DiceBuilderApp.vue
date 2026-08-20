@@ -63,12 +63,12 @@ function faceTypes(die, key) {
   return []
 }
 
-// A single source of truth for the face-cell size — everything else (the dual-slot mini
-// icons, their inset, and the divider line's length) is derived from it proportionally.
-const CELL = 40
-const MINI = Math.round(CELL * 9 / 24)
-const INSET = Math.round(CELL * 1 / 24)
-const DIVIDER_LEN = Math.round(CELL * Math.SQRT2)
+// A single source of truth for the face-cell size, in rem — everything else (the dual-slot
+// mini icons, their inset, and the divider line's length) is derived from it proportionally.
+const CELL = 2.5
+const MINI = CELL * 9 / 24
+const INSET = CELL * 1 / 24
+const DIVIDER_LEN = CELL * Math.SQRT2
 
 // --- energy picker popup ---
 // convex/concave faces are fixed to their own type pool (5-way / 4-way single pick).
@@ -278,36 +278,36 @@ const groupedProbCombos = computed(() => {
 
 <template>
   <div v-if="showProbTable" class="board select-board" style="overflow-y:auto; align-items:center;">
-    <div class="modal-title" style="margin:8px 0 4px;">{{ t('diceBuilder.probTitle') }}</div>
-    <div class="center-hint" style="padding-bottom:6px;">{{ t('diceBuilder.probHint') }}</div>
+    <div class="modal-title" style="margin:0.5rem 0 0.25rem;">{{ t('diceBuilder.probTitle') }}</div>
+    <div class="center-hint" style="padding-bottom:0.375rem;">{{ t('diceBuilder.probHint') }}</div>
 
-    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; width:100%; max-width:640px; padding:0 10px 10px;">
-      <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-        <span style="font-size:12px; font-weight:800; color:var(--sub); flex-shrink:0;">{{ t('diceBuilder.probFilterLabel') }}</span>
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; flex-wrap:wrap; width:100%; max-width:40rem; padding:0 0.625rem 0.625rem;">
+      <div style="display:flex; align-items:center; gap:0.375rem; flex-wrap:wrap;">
+        <span style="font-size:0.75rem; font-weight:800; color:var(--sub); flex-shrink:0;">{{ t('diceBuilder.probFilterLabel') }}</span>
         <div
           v-for="ty in diceHaveTypes"
           :key="ty"
           @click="toggleProbFilter(ty)"
           :style="{
-            width: '28px', height: '28px', borderRadius: '6px', overflow: 'hidden',
+            width: '1.75rem', height: '1.75rem', borderRadius: '0.375rem', overflow: 'hidden',
             background: '#fff', cursor: 'pointer',
-            border: probFilterTypes.includes(ty) ? '3px solid #AEFF3E' : '2px solid var(--line)'
+            border: probFilterTypes.includes(ty) ? '0.1875rem solid #AEFF3E' : '0.125rem solid var(--line)'
           }"
         >
           <img :src="asset(`image/ICON/${ty}.png`)" class="img-icon" :alt="ty">
         </div>
       </div>
 
-      <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
-        <span style="font-size:12px; font-weight:800; color:var(--sub); flex-shrink:0;">{{ t('diceBuilder.probGroupLabel') }}</span>
+      <div style="display:flex; align-items:center; gap:0.375rem; flex-wrap:wrap; justify-content:flex-end;">
+        <span style="font-size:0.75rem; font-weight:800; color:var(--sub); flex-shrink:0;">{{ t('diceBuilder.probGroupLabel') }}</span>
         <div
           v-for="ty in diceHaveTypes"
           :key="ty"
           @click="toggleGroupBy(ty)"
           :style="{
-            width: '28px', height: '28px', borderRadius: '6px', overflow: 'hidden',
+            width: '1.75rem', height: '1.75rem', borderRadius: '0.375rem', overflow: 'hidden',
             background: '#fff', cursor: 'pointer',
-            border: groupByType === ty ? '3px solid #AEFF3E' : '2px solid var(--line)'
+            border: groupByType === ty ? '0.1875rem solid #AEFF3E' : '0.125rem solid var(--line)'
           }"
         >
           <img :src="asset(`image/ICON/${ty}.png`)" class="img-icon" :alt="ty">
@@ -315,30 +315,30 @@ const groupedProbCombos = computed(() => {
       </div>
     </div>
 
-    <div style="width:100%; max-width:640px; padding:0 10px;">
-      <div v-if="groupByType" style="display:flex; flex-direction:column; gap:10px;">
+    <div style="width:100%; max-width:40rem; padding:0 0.625rem;">
+      <div v-if="groupByType" style="display:flex; flex-direction:column; gap:0.625rem;">
         <div v-for="group in groupedProbCombos" :key="group.n">
           <div
             @click="toggleGroupExpanded(group.n)"
-            style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:5px 6px; background:rgba(0,0,0,.05); border-radius:6px; cursor:pointer;"
+            style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem; padding:0.3125rem 0.375rem; background:rgba(0,0,0,.05); border-radius:0.375rem; cursor:pointer;"
           >
-            <span style="display:flex; align-items:center; gap:5px; font-size:13px; font-weight:800;">
-              <span style="font-size:10px; color:var(--sub); width:12px; display:inline-block;">{{ expandedGroupCounts.has(group.n) ? '▼' : '▶' }}</span>
-              <span style="width:20px; height:20px; border-radius:5px; overflow:hidden; background:#fff; border:1.5px solid var(--line); flex-shrink:0;">
+            <span style="display:flex; align-items:center; gap:0.3125rem; font-size:0.8125rem; font-weight:800;">
+              <span style="font-size:0.625rem; color:var(--sub); width:0.75rem; display:inline-block;">{{ expandedGroupCounts.has(group.n) ? '▼' : '▶' }}</span>
+              <span style="width:1.25rem; height:1.25rem; border-radius:0.3125rem; overflow:hidden; background:#fff; border:0.09375rem solid var(--line); flex-shrink:0;">
                 <img :src="asset(`image/ICON/${groupByType}.png`)" class="img-icon" :alt="groupByType">
               </span>
               × {{ group.n }}
             </span>
-            <span style="font-size:12px; font-weight:800; color:var(--sub);">{{ group.totalCount }}/{{ TOTAL_ROLLS }}（{{ (group.totalCount / TOTAL_ROLLS * 100).toFixed(1) }}%）</span>
+            <span style="font-size:0.75rem; font-weight:800; color:var(--sub);">{{ group.totalCount }}/{{ TOTAL_ROLLS }}（{{ (group.totalCount / TOTAL_ROLLS * 100).toFixed(1) }}%）</span>
           </div>
           <template v-if="expandedGroupCounts.has(group.n)">
-            <div v-for="combo in group.combos" :key="combo.types.join(',')" style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:4px 2px 4px 14px; border-bottom:1px solid var(--line);">
-              <div style="display:flex; gap:3px; flex-wrap:wrap;">
-                <div v-for="(ty, ti) in combo.types" :key="ti" style="width:22px; height:22px; border-radius:5px; overflow:hidden; background:#fff; border:1.5px solid var(--line); flex-shrink:0;">
+            <div v-for="combo in group.combos" :key="combo.types.join(',')" style="display:flex; align-items:center; justify-content:space-between; gap:0.625rem; padding:0.25rem 0.125rem 0.25rem 0.875rem; border-bottom:1px solid var(--line);">
+              <div style="display:flex; gap:0.1875rem; flex-wrap:wrap;">
+                <div v-for="(ty, ti) in combo.types" :key="ti" style="width:1.375rem; height:1.375rem; border-radius:0.3125rem; overflow:hidden; background:#fff; border:0.09375rem solid var(--line); flex-shrink:0;">
                   <img :src="asset(`image/ICON/${ty}.png`)" class="img-icon" :alt="ty">
                 </div>
               </div>
-              <div style="font-size:11px; font-weight:700; color:var(--sub); text-align:right; flex-shrink:0;">
+              <div style="font-size:0.6875rem; font-weight:700; color:var(--sub); text-align:right; flex-shrink:0;">
                 {{ combo.count }}/{{ TOTAL_ROLLS }}（{{ (combo.count / TOTAL_ROLLS * 100).toFixed(1) }}%）
               </div>
             </div>
@@ -346,81 +346,81 @@ const groupedProbCombos = computed(() => {
         </div>
       </div>
 
-      <div v-else style="display:flex; flex-direction:column; gap:6px;">
-        <div v-for="combo in filteredProbCombos" :key="combo.types.join(',')" style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:4px 2px; border-bottom:1px solid var(--line);">
-          <div style="display:flex; gap:3px; flex-wrap:wrap;">
-            <div v-for="(ty, ti) in combo.types" :key="ti" style="width:24px; height:24px; border-radius:5px; overflow:hidden; background:#fff; border:1.5px solid var(--line); flex-shrink:0;">
+      <div v-else style="display:flex; flex-direction:column; gap:0.375rem;">
+        <div v-for="combo in filteredProbCombos" :key="combo.types.join(',')" style="display:flex; align-items:center; justify-content:space-between; gap:0.625rem; padding:0.25rem 0.125rem; border-bottom:1px solid var(--line);">
+          <div style="display:flex; gap:0.1875rem; flex-wrap:wrap;">
+            <div v-for="(ty, ti) in combo.types" :key="ti" style="width:1.5rem; height:1.5rem; border-radius:0.3125rem; overflow:hidden; background:#fff; border:0.09375rem solid var(--line); flex-shrink:0;">
               <img :src="asset(`image/ICON/${ty}.png`)" class="img-icon" :alt="ty">
             </div>
           </div>
-          <div style="font-size:12px; font-weight:800; color:var(--sub); text-align:right; flex-shrink:0;">
+          <div style="font-size:0.75rem; font-weight:800; color:var(--sub); text-align:right; flex-shrink:0;">
             {{ combo.count }}/{{ TOTAL_ROLLS }}（{{ (combo.count / TOTAL_ROLLS * 100).toFixed(1) }}%）
           </div>
         </div>
       </div>
     </div>
 
-    <div style="display:flex; justify-content:center; padding:14px 0 4px;">
+    <div style="display:flex; justify-content:center; padding:0.875rem 0 0.25rem;">
       <button class="btn secondary" @click="showProbTable = false">{{ t('common.back') }}</button>
     </div>
   </div>
 
   <div v-else class="board select-board" style="overflow-y:auto; align-items:center;">
-    <div class="modal-title" style="margin:8px 0 4px;">{{ t('diceBuilder.title') }}</div>
-    <div class="center-hint" style="padding-bottom:6px;">{{ t('diceBuilder.hint') }}</div>
+    <div class="modal-title" style="margin:0.5rem 0 0.25rem;">{{ t('diceBuilder.title') }}</div>
+    <div class="center-hint" style="padding-bottom:0.375rem;">{{ t('diceBuilder.hint') }}</div>
 
-    <div class="select-card" style="width:100%; max-width:760px; align-items:stretch; padding:14px;">
-      <div style="display:grid; grid-template-columns: 70px repeat(6, 1fr); gap:8px 6px; align-items:center;">
+    <div class="select-card" style="width:100%; max-width:47.5rem; align-items:stretch; padding:0.875rem;">
+      <div style="display:grid; grid-template-columns: 4.375rem repeat(6, 1fr); gap:0.5rem 0.375rem; align-items:center;">
         <div></div>
-        <div v-for="row in FACE_ROWS" :key="row.key" style="font-size:13px; font-weight:800; color:var(--sub); text-align:center;">{{ t('diceBuilder.face.' + row.labelKey) }}</div>
+        <div v-for="row in FACE_ROWS" :key="row.key" style="font-size:0.8125rem; font-weight:800; color:var(--sub); text-align:center;">{{ t('diceBuilder.face.' + row.labelKey) }}</div>
 
         <template v-for="(die, di) in dice" :key="di">
-          <div style="display:flex; flex-direction:column; align-items:center; gap:3px;">
-            <span style="font-size:14px; font-weight:800;">{{ t('diceBuilder.die', { n: di + 1 }) }}</span>
-            <label v-if="di > 0" style="display:flex; align-items:center; gap:3px; font-size:10px; font-weight:800; color:var(--sub); cursor:pointer;">
-              <input type="checkbox" :checked="sameAsDie1[di - 1]" @change="onToggleSame(di, $event.target.checked)" style="width:12px; height:12px; margin:0;">
+          <div style="display:flex; flex-direction:column; align-items:center; gap:0.1875rem;">
+            <span style="font-size:0.875rem; font-weight:800;">{{ t('diceBuilder.die', { n: di + 1 }) }}</span>
+            <label v-if="di > 0" style="display:flex; align-items:center; gap:0.1875rem; font-size:0.625rem; font-weight:800; color:var(--sub); cursor:pointer;">
+              <input type="checkbox" :checked="sameAsDie1[di - 1]" @change="onToggleSame(di, $event.target.checked)" style="width:0.75rem; height:0.75rem; margin:0;">
               {{ t('diceBuilder.sameAsDie1Short') }}
             </label>
           </div>
           <div v-for="row in FACE_ROWS" :key="row.key" style="display:flex; justify-content:center; cursor:pointer;" @click="openPicker(di, row.key)">
             <div
               v-if="faceTypes(die, row.key).length > 0"
-              :style="{ position: 'relative', width: CELL + 'px', height: CELL + 'px', borderRadius: '8px', overflow: 'hidden', background: '#fff', border: '2px solid var(--line)', flexShrink: 0 }"
+              :style="{ position: 'relative', width: CELL + 'rem', height: CELL + 'rem', borderRadius: '0.5rem', overflow: 'hidden', background: '#fff', border: '0.125rem solid var(--line)', flexShrink: 0 }"
             >
               <template v-if="faceTypes(die, row.key).length > 1">
-                <div :style="{ position: 'absolute', top: '50%', left: '50%', width: DIVIDER_LEN + 'px', height: '1.5px', background: 'var(--line)', transform: 'translate(-50%,-50%) rotate(-45deg)' }"></div>
-                <img :src="asset(`image/ICON/${faceTypes(die, row.key)[0]}.png`)" class="img-icon" :alt="faceTypes(die, row.key)[0]" :style="{ position: 'absolute', top: INSET + 'px', left: INSET + 'px', width: MINI + 'px', height: MINI + 'px' }">
-                <img :src="asset(`image/ICON/${faceTypes(die, row.key)[1]}.png`)" class="img-icon" :alt="faceTypes(die, row.key)[1]" :style="{ position: 'absolute', bottom: INSET + 'px', right: INSET + 'px', width: MINI + 'px', height: MINI + 'px' }">
+                <div :style="{ position: 'absolute', top: '50%', left: '50%', width: DIVIDER_LEN + 'rem', height: '0.09375rem', background: 'var(--line)', transform: 'translate(-50%,-50%) rotate(-45deg)' }"></div>
+                <img :src="asset(`image/ICON/${faceTypes(die, row.key)[0]}.png`)" class="img-icon" :alt="faceTypes(die, row.key)[0]" :style="{ position: 'absolute', top: INSET + 'rem', left: INSET + 'rem', width: MINI + 'rem', height: MINI + 'rem' }">
+                <img :src="asset(`image/ICON/${faceTypes(die, row.key)[1]}.png`)" class="img-icon" :alt="faceTypes(die, row.key)[1]" :style="{ position: 'absolute', bottom: INSET + 'rem', right: INSET + 'rem', width: MINI + 'rem', height: MINI + 'rem' }">
               </template>
               <img v-else :src="asset(`image/ICON/${faceTypes(die, row.key)[0]}.png`)" class="img-icon" :alt="faceTypes(die, row.key)[0]">
             </div>
-            <div v-else :style="{ width: CELL + 'px', height: CELL + 'px', borderRadius: '8px', border: '2px dashed var(--sub)', flexShrink: 0 }"></div>
+            <div v-else :style="{ width: CELL + 'rem', height: CELL + 'rem', borderRadius: '0.5rem', border: '0.125rem dashed var(--sub)', flexShrink: 0 }"></div>
           </div>
         </template>
       </div>
     </div>
 
-    <div v-if="rollResults" style="display:flex; gap:14px; justify-content:center; padding-top:12px;">
-      <div v-for="(res, ri) in rollResults" :key="ri" style="display:flex; flex-direction:column; align-items:center; gap:4px;">
-        <div style="font-size:11px; font-weight:800; color:var(--sub);">{{ t('diceBuilder.die', { n: ri + 1 }) }}</div>
-        <div :style="{ position: 'relative', width: CELL + 'px', height: CELL + 'px', borderRadius: '8px', overflow: 'hidden', background: '#fff', border: '2px solid var(--line)', flexShrink: 0 }">
+    <div v-if="rollResults" style="display:flex; gap:0.875rem; justify-content:center; padding-top:0.75rem;">
+      <div v-for="(res, ri) in rollResults" :key="ri" style="display:flex; flex-direction:column; align-items:center; gap:0.25rem;">
+        <div style="font-size:0.6875rem; font-weight:800; color:var(--sub);">{{ t('diceBuilder.die', { n: ri + 1 }) }}</div>
+        <div :style="{ position: 'relative', width: CELL + 'rem', height: CELL + 'rem', borderRadius: '0.5rem', overflow: 'hidden', background: '#fff', border: '0.125rem solid var(--line)', flexShrink: 0 }">
           <template v-if="res.types.length > 1">
-            <div :style="{ position: 'absolute', top: '50%', left: '50%', width: DIVIDER_LEN + 'px', height: '1.5px', background: 'var(--line)', transform: 'translate(-50%,-50%) rotate(-45deg)' }"></div>
-            <img :src="asset(`image/ICON/${res.types[0]}.png`)" class="img-icon" :alt="res.types[0]" :style="{ position: 'absolute', top: INSET + 'px', left: INSET + 'px', width: MINI + 'px', height: MINI + 'px' }">
-            <img :src="asset(`image/ICON/${res.types[1]}.png`)" class="img-icon" :alt="res.types[1]" :style="{ position: 'absolute', bottom: INSET + 'px', right: INSET + 'px', width: MINI + 'px', height: MINI + 'px' }">
+            <div :style="{ position: 'absolute', top: '50%', left: '50%', width: DIVIDER_LEN + 'rem', height: '0.09375rem', background: 'var(--line)', transform: 'translate(-50%,-50%) rotate(-45deg)' }"></div>
+            <img :src="asset(`image/ICON/${res.types[0]}.png`)" class="img-icon" :alt="res.types[0]" :style="{ position: 'absolute', top: INSET + 'rem', left: INSET + 'rem', width: MINI + 'rem', height: MINI + 'rem' }">
+            <img :src="asset(`image/ICON/${res.types[1]}.png`)" class="img-icon" :alt="res.types[1]" :style="{ position: 'absolute', bottom: INSET + 'rem', right: INSET + 'rem', width: MINI + 'rem', height: MINI + 'rem' }">
           </template>
           <img v-else :src="asset(`image/ICON/${res.types[0]}.png`)" class="img-icon" :alt="res.types[0]">
         </div>
       </div>
-      <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
-        <div style="font-size:11px; font-weight:800; color:var(--sub);">{{ t('diceBuilder.charaDie') }}</div>
-        <div :style="{ width: CELL + 'px', height: CELL + 'px', borderRadius: '8px', overflow: 'hidden', background: '#fff', border: '2px solid var(--line)', flexShrink: 0 }">
+      <div style="display:flex; flex-direction:column; align-items:center; gap:0.25rem;">
+        <div style="font-size:0.6875rem; font-weight:800; color:var(--sub);">{{ t('diceBuilder.charaDie') }}</div>
+        <div :style="{ width: CELL + 'rem', height: CELL + 'rem', borderRadius: '0.5rem', overflow: 'hidden', background: '#fff', border: '0.125rem solid var(--line)', flexShrink: 0 }">
           <img :src="asset(`image/ICON/${charaRollResult}.png`)" class="img-icon" :alt="charaRollResult">
         </div>
       </div>
     </div>
 
-    <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap; padding:14px 0 4px;">
+    <div style="display:flex; gap:0.625rem; justify-content:center; flex-wrap:wrap; padding:0.875rem 0 0.25rem;">
       <button class="btn" @click="rollDice">{{ t('diceBuilder.rollButton') }}</button>
       <button class="btn secondary" @click="showQuickApply = true">{{ t('diceBuilder.quickApplyButton') }}</button>
       <button class="btn secondary" @click="showProbTable = true; probFilterTypes = []; groupByType = null; expandedGroupCounts.clear()">{{ t('diceBuilder.probButton') }}</button>
@@ -433,23 +433,23 @@ const groupedProbCombos = computed(() => {
     <div class="modal-sheet" style="max-height:75%; position:relative;">
       <button
         @click="closePicker"
-        style="position:absolute; top:10px; right:10px; width:28px; height:28px; border:none; border-radius:50%; background:rgba(0,0,0,.08); color:var(--ink); font-size:15px; font-weight:800; line-height:1; cursor:pointer;"
+        style="position:absolute; top:0.625rem; right:0.625rem; width:1.75rem; height:1.75rem; border:none; border-radius:50%; background:rgba(0,0,0,.08); color:var(--ink); font-size:0.9375rem; font-weight:800; line-height:1; cursor:pointer;"
       >✕</button>
       <div class="modal-title">{{ t(pickerTitleKey) }}</div>
 
       <template v-if="currentMeta && currentMeta.kind === 'dual'">
-        <div style="font-size:12px; color:var(--sub); text-align:center; margin:-4px 0 10px;">{{ t('diceBuilder.picker.dualHint') }}</div>
-        <div v-for="idx in [0, 1]" :key="idx" style="margin-bottom:12px;">
-          <div style="font-size:11px; font-weight:800; color:var(--sub); text-align:center; margin-bottom:5px;">{{ t('diceBuilder.picker.dualSlotLabel', { n: idx + 1 }) }}</div>
-          <div style="display:flex; flex-wrap:wrap; gap:8px; justify-content:center;">
+        <div style="font-size:0.75rem; color:var(--sub); text-align:center; margin:-0.25rem 0 0.625rem;">{{ t('diceBuilder.picker.dualHint') }}</div>
+        <div v-for="idx in [0, 1]" :key="idx" style="margin-bottom:0.75rem;">
+          <div style="font-size:0.6875rem; font-weight:800; color:var(--sub); text-align:center; margin-bottom:0.3125rem;">{{ t('diceBuilder.picker.dualSlotLabel', { n: idx + 1 }) }}</div>
+          <div style="display:flex; flex-wrap:wrap; gap:0.5rem; justify-content:center;">
             <div
               v-for="ty in currentMeta.options"
               :key="ty"
               @click="setDualType(idx, ty)"
               :style="{
-                width: '36px', height: '36px', borderRadius: '8px', overflow: 'hidden',
+                width: '2.25rem', height: '2.25rem', borderRadius: '0.5rem', overflow: 'hidden',
                 background: '#fff', cursor: 'pointer',
-                border: currentDualTypes[idx] === ty ? '3px solid #AEFF3E' : '2px solid var(--line)'
+                border: currentDualTypes[idx] === ty ? '0.1875rem solid #AEFF3E' : '0.125rem solid var(--line)'
               }"
             >
               <img :src="asset(`image/ICON/${ty}.png`)" class="img-icon" :alt="ty">
@@ -458,15 +458,15 @@ const groupedProbCombos = computed(() => {
         </div>
       </template>
 
-      <div v-else style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center;">
+      <div v-else style="display:flex; flex-wrap:wrap; gap:0.625rem; justify-content:center;">
         <div
           v-for="ty in (currentMeta ? currentMeta.options : [])"
           :key="ty"
           @click="pickType(ty)"
           :style="{
-            width: '44px', height: '44px', borderRadius: '8px', overflow: 'hidden',
+            width: '2.75rem', height: '2.75rem', borderRadius: '0.5rem', overflow: 'hidden',
             background: '#fff', cursor: 'pointer',
-            border: isTypeSelected(ty) ? '3px solid #AEFF3E' : '2px solid var(--line)'
+            border: isTypeSelected(ty) ? '0.1875rem solid #AEFF3E' : '0.125rem solid var(--line)'
           }"
         >
           <img :src="asset(`image/ICON/${ty}.png`)" class="img-icon" :alt="ty">
@@ -479,16 +479,16 @@ const groupedProbCombos = computed(() => {
     <div class="modal-sheet" style="max-height:75%; position:relative;">
       <button
         @click="showQuickApply = false"
-        style="position:absolute; top:10px; right:10px; width:28px; height:28px; border:none; border-radius:50%; background:rgba(0,0,0,.08); color:var(--ink); font-size:15px; font-weight:800; line-height:1; cursor:pointer;"
+        style="position:absolute; top:0.625rem; right:0.625rem; width:1.75rem; height:1.75rem; border:none; border-radius:50%; background:rgba(0,0,0,.08); color:var(--ink); font-size:0.9375rem; font-weight:800; line-height:1; cursor:pointer;"
       >✕</button>
       <div class="modal-title">{{ t('diceBuilder.quickApplyTitle') }}</div>
-      <div style="font-size:12px; color:var(--sub); text-align:center; margin:-4px 0 10px;">{{ t('diceBuilder.quickApplyHint') }}</div>
-      <div style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center;">
+      <div style="font-size:0.75rem; color:var(--sub); text-align:center; margin:-0.25rem 0 0.625rem;">{{ t('diceBuilder.quickApplyHint') }}</div>
+      <div style="display:flex; flex-wrap:wrap; gap:0.625rem; justify-content:center;">
         <div
           v-for="ty in CHIP_TYPES"
           :key="ty"
           @click="applyPureType(ty)"
-          style="width:44px; height:44px; border-radius:8px; overflow:hidden; background:#fff; cursor:pointer; border:2px solid var(--line);"
+          style="width:2.75rem; height:2.75rem; border-radius:0.5rem; overflow:hidden; background:#fff; cursor:pointer; border:0.125rem solid var(--line);"
         >
           <img :src="asset(`image/ICON/${ty}.png`)" class="img-icon" :alt="ty">
         </div>

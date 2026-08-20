@@ -42,15 +42,15 @@ const showDiceHint = computed(() => isActiveTurn.value && ['moveSelect', 'diceSu
         </div>
       </div>
       <div class="pc-info-col">
-        <div class="pc-status" style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:800;">
+        <div class="pc-status" style="display:flex; align-items:center; gap:0.5rem; font-size:0.8125rem; font-weight:800;">
           <span>{{ label }}</span>
-          <span v-for="b in statBadges" :key="b.label" style="background:rgba(0,0,0,.55); color:#fff; border-radius:6px; padding:1px 6px;">{{ b.label }}{{ b.value }}</span>
+          <span v-for="b in statBadges" :key="b.label" style="background:rgba(0,0,0,.55); color:#fff; border-radius:0.375rem; padding:0.0625rem 0.375rem;">{{ b.label }}{{ b.value }}</span>
         </div>
         <div class="pc-name-hp">
           <div class="pc-name-wrap">
             <div class="pc-type-icon"><img :src="asset(`image/ICON/${c.character.type}.png`)" class="img-icon" :alt="c.character.type"></div>
             <div class="pc-name">{{ c.character.name }}</div>
-            <div v-if="who === 'ai'" style="font-size:11px; font-weight:800; color:var(--sub); flex-shrink:0;">Lv.{{ c.tier }}</div>
+            <div v-if="who === 'ai'" style="font-size:0.6875rem; font-weight:800; color:var(--sub); flex-shrink:0;">Lv.{{ c.tier }}</div>
           </div>
           <div class="pc-hp-num" :class="solo.hpBarClass(c)">{{ Math.max(0, c.hp) }}</div>
         </div>
@@ -58,22 +58,22 @@ const showDiceHint = computed(() => isActiveTurn.value && ['moveSelect', 'diceSu
           <div class="pc-weak">HP</div>
           <div class="pc-hpbar-wrap">
             <div class="hp-bar-bg">
-              <div class="hp-bar-fill" :class="solo.hpBarClass(c)" :style="{ width: Math.max(0, c.hp / c.maxHp * 100) + '%' }"></div>
+              <div class="hp-bar-fill" :class="solo.hpBarClass(c)" :style="{ width:Math.max(0, c.hp / c.maxHp * 100) + '%' }"></div>
             </div>
           </div>
         </div>
-        <div v-if="who === 'player'" style="display:flex; align-items:center; gap:4px; margin-top:3px;">
-          <div style="font-size:9px; font-weight:800; color:var(--sub); flex-shrink:0;">Lv.{{ c.level }}</div>
-          <div style="display:flex; gap:2px; flex:1;">
+        <div v-if="who === 'player'" style="display:flex; align-items:center; gap:0.25rem; margin-top:0.1875rem;">
+          <div style="font-size:0.5625rem; font-weight:800; color:var(--sub); flex-shrink:0;">Lv.{{ c.level }}</div>
+          <div style="display:flex; gap:0.125rem; flex:1;">
             <div
               v-for="i in c.level"
               :key="i"
-              style="flex:1; height:8px; border-radius:2px; border:1px solid #000;"
+              style="flex:1; height:0.5rem; border-radius:0.125rem; border:1px solid #000;"
               :style="{ background: i <= c.winsSinceLevel ? '#AEFF3E' : '#E9E7E0' }"
             ></div>
           </div>
         </div>
-        <div v-if="showDiceHint" style="font-size:16px; font-weight:800; color:#000; margin-top:3px;">{{ t('solo.diceHint', { n: diceToRoll }) }}</div>
+        <div v-if="showDiceHint" style="font-size:1rem; font-weight:800; color:#000; margin-top:0.1875rem;">{{ t('solo.diceHint', { n: diceToRoll }) }}</div>
       </div>
     </div>
     <div class="pc-row2 revealed" :style="{ background: CARD_BOTTOM_DARK }">

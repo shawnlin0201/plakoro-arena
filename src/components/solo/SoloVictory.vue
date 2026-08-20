@@ -12,9 +12,9 @@ function restart() {
 
 <template>
   <div class="overlay full">
-    <div style="font-size:48px;">🏆</div>
+    <div style="font-size:3rem;">🏆</div>
     <div class="overlay-title">{{ t('solo.victory.title') }}</div>
     <div class="overlay-sub">{{ t('solo.victory.subtitle') }}</div>
-    <button class="btn" style="margin-top:16px;" @click="restart">{{ t('solo.victory.playAgain') }}</button>
+    <button class="btn" style="margin-top:1rem;" @click="restart">{{ t('solo.victory.playAgain') }}</button>
   </div>
 </template>

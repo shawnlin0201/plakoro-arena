@@ -68,7 +68,7 @@ function onClick() {
     </div>
     <div class="mc-bottom">
       <div v-for="(ce, i) in mv.chara" :key="i" class="mc-chara-row">
-        <div style="display:flex; gap:2px; flex-shrink:0;">
+        <div style="display:flex; gap:0.125rem; flex-shrink:0;">
           <div v-for="(ori, j) in ce.orientations" :key="j" class="oi"><img :src="asset(`image/ICON/${ori}.png`)" class="img-icon" :alt="ori"></div>
         </div>
         <div class="txt" :style="charaHighlighted(ce) ? 'color:#F5F842;' : ''">{{ ce.text }}</div>

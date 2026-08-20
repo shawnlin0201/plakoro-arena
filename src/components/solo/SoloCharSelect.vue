@@ -29,7 +29,7 @@ function back() {
 <template>
   <div class="board select-board" style="overflow-y:auto;">
     <template v-if="!state.charSelectTemp">
-      <div class="modal-title" style="margin:8px 0 10px;">{{ t('solo.charSelect.title') }}</div>
+      <div class="modal-title" style="margin:0.5rem 0 0.625rem;">{{ t('solo.charSelect.title') }}</div>
       <div class="grid-2">
         <div v-for="c in characters" :key="c.id" class="pick-card" @click="pickCharacter(c)">
           <div class="pick-top" :style="{ background: typeBgColor(c.type) }">
@@ -43,9 +43,9 @@ function back() {
       </div>
     </template>
     <template v-else>
-      <div class="modal-title" style="margin:8px 0 10px;">{{ t('solo.charSelect.pickMove', { name: state.charSelectTemp.character.name }) }}</div>
+      <div class="modal-title" style="margin:0.5rem 0 0.625rem;">{{ t('solo.charSelect.pickMove', { name: state.charSelectTemp.character.name }) }}</div>
       <div class="pick-count">{{ state.charSelectTemp.moveIds.length }} / 2</div>
-      <div class="move-pick-list" style="padding:0 10px;">
+      <div class="move-pick-list" style="padding:0 0.625rem;">
         <MoveCard
           v-for="mid in affordableMoveIds"
           :key="mid"
@@ -56,7 +56,7 @@ function back() {
           @pick="pickMove"
         />
       </div>
-      <div style="display:flex; gap:10px; padding:14px 10px;">
+      <div style="display:flex; gap:0.625rem; padding:0.875rem 0.625rem;">
         <button class="btn secondary" @click="back">{{ t('common.back') }}</button>
         <button class="btn wide" :disabled="state.charSelectTemp.moveIds.length !== 2" :style="{ opacity: state.charSelectTemp.moveIds.length === 2 ? 1 : 0.4 }" @click="solo.confirmStartingSetup()">{{ t('solo.charSelect.confirm') }}</button>
       </div>

@@ -9,10 +9,12 @@ const state = solo.state
 
 const TYPE_ICON = { monster: '⚔️', event: '❓', campfire: '🔥', boss: '👑' }
 
-const NODE_SIZE = 96
-const NODE_SEP = 42
-const RANK_SEP = 78
-const MARGIN = 20
+// Sizes below are in rem (dagre just does arithmetic on these numbers — it doesn't care what
+// unit they represent — and every place they're used in inline styles appends 'rem').
+const NODE_SIZE = 3
+const NODE_SEP = 1.3125
+const RANK_SEP = 2.4375
+const MARGIN = 0.625
 
 // Real layered-graph layout (same family of algorithm d3-dag's sugiyama layout and
 // graphviz's `dot` use): dagre assigns each node a non-overlapping x/y and routes each
@@ -22,7 +24,10 @@ const MARGIN = 20
 // things to force a fit, the viewport just scrolls in both directions.
 const layout = computed(() => {
   const g = new dagre.graphlib.Graph()
-  g.setGraph({ rankdir: 'LR', nodesep: NODE_SEP, ranksep: RANK_SEP, marginx: MARGIN, marginy: MARGIN })
+  // dagre's edgesep (spacing reserved for dummy/routing nodes) defaults to 20 if left unset —
+  // harmless back when sizes were in px (NODE_SIZE=96 etc.) but now that everything's in rem
+  // (NODE_SIZE=3), that unset default dwarfs nodesep and silently inflates the whole layout.
+  g.setGraph({ rankdir: 'LR', nodesep: NODE_SEP, ranksep: RANK_SEP, edgesep: NODE_SEP, marginx: MARGIN, marginy: MARGIN })
   g.setDefaultEdgeLabel(() => ({}))
   const allNodes = Object.values(state.map.nodes)
   allNodes.forEach(n => g.setNode(n.id, { width: NODE_SIZE, height: NODE_SIZE }))
@@ -36,7 +41,7 @@ const layoutH = computed(() => layout.value.graph().height)
 
 function topLeftOf(nodeId) {
   const gn = layout.value.node(nodeId)
-  return { left: (gn.x - NODE_SIZE / 2) + 'px', top: (gn.y - NODE_SIZE / 2) + 'px' }
+  return { left: (gn.x - NODE_SIZE / 2) + 'rem', top: (gn.y - NODE_SIZE / 2) + 'rem' }
 }
 
 const edgePaths = computed(() => {
@@ -63,19 +68,19 @@ function pick(node) {
 <template>
   <div class="board" style="display:flex; flex-direction:column; min-height:0;">
     <div style="flex-shrink:0;">
-      <div class="modal-title" style="margin:8px 0 4px;">{{ t('solo.map.title', { act: state.act }) }}</div>
-      <div class="center-hint" style="padding-bottom:6px;">{{ t('solo.map.hint') }}</div>
+      <div class="modal-title" style="margin:0.5rem 0 0.25rem;">{{ t('solo.map.title', { act: state.act }) }}</div>
+      <div class="center-hint" style="padding-bottom:0.375rem;">{{ t('solo.map.hint') }}</div>
     </div>
     <div style="flex:1; min-height:0; overflow:auto;">
-      <div style="position:relative;" :style="{ width: layoutW + 'px', height: layoutH + 'px' }">
-        <svg :width="layoutW" :height="layoutH" style="position:absolute; left:0; top:0; pointer-events:none;">
+      <div style="position:relative;" :style="{ width: layoutW + 'rem', height: layoutH + 'rem' }">
+        <svg :viewBox="`0 0 ${layoutW} ${layoutH}`" :style="{ width: layoutW + 'rem', height: layoutH + 'rem', position: 'absolute', left: 0, top: 0, pointerEvents: 'none' }">
           <path
             v-for="line in edgePaths"
             :key="line.key"
             :d="line.d"
             fill="none"
             :stroke="line.active ? '#8FCDA9' : '#DEDACD'"
-            :stroke-width="line.active ? 6 : 4"
+            :stroke-width="line.active ? 0.1875 : 0.125"
           />
         </svg>
         <div
@@ -85,21 +90,21 @@ function pick(node) {
           :style="{
             position: 'absolute',
             ...topLeftOf(node.id),
-            width: NODE_SIZE + 'px',
-            height: NODE_SIZE + 'px',
-            padding: '2px',
-            gap: '2px',
+            width: NODE_SIZE + 'rem',
+            height: NODE_SIZE + 'rem',
+            padding: '0.0625rem',
+            gap: '0.0625rem',
             justifyContent: 'center',
             borderRadius: '50%',
             background: 'var(--card)',
             cursor: nodeStatus(node) === 'reachable' ? 'pointer' : 'default',
             opacity: nodeStatus(node) === 'locked' ? 0.35 : 1,
-            border: nodeStatus(node) === 'current' ? '3px solid #AEFF3E' : (nodeStatus(node) === 'reachable' ? '3px solid #8FCDA9' : '3px solid transparent')
+            border: nodeStatus(node) === 'current' ? '0.09375rem solid #AEFF3E' : (nodeStatus(node) === 'reachable' ? '0.09375rem solid #8FCDA9' : '0.09375rem solid transparent')
           }"
           @click="pick(node)"
         >
-          <div style="font-size:35px; line-height:1;">{{ TYPE_ICON[node.type] }}</div>
-          <div style="font-size:13px; line-height:1.1; font-weight:800; text-align:center; white-space:nowrap;">{{ t('solo.node.' + node.type) }}</div>
+          <div style="font-size:1.09375rem; line-height:1;">{{ TYPE_ICON[node.type] }}</div>
+          <div style="font-size:0.40625rem; line-height:1.1; font-weight:800; text-align:center; white-space:nowrap;">{{ t('solo.node.' + node.type) }}</div>
         </div>
       </div>
     </div>
