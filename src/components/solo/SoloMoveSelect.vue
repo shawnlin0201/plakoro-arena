@@ -37,7 +37,7 @@ function pick(mid) {
 </script>
 
 <template>
-  <div class="move-select-panel" :style="{ background: typeBgColor(player.character.type), boxShadow: 'none', height: '80%', borderRadius: '0 18px 0 0' }">
+  <div class="move-select-panel" :style="{ background: typeBgColor(player.character.type), boxShadow: 'none', height: '80%', borderRadius: '0 1.125rem 0 0' }">
     <div class="ms-grid">
       <div v-for="row in rows" :key="row.mid" style="position:relative; display:flex; min-height:0; min-width:0;">
         <MoveCard

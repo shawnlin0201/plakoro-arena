@@ -18,7 +18,7 @@ const panelStyle = computed(() => ({
   background: typeBgColor(p.value.character.type),
   boxShadow: 'none',
   height: '80%',
-  borderRadius: state.turnPlayer === 'A' ? '0 18px 0 0' : '18px 0 0 0'
+  borderRadius: state.turnPlayer === 'A' ? '0 1.125rem 0 0' : '1.125rem 0 0 0'
 }))
 
 function onPick(mid) {

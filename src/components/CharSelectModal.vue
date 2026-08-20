@@ -16,7 +16,7 @@ function pick(c) {
 
 <template>
   <div class="modal-title">{{ t('charSelect.title') }}</div>
-  <div v-if="characters.length === 0" style="text-align:center; color:var(--sub); font-size:12px; padding:16px 10px; line-height:1.6;">
+  <div v-if="characters.length === 0" style="text-align:center; color:var(--sub); font-size:0.75rem; padding:1rem 0.625rem; line-height:1.6;">
     {{ t('charSelect.empty') }}
   </div>
   <div v-else class="grid-2">

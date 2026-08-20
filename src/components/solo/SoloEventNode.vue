@@ -14,8 +14,8 @@ const effectText = computed(() => t(`solo.events.${ev.value.id}.effect`))
 <template>
   <div class="overlay full">
     <div class="overlay-title">{{ t('solo.event.title') }}</div>
-    <div class="overlay-sub" style="max-width:420px; font-size:15px; line-height:1.7;">{{ text }}</div>
-    <div style="font-size:16px; font-weight:800; color:#4E9E6C; margin-top:8px;">{{ effectText }}</div>
-    <button class="btn" style="margin-top:16px;" @click="solo.returnToMap()">{{ t('solo.event.continue') }}</button>
+    <div class="overlay-sub" style="max-width:26.25rem; font-size:0.9375rem; line-height:1.7;">{{ text }}</div>
+    <div style="font-size:1rem; font-weight:800; color:#4E9E6C; margin-top:0.5rem;">{{ effectText }}</div>
+    <button class="btn" style="margin-top:1rem;" @click="solo.returnToMap()">{{ t('solo.event.continue') }}</button>
   </div>
 </template>

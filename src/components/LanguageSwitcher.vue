@@ -21,20 +21,20 @@ const LABELS = { ja: '日', en: 'EN', 'zh-TW': '繁' }
 <style scoped>
 .lang-switcher {
   position: absolute;
-  top: 6px;
-  right: 6px;
+  top: 0.375rem;
+  right: 0.375rem;
   z-index: 300;
   display: flex;
-  gap: 3px;
+  gap: 0.1875rem;
   background: rgba(0,0,0,.35);
-  border-radius: 10px;
-  padding: 3px;
+  border-radius: 0.625rem;
+  padding: 0.1875rem;
 }
 .lang-switcher-btn {
   border: none;
-  border-radius: 7px;
-  padding: 3px 7px;
-  font-size: 11px;
+  border-radius: 0.4375rem;
+  padding: 0.1875rem 0.4375rem;
+  font-size: 0.6875rem;
   font-weight: 800;
   color: #fff;
   background: transparent;

@@ -68,7 +68,7 @@ function goBack() {
         </div>
         <div class="dr-move-name mc-name-big">{{ mv.name }}</div>
       </div>
-      <div v-if="mv.effect" class="dr-roll-line" style="flex-direction:column; align-items:flex-start; gap:2px;">
+      <div v-if="mv.effect" class="dr-roll-line" style="flex-direction:column; align-items:flex-start; gap:0.125rem;">
         <div class="mc-effect" style="position:static; white-space:normal;">{{ mv.effect }}</div>
       </div>
     </div>

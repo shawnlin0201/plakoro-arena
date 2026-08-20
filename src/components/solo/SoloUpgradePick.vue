@@ -23,16 +23,16 @@ function pick(choice) {
 <template>
   <div class="overlay full">
     <div class="overlay-title">{{ t('solo.upgrade.title', { level: state.player.level }) }}</div>
-    <div style="display:flex; gap:14px; flex-wrap:wrap; justify-content:center; margin-top:14px; width:100%; max-width:640px;">
+    <div style="display:flex; gap:0.875rem; flex-wrap:wrap; justify-content:center; margin-top:0.875rem; width:100%; max-width:40rem;">
       <div
         v-for="(choice, i) in state.upgradeChoices"
         :key="i"
         class="select-card"
-        style="flex:1 1 160px; max-width:220px; cursor:pointer;"
+        style="flex:1 1 10rem; max-width:13.75rem; cursor:pointer;"
         @click="pick(choice)"
       >
-        <div style="font-size:34px;">{{ ICONS[choice.kind] }}</div>
-        <div class="select-card-title" style="font-size:15px; text-align:center;">{{ labelFor(choice) }}</div>
+        <div style="font-size:2.125rem;">{{ ICONS[choice.kind] }}</div>
+        <div class="select-card-title" style="font-size:0.9375rem; text-align:center;">{{ labelFor(choice) }}</div>
       </div>
     </div>
   </div>

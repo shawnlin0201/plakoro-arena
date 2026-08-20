@@ -58,9 +58,9 @@ watch(() => state.modal && state.modal.tempMoves.length, async (len) => {
       background: '#AEFF3E',
       color: '#2A2A2A',
       boxShadow: '0 3px 10px rgba(174,255,62,.4)',
-      padding: '24px 20px',
-      marginTop: '10px',
-      fontSize: '18px',
+      padding: '1.5rem 1.25rem',
+      marginTop: '0.625rem',
+      fontSize: '1.125rem',
       fontFamily: `'CorporateLogoBold','Hiragino Sans','Noto Sans JP',sans-serif`
     }"
     @click="battle.confirmCharacterMoves()"

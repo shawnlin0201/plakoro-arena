@@ -47,13 +47,13 @@ onMounted(() => {
   <div id="stage" ref="stageRef">
     <div id="app">
       <LanguageSwitcher />
-      <div style="position:absolute; right:6px; bottom:4px; z-index:300; font-size:10px; font-weight:700; color:rgba(58,58,58,.5); pointer-events:none;">v{{ appVersion }}</div>
+      <div style="position:absolute; right:0.375rem; bottom:0.25rem; z-index:300; font-size:0.625rem; font-weight:700; color:rgba(58,58,58,.5); pointer-events:none;">v{{ appVersion }}</div>
 
-      <div v-if="isLoading" style="display:flex; height:100%; align-items:center; justify-content:center; font-weight:800; font-size:16px; color:var(--sub);">{{ t('app.loading') }}</div>
+      <div v-if="isLoading" style="display:flex; height:100%; align-items:center; justify-content:center; font-weight:800; font-size:1rem; color:var(--sub);">{{ t('app.loading') }}</div>
 
-      <div v-else-if="loadError" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:14px; padding:24px; text-align:center;">
-        <div style="font-weight:800; font-size:14px; color:var(--ink); line-height:1.6;">{{ t('app.loadErrorTitle') }}</div>
-        <div style="font-size:12px; color:var(--sub); max-width:320px; line-height:1.6;">{{ loadError }}</div>
+      <div v-else-if="loadError" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:0.875rem; padding:1.5rem; text-align:center;">
+        <div style="font-weight:800; font-size:0.875rem; color:var(--ink); line-height:1.6;">{{ t('app.loadErrorTitle') }}</div>
+        <div style="font-size:0.75rem; color:var(--sub); max-width:20rem; line-height:1.6;">{{ loadError }}</div>
         <button class="btn" @click="characterData.loadData()">{{ t('app.retry') }}</button>
       </div>
 
