@@ -101,6 +101,16 @@
     "probHint": "All 3 dice rolled together, tallied by the resulting energy-type combo (sorted by odds)",
     "probFilterLabel": "Only show",
     "probGroupLabel": "Sort by count",
+    "moveOddsButton": "Move Odds",
+    "moveOdds": {
+      "title": "Move Odds",
+      "hint": "Pick a Pokémon to see how often the current dice build can pay each move's cost. Character-die odds include the move landing first.",
+      "changeCharacter": "Change",
+      "diceInPlay": "Dice in play",
+      "moveHeader": "Move ({n} dice)",
+      "successRate": "Success",
+      "charaDieOdds": "Char. die"
+    },
     "showCumulativeProb": "Show cumulative odds",
     "showExactProb": "Show exact odds",
     "showCountsLabel": "Show counts",
