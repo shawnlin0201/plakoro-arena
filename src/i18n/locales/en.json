@@ -173,6 +173,10 @@
       "title": "Opponent can't move",
       "desc": "Every move the opponent has left is sealed, so it can't act.",
       "button": "Skip Opponent's Turn"
+    },
+    "playerSkip": {
+      "notice": "No move available — they're sealed or were used last turn.",
+      "button": "Skip Turn"
     }
   }
 }

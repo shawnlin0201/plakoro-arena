@@ -236,6 +236,12 @@ export function useSoloRun(charactersRef, movesRef) {
 
   // --- move selection / AI move choice ---
 
+  // The two standard restrictions, straight from the tabletop rules: a move can't be used
+  // twice in a row, and a sealed move can't be used at all. Neither is relaxed here — an
+  // empty result genuinely means "no legal move", which the caller resolves by skipping the
+  // turn (SoloMoveSelect.vue for the player, `aiTakeTurn` below for the AI) rather than by
+  // handing back an illegal move. With 4 moves these two restrictions can never lock out
+  // every option, but a tower run starts at 2 moves, where they can.
   function availableMoveIds(who) {
     const c = state[who]
     return c.moveIds.filter(mid => mid !== c.committedLastMoveId && !(c.committedBannedMoveIds || []).includes(mid))
@@ -256,10 +262,11 @@ export function useSoloRun(charactersRef, movesRef) {
       state.phase = "aiSkip"
       return
     }
-    // Same fallback as SoloMoveSelect.vue's `available` for the player: ruling out the move
-    // it can't immediately repeat is only meaningful if something else is left afterward —
-    // e.g. a 1-move AI must be allowed to repeat its only move once it's actually unsealed,
-    // rather than being treated as if it were still sealed.
+    // The AI alone gets the no-repeat rule relaxed, and only as a last resort. A tier-1
+    // opponent knows exactly 1 move (see buildAiMoveset), so enforcing "no repeats" strictly
+    // would make it skip every turn after its first — the run would stop being a fight. The
+    // player never needs this: they always start with 2 moves, so an empty result there is a
+    // real dead end and gets a skip instead (see SoloMoveSelect.vue).
     const pool = notSealed.filter(mid => mid !== ai.committedLastMoveId)
     const usable = pool.length > 0 ? pool : notSealed
     const mid = usable[Math.floor(Math.random() * usable.length)]
@@ -281,6 +288,25 @@ export function useSoloRun(charactersRef, movesRef) {
     state.turn = "player"
     state.selectedMove = null
     state.phase = "moveSelect"
+  }
+
+  // Mirror of skipAiTurn for the player, for when every move they know is either sealed or
+  // the one they just used. Without this the run would simply dead-end: the move grid would
+  // sit there with all 4 cards disabled and no way to advance the turn.
+  function skipPlayerTurn() {
+    const p = state.player
+    p.committedLastMoveId = null
+    p.committedLastMoveFailed = false
+    p.committedBannedMoveIds = []
+    p.committedBannedMoveSourceName = ""
+    // Same reasoning as skipAiTurn: resolveTurn never runs for a skipped turn, so the live
+    // seal fields have to be cleared here or they'd be re-committed on every later turn.
+    p.bannedMoveIds = []
+    p.bannedMoveSourceName = ""
+    state.turn = "ai"
+    state.selectedMove = null
+    state.phase = "moveSelect"
+    aiTakeTurn()
   }
 
   function backToMoveSelect() {
@@ -617,6 +643,7 @@ export function useSoloRun(charactersRef, movesRef) {
     availableMoveIds,
     pickMove,
     skipAiTurn,
+    skipPlayerTurn,
     backToMoveSelect,
     moveForTurn,
     submitEffectPrompt,

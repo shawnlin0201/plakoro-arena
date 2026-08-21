@@ -20,6 +20,11 @@ const bindMoveRows = computed(() => {
   if (ep.value.kind !== 'bindWaza') return []
   return target.value.moveIds.map(mid => {
     const mv = moves.value[mid]
+    // A seal has to land on a move the target could otherwise actually use, so the one they
+    // just used stays off the table — same rule as duel mode. On a 2-move run that means the
+    // seal necessarily lands on their only playable move, leaving them with nothing next
+    // turn; that dead end is resolved by the skip-turn button in SoloMoveSelect.vue, not by
+    // weakening the seal.
     const isPrevUsed = mid === target.value.lastMoveId
     const isPicked = ep.value.picked.includes(mid)
     const dmgInfo = solo.computeDisplayDamage(mv, target.value, targetOpp.value)
