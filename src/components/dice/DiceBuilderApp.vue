@@ -1,8 +1,9 @@
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { randomDie, CONVEX_TYPES, CONCAVE_TYPES, CHIP_TYPES } from '../../game/diceParts'
+import { randomDie, faceTypes, FACE_KEYS, CONVEX_TYPES, CONCAVE_TYPES, CHIP_TYPES } from '../../game/diceParts'
 import { asset } from '../../data/assetPath'
+import MoveOddsView from './MoveOddsView.vue'
 
 const emit = defineEmits(['back'])
 const { t } = useI18n()
@@ -83,26 +84,14 @@ function removeCompareSet() {
   }
 }
 
-// The 6 faces of a die, in the fixed display order the spec calls for: convex, concave,
-// single, single, dual, dual.
-const FACE_ROWS = [
-  { key: 'convex', labelKey: 'convex' },
-  { key: 'concave', labelKey: 'concave' },
-  { key: 'single1', labelKey: 'single' },
-  { key: 'single2', labelKey: 'single' },
-  { key: 'dual1', labelKey: 'dual' },
-  { key: 'dual2', labelKey: 'dual' }
-]
-
-function faceTypes(die, key) {
-  if (key === 'convex') return [die.convexType]
-  if (key === 'concave') return [die.concaveType]
-  if (key === 'single1') return die.singleSlots[0] ? [die.singleSlots[0].type] : []
-  if (key === 'single2') return die.singleSlots[1] ? [die.singleSlots[1].type] : []
-  if (key === 'dual1') return die.dualSlots[0] ? die.dualSlots[0].types : []
-  if (key === 'dual2') return die.dualSlots[1] ? die.dualSlots[1].types : []
-  return []
+// Row labels for the 6 faces, in FACE_KEYS order. The two round sockets share one label, as
+// do the two square ones, so the label can't just be derived from the key.
+const FACE_LABEL_KEYS = {
+  convex: 'convex', concave: 'concave',
+  single1: 'single', single2: 'single',
+  dual1: 'dual', dual2: 'dual'
 }
+const FACE_ROWS = FACE_KEYS.map(key => ({ key, labelKey: FACE_LABEL_KEYS[key] }))
 
 // A single source of truth for the face-cell size, in rem — everything else (the dual-slot
 // mini icons, their inset, and the divider line's length) is derived from it proportionally.
@@ -239,7 +228,7 @@ function closeQuickApply() {
 }
 
 // --- roll simulation ---
-const ALL_FACE_KEYS = FACE_ROWS.map(row => row.key)
+const ALL_FACE_KEYS = FACE_KEYS
 const rollResults = ref(null) // [[{ faceKey, types }, x3], ...] — one entry per set | null
 
 // The character die (キャラコロ) is a separate, fixed 6-face die — not part of the energy
@@ -263,6 +252,7 @@ function rollDice() {
 // types it grants (regardless of which die contributed which face or what order), and those
 // 216 outcomes get grouped/tallied by that resulting type set.
 const showProbTable = ref(false)
+const showMoveOdds = ref(false)
 const TOTAL_ROLLS = ALL_FACE_KEYS.length ** 3
 
 function sortByChipOrder(types) {
@@ -416,7 +406,9 @@ function openProbTable() {
 </script>
 
 <template>
-  <div v-if="showProbTable" class="board select-board" style="overflow-y:auto; align-items:center;">
+  <MoveOddsView v-if="showMoveOdds" :sets="sets" :set-labels="SET_LABELS.slice(0, sets.length)" @back="showMoveOdds = false" />
+
+  <div v-else-if="showProbTable" class="board select-board" style="overflow-y:auto; align-items:center;">
     <div class="modal-title" style="margin:0.5rem 0 0.25rem;">{{ t('diceBuilder.probTitle') }}</div>
     <div class="center-hint" style="padding-bottom:0.375rem;">{{ t('diceBuilder.probHint') }}</div>
 
@@ -603,6 +595,7 @@ function openProbTable() {
       <button class="btn" @click="rollDice">{{ t('diceBuilder.rollButton') }}</button>
       <button class="btn secondary" @click="showQuickApply = true">{{ t('diceBuilder.quickApplyButton') }}</button>
       <button class="btn secondary" @click="openProbTable">{{ t('diceBuilder.probButton') }}</button>
+      <button class="btn secondary" @click="showMoveOdds = true">{{ t('diceBuilder.moveOddsButton') }}</button>
       <button class="btn secondary" @click="emit('back')">{{ t('common.back') }}</button>
     </div>
   </div>

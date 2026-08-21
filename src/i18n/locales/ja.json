@@ -101,6 +101,16 @@
     "probHint": "3つのダイスを一緒に振り、最終的に揃うエネルギータイプの組み合わせごとに確率を集計（確率順）",
     "probFilterLabel": "絞り込み",
     "probGroupLabel": "個数で並び替え",
+    "moveOddsButton": "ワザ成功率",
+    "moveOdds": {
+      "title": "ワザ成功率",
+      "hint": "ポケモンを選ぶと、今のダイス構成で各ワザのエネルギーを払える確率が出ます。キャラコロ効果はワザ成功も含めた確率です",
+      "changeCharacter": "変更",
+      "diceInPlay": "振るダイス",
+      "moveHeader": "ワザ（ダイス{n}個）",
+      "successRate": "成功率",
+      "charaDieOdds": "キャラコロ"
+    },
     "showCumulativeProb": "累計確率で表示",
     "showExactProb": "ちょうどの確率で表示",
     "showCountsLabel": "回数も表示",
