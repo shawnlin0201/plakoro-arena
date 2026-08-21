@@ -59,9 +59,9 @@ function onTap() {
           <div class="pc-name-wrap">
             <div v-if="showAsSelected" class="pc-type-icon"><img :src="asset(`image/ICON/${p.character.type}.png`)" class="img-icon" :alt="p.character.type"></div>
             <div class="pc-name">{{ showAsSelected ? p.character.name : trainerName }}</div>
-            <div v-if="showAsSelected" class="wk-inline">
+            <div v-if="showAsSelected && p.character.weaknesses.length > 0" class="wk-inline">
               <span>{{ t('common.weaknessColon') }}</span>
-              <div class="tw-icon"><img :src="asset(`image/ICON/${p.character.weakness}.png`)" class="img-icon" :alt="p.character.weakness"></div>
+              <div v-for="w in p.character.weaknesses" :key="w.type" class="tw-icon"><img :src="asset(`image/ICON/${w.type}.png`)" class="img-icon" :alt="w.type"></div>
             </div>
           </div>
           <div class="pc-hp-num" :class="showAsSelected ? battle.hpBarClass(p) : ''">{{ showAsSelected ? Math.max(0, p.hp) : '' }}</div>

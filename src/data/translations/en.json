@@ -76,7 +76,7 @@
       "effect": "This move ignores weakness.",
       "chara_effect1": "Use \"Electro Rush\" again. (Can repeat until it fails.)"
     },
-    "STW05-002\n": {
+    "STW05-002": {
       "name": "Tackle",
       "chara_effect1": "Adds 20 damage."
     },

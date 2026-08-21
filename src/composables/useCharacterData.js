@@ -9,6 +9,43 @@ import translationsZhTW from '../data/translations/zh-TW.json'
 
 const TRANSLATIONS = { en: translationsEn, 'zh-TW': translationsZhTW }
 
+// The generated JSON mirrors whatever the Supabase rows hold, and those have historically
+// carried stray whitespace (e.g. a waza id of "STW05-002\n"). Anything used as a lookup key
+// or matched by string gets trimmed here, so a dirty row can't silently break translation
+// overlays, the waza-id comparisons in `DAMAGE_*_SUCCESS_SELF_<id>` effects, or the
+// chara_name -> character join below — even after a fresh `npm run fetch-data`.
+function cleanKey(value) {
+  return value === null || value === undefined ? value : String(value).trim()
+}
+
+// Applied when a row's weakness damage is missing or unparseable — every card printed so
+// far uses 20, so that's the safe assumption for a half-filled row.
+export const DEFAULT_WEAKNESS_DAMAGE = 20
+
+// A character can be printed with more than one weakness, each carrying its own bonus
+// damage, so the Supabase row spreads them across numbered column pairs
+// (weakness_type1/weakness_damage1, weakness_type2/weakness_damage2). They collapse into one
+// `weaknesses` array here; a character with a single weakness just gets a 1-entry array, and
+// rows with no weakness at all get an empty one. `weakness` (no suffix) is accepted as a
+// legacy alias for the first slot's type, matching what the original fork's data used.
+function buildWeaknesses(c) {
+  const columns = [
+    { type: c.weakness_type1 ?? c.weakness, damage: c.weakness_damage1 ?? c.weakness_damage },
+    { type: c.weakness_type2, damage: c.weakness_damage2 }
+  ]
+  const out = []
+  const seenTypes = new Set()
+  columns.forEach(col => {
+    const type = cleanKey(col.type)
+    // Skip empty slots, and guard against a row that repeats the same type in both columns —
+    // otherwise one move would collect the same weakness bonus twice.
+    if (!type || seenTypes.has(type)) return
+    seenTypes.add(type)
+    out.push({ type, damage: parseInt(col.damage, 10) || DEFAULT_WEAKNESS_DAMAGE })
+  })
+  return out
+}
+
 function buildCharaEffect(die, effectStr, type, val) {
   if (!die || String(die) === "0") return null
   const orientations = String(die).replace(/"/g, '').split(',').map(s => s.trim())
@@ -33,9 +70,10 @@ wazaRaw.forEach(w => {
   if (w.waza_energy && String(w.waza_energy) !== "0") {
     cost = String(w.waza_energy).replace(/"/g, '').split(',').map(s => s.trim()).filter(s => s !== "")
   }
-  MOVES_BASE[w.id] = {
-    id: w.id,
-    chara_name: w.chara_name,
+  const id = cleanKey(w.id)
+  MOVES_BASE[id] = {
+    id,
+    chara_name: cleanKey(w.chara_name),
     name: w.waza_name,
     type: w.waza_type,
     cost,
@@ -48,8 +86,9 @@ wazaRaw.forEach(w => {
 })
 
 const CHARACTERS_BASE = charaRaw.map(c => {
+  const name = cleanKey(c.name)
   const charaMoves = Object.values(MOVES_BASE)
-    .filter(m => m.chara_name === c.name)
+    .filter(m => m.chara_name === name)
     .map(m => m.id)
     .sort((a, b) => {
       const na = Number(a), nb = Number(b)
@@ -57,13 +96,12 @@ const CHARACTERS_BASE = charaRaw.map(c => {
       return String(a).localeCompare(String(b))
     })
   return {
-    id: c.id,
-    name: c.name,
+    id: cleanKey(c.id),
+    name,
     type: c.type,
-    weakness: c.weakness_type1 || c.weakness || "",
-    weaknessDamage: parseInt(c.weakness_damage, 10) || 20,
+    weaknesses: buildWeaknesses(c),
     hp: parseInt(c.HP, 10) || 100,
-    imageUrl: asset(`image/CHARA/${c.name}.jpg`),
+    imageUrl: asset(`image/CHARA/${name}.jpg`),
     moves: charaMoves
   }
 })
