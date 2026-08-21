@@ -1,3 +1,11 @@
+// Returns the character's matching weakness entry ({ type, damage }) for an incoming move
+// type, or null if the move doesn't hit a weakness. A character can carry more than one
+// weakness, but a move only ever has one type, so at most one entry can match.
+export function weaknessFor(character, moveType) {
+  if (!character || !moveType) return null
+  return (character.weaknesses || []).find(w => w.type === moveType) || null
+}
+
 export function isCharaColorConditionMet(effType, owner, opponent) {
   if (!effType || !owner || !opponent) return false
   if (effType === "DAMAGE_EXTRA_DICE_MISS_ENEMY") {
@@ -27,8 +35,9 @@ export function computeDisplayDamage(mv, mover, target, movesMap) {
     base = lastMv ? lastMv.baseDamage * mv.effectValue : 0
   }
   const ignoreWeakness = mv.effectType === "SPECIAL_IGNORE_WEAKNESS"
-  if (!ignoreWeakness && mv.type === target.character.weakness && base > 0) {
-    base += target.character.weaknessDamage || 20
+  const hitWeakness = ignoreWeakness ? null : weaknessFor(target.character, mv.type)
+  if (hitWeakness && base > 0) {
+    base += hitWeakness.damage
     mode = "weak"
   }
   if (target.incomingDamageMod) {

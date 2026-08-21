@@ -7,9 +7,10 @@ import { asset } from '../../data/assetPath'
 const emit = defineEmits(['back'])
 const { t } = useI18n()
 
-const dice = ref([randomDie(), randomDie(), randomDie()])
-// Whether die 2 / die 3 (indices 1 and 2) are locked to always mirror die 1's setup.
-const sameAsDie1 = ref([false, false])
+// Up to two dice sets can exist side by side, so their roll probabilities can be compared
+// against each other. Set A always exists; set B is opt-in and starts as a copy of A, since
+// the usual reason to compare is "what changes if I swap this one face".
+const SET_LABELS = ['A', 'B']
 
 function cloneDie(die) {
   return {
@@ -20,25 +21,65 @@ function cloneDie(die) {
   }
 }
 
-function syncCheckedDice() {
-  for (let i = 1; i <= 2; i++) {
-    if (sameAsDie1.value[i - 1]) dice.value[i] = cloneDie(dice.value[0])
+function newDiceSet() {
+  return {
+    dice: [randomDie(), randomDie(), randomDie()],
+    // Whether die 2 / die 3 (indices 1 and 2) are locked to always mirror die 1's setup.
+    // Scoped per set — set B's checkboxes mirror set B's own die 1, never set A's.
+    sameAsDie1: [false, false]
   }
 }
 
-// Keep die 2 / die 3 mirroring die 1 live — any edit to die 1 (a reroll, or picking a new
-// energy on one of its faces) should immediately propagate to whichever dice are locked.
-watch(() => dice.value[0], syncCheckedDice, { deep: true })
-
-function onToggleSame(dieIndex, checked) {
-  sameAsDie1.value[dieIndex - 1] = checked
-  if (checked) dice.value[dieIndex] = cloneDie(dice.value[0])
+function cloneDiceSet(set) {
+  return { dice: set.dice.map(cloneDie), sameAsDie1: [...set.sameAsDie1] }
 }
 
-function reroll() {
-  dice.value[0] = randomDie()
-  for (let i = 1; i <= 2; i++) {
-    if (!sameAsDie1.value[i - 1]) dice.value[i] = randomDie()
+const sets = ref([newDiceSet()])
+const hasCompare = computed(() => sets.value.length > 1)
+
+function syncCheckedDice() {
+  sets.value.forEach(set => {
+    for (let i = 1; i <= 2; i++) {
+      if (set.sameAsDie1[i - 1]) set.dice[i] = cloneDie(set.dice[0])
+    }
+  })
+}
+
+// Keep die 2 / die 3 mirroring die 1 live — any edit to die 1 (picking a new energy on one of
+// its faces, or a quick pure-type apply) should immediately propagate to the locked dice.
+// Watching only each set's die 1 keeps this from re-triggering itself: the handler writes to
+// dice[1]/dice[2], which aren't part of the watched source.
+watch(() => sets.value.map(s => s.dice[0]), syncCheckedDice, { deep: true })
+
+function onToggleSame(setIndex, dieIndex, checked) {
+  const set = sets.value[setIndex]
+  set.sameAsDie1[dieIndex - 1] = checked
+  if (checked) set.dice[dieIndex] = cloneDie(set.dice[0])
+}
+
+function addCompareSet() {
+  if (sets.value.length > 1) return
+  sets.value.push(cloneDiceSet(sets.value[0]))
+  // A previous roll only covered set A, so it would render as a lone set-A row under a
+  // header that now promises two. Clear it and let the player roll both together.
+  rollResults.value = null
+  charaRollResult.value = null
+}
+
+function removeCompareSet() {
+  sets.value.splice(1)
+  // Drop any state still pointing at the set that no longer exists.
+  if (editingSlot.value && editingSlot.value.setIndex > 0) editingSlot.value = null
+  if (rollResults.value) rollResults.value = rollResults.value.slice(0, 1)
+  closeQuickApply()
+  // A filter or grouping can be pinned to a type only set B carried. Its icon disappears
+  // from the control row with set B, which would leave an invisible filter silently
+  // emptying the table, so anything no longer present gets dropped.
+  const stillPresent = diceHaveTypes.value
+  probFilterTypes.value = probFilterTypes.value.filter(ty => stillPresent.includes(ty))
+  if (groupByType.value && !stillPresent.includes(groupByType.value)) {
+    groupByType.value = null
+    expandedGroupCounts.clear()
   }
 }
 
@@ -84,11 +125,15 @@ function slotMeta(faceKey) {
   return null
 }
 
-const editingSlot = ref(null) // { dieIndex, faceKey } | null
+const editingSlot = ref(null) // { setIndex, dieIndex, faceKey } | null
 const currentMeta = computed(() => editingSlot.value ? slotMeta(editingSlot.value.faceKey) : null)
+const editingDie = computed(() => {
+  const es = editingSlot.value
+  return es ? sets.value[es.setIndex].dice[es.dieIndex] : null
+})
 
-function openPicker(dieIndex, faceKey) {
-  editingSlot.value = { dieIndex, faceKey }
+function openPicker(setIndex, dieIndex, faceKey) {
+  editingSlot.value = { setIndex, dieIndex, faceKey }
 }
 
 function closePicker() {
@@ -97,8 +142,8 @@ function closePicker() {
 
 function isTypeSelected(type) {
   const meta = currentMeta.value
-  if (!meta || !editingSlot.value) return false
-  const die = dice.value[editingSlot.value.dieIndex]
+  const die = editingDie.value
+  if (!meta || !die) return false
   if (meta.kind === 'convex') return die.convexType === type
   if (meta.kind === 'concave') return die.concaveType === type
   if (meta.kind === 'single') return die.singleSlots[meta.slotIndex].type === type
@@ -108,17 +153,17 @@ function isTypeSelected(type) {
 // A dual-energy chip's 2 types are picked independently, one row of type icons per slot
 // half — the two halves can be the same type.
 const currentDualTypes = computed(() => {
-  const es = editingSlot.value
   const meta = currentMeta.value
-  if (!es || !meta || meta.kind !== 'dual') return [null, null]
-  return dice.value[es.dieIndex].dualSlots[meta.slotIndex].types
+  const die = editingDie.value
+  if (!die || !meta || meta.kind !== 'dual') return [null, null]
+  return die.dualSlots[meta.slotIndex].types
 })
 
 function setDualType(idx, type) {
-  const es = editingSlot.value
   const meta = currentMeta.value
-  if (!es || !meta || meta.kind !== 'dual') return
-  dice.value[es.dieIndex].dualSlots[meta.slotIndex].types[idx] = type
+  const die = editingDie.value
+  if (!die || !meta || meta.kind !== 'dual') return
+  die.dualSlots[meta.slotIndex].types[idx] = type
 }
 
 const pickerTitleKey = computed(() => {
@@ -131,10 +176,9 @@ const pickerTitleKey = computed(() => {
 })
 
 function pickType(type) {
-  const es = editingSlot.value
   const meta = currentMeta.value
-  if (!es || !meta) return
-  const die = dice.value[es.dieIndex]
+  const die = editingDie.value
+  if (!die || !meta) return
 
   if (meta.kind === 'convex') {
     die.convexType = type
@@ -150,49 +194,74 @@ function pickType(type) {
 // Sets every die's round/square sockets to the same single type in one go, plus whichever
 // fixed face the picked type actually belongs to (skip the convex face for a concave-pool
 // type, and vice versa — the fixed face on the OTHER pool is left as-is since the picked
-// type can never legally sit there). Applies to all 3 dice regardless of the "same as die 1"
-// checkboxes.
+// type can never legally sit there). Applies to every die of the targeted set(s), regardless
+// of the "same as die 1" checkboxes.
 const showQuickApply = ref(false)
+// With two sets in play the type pick is only half the decision, so it parks here while the
+// second step (which set to apply it to) is answered. Single-set mode applies immediately.
+const quickApplyType = ref(null)
 
-function applyPureType(type) {
+function applyPureType(type, setIndexes) {
   const isConvexType = CONVEX_TYPES.includes(type)
-  dice.value.forEach(die => {
-    if (isConvexType) {
-      die.convexType = type
-    } else {
-      die.concaveType = type
-    }
-    die.singleSlots[0].type = type
-    die.singleSlots[1].type = type
-    die.dualSlots[0].types = [type, type]
-    die.dualSlots[1].types = [type, type]
+  setIndexes.forEach(si => {
+    sets.value[si].dice.forEach(die => {
+      if (isConvexType) {
+        die.convexType = type
+      } else {
+        die.concaveType = type
+      }
+      die.singleSlots[0].type = type
+      die.singleSlots[1].type = type
+      die.dualSlots[0].types = [type, type]
+      die.dualSlots[1].types = [type, type]
+    })
   })
+}
+
+function pickQuickApplyType(type) {
+  if (!hasCompare.value) {
+    applyPureType(type, [0])
+    closeQuickApply()
+    return
+  }
+  quickApplyType.value = type
+}
+
+function confirmQuickApply(setIndexes) {
+  if (quickApplyType.value === null) return
+  applyPureType(quickApplyType.value, setIndexes)
+  closeQuickApply()
+}
+
+function closeQuickApply() {
   showQuickApply.value = false
+  quickApplyType.value = null
 }
 
 // --- roll simulation ---
 const ALL_FACE_KEYS = FACE_ROWS.map(row => row.key)
-const rollResults = ref(null) // [{ faceKey, types }, ...] | null
+const rollResults = ref(null) // [[{ faceKey, types }, x3], ...] — one entry per set | null
 
 // The character die (キャラコロ) is a separate, fixed 6-face die — not part of the energy
-// die being assembled above — using the up/down/left/right/upright/reversed orientation
-// icons that character-die move effects already reference elsewhere in the app.
+// dice being assembled above — using the up/down/left/right/upright/reversed orientation
+// icons that character-die move effects already reference elsewhere in the app. It's rolled
+// once and shared: it belongs to neither set, so comparing two of them would be meaningless.
 const CHARA_DIE_FACES = ['上', '下', '左', '右', '立', '逆']
 const charaRollResult = ref(null)
 
 function rollDice() {
-  rollResults.value = dice.value.map(die => {
+  rollResults.value = sets.value.map(set => set.dice.map(die => {
     const faceKey = ALL_FACE_KEYS[Math.floor(Math.random() * ALL_FACE_KEYS.length)]
     return { faceKey, types: faceTypes(die, faceKey) }
-  })
+  }))
   charaRollResult.value = CHARA_DIE_FACES[Math.floor(Math.random() * CHARA_DIE_FACES.length)]
 }
 
 // --- probability table ---
-// All 3 dice are rolled together (6x6x6 = 216 equally-likely face combinations). Rather than
-// listing all 216 permutations, each one collapses to the multiset of energy types it grants
-// (regardless of which die contributed which face or what order), and those 216 outcomes get
-// grouped/tallied by that resulting type set.
+// All 3 dice of a set are rolled together (6x6x6 = 216 equally-likely face combinations).
+// Rather than listing all 216 permutations, each one collapses to the multiset of energy
+// types it grants (regardless of which die contributed which face or what order), and those
+// 216 outcomes get grouped/tallied by that resulting type set.
 const showProbTable = ref(false)
 const TOTAL_ROLLS = ALL_FACE_KEYS.length ** 3
 
@@ -200,15 +269,15 @@ function sortByChipOrder(types) {
   return [...types].sort((a, b) => CHIP_TYPES.indexOf(a) - CHIP_TYPES.indexOf(b))
 }
 
-const probCombos = computed(() => {
+function combosForDice(dice) {
   const byKey = new Map()
   for (const faceA of ALL_FACE_KEYS) {
     for (const faceB of ALL_FACE_KEYS) {
       for (const faceC of ALL_FACE_KEYS) {
         const types = sortByChipOrder([
-          ...faceTypes(dice.value[0], faceA),
-          ...faceTypes(dice.value[1], faceB),
-          ...faceTypes(dice.value[2], faceC)
+          ...faceTypes(dice[0], faceA),
+          ...faceTypes(dice[1], faceB),
+          ...faceTypes(dice[2], faceC)
         ])
         const key = types.join(',')
         if (!byKey.has(key)) byKey.set(key, { types, count: 0 })
@@ -216,15 +285,37 @@ const probCombos = computed(() => {
       }
     }
   }
-  return [...byKey.values()].sort((a, b) => b.count - a.count)
+  return byKey
+}
+
+// One row per energy combination that ANY set can produce, carrying that combination's count
+// for every set (0 for a set that can't roll it at all) so the two are directly comparable
+// on the same line. Ordered by set A's probability, falling back to set B's to break ties —
+// so combinations unique to B collect at the bottom instead of being scattered.
+const probCombos = computed(() => {
+  const maps = sets.value.map(set => combosForDice(set.dice))
+  const keys = new Set()
+  maps.forEach(map => map.forEach((_, key) => keys.add(key)))
+  const rows = [...keys].map(key => {
+    const hit = maps.map(map => map.get(key))
+    return {
+      key,
+      types: hit.find(Boolean).types,
+      counts: hit.map(entry => (entry ? entry.count : 0))
+    }
+  })
+  return rows.sort((a, b) => (b.counts[0] - a.counts[0]) || ((b.counts[1] || 0) - (a.counts[1] || 0)))
 })
 
-// "Only show" filter: multi-select among the energy types actually present on the 3 dice
-// right now (not the full 9), narrowing the list to combos that contain every selected type.
+// "Only show" filter: multi-select among the energy types actually present on the dice right
+// now (not the full 9), narrowing the list to combos that contain every selected type. With
+// two sets the pool is their union, so a type only set B carries is still filterable.
 const diceHaveTypes = computed(() => {
   const present = new Set()
-  dice.value.forEach(die => {
-    ALL_FACE_KEYS.forEach(faceKey => faceTypes(die, faceKey).forEach(ty => present.add(ty)))
+  sets.value.forEach(set => {
+    set.dice.forEach(die => {
+      ALL_FACE_KEYS.forEach(faceKey => faceTypes(die, faceKey).forEach(ty => present.add(ty)))
+    })
   })
   return CHIP_TYPES.filter(ty => present.has(ty))
 })
@@ -246,6 +337,9 @@ const filteredProbCombos = computed(() => {
 // they contain (e.g. "3 fire" covers both fire/fire/fire/water and fire/fire/fire/water/water),
 // each bucket showing its combined probability, sorted by that count descending; within a
 // bucket the individual combos that make it up are still listed with their own probability.
+// Each bucket also carries a cumulative "at least n" figure, which is usually the number that
+// actually matters: a move costing 3 fire is payable by any roll of 3 fire or more, not only
+// by exactly 3.
 const groupByType = ref(null)
 // Which bucket counts (the "n" of "n fire") are currently expanded to show their individual
 // combos — collapsed by default so the grouped view starts as just the summary rows.
@@ -263,17 +357,62 @@ function toggleGroupExpanded(n) {
 
 const groupedProbCombos = computed(() => {
   if (!groupByType.value) return null
-  const groups = new Map() // count of groupByType in combo -> { n, totalCount, combos }
+  const groups = new Map() // count of groupByType in combo -> { n, totals: [perSet], combos }
   filteredProbCombos.value.forEach(combo => {
     const n = combo.types.filter(ty => ty === groupByType.value).length
-    if (!groups.has(n)) groups.set(n, { n, totalCount: 0, combos: [] })
+    if (!groups.has(n)) groups.set(n, { n, totals: sets.value.map(() => 0), combos: [] })
     const g = groups.get(n)
-    g.totalCount += combo.count
+    combo.counts.forEach((count, i) => { g.totals[i] += count })
     g.combos.push(combo)
   })
-  groups.forEach(g => g.combos.sort((a, b) => b.count - a.count))
-  return [...groups.values()].sort((a, b) => b.n - a.n)
+  groups.forEach(g => g.combos.sort((a, b) => b.counts[0] - a.counts[0]))
+  const list = [...groups.values()].sort((a, b) => b.n - a.n)
+  // "At least n" = every bucket from n upwards. The list is already sorted by n descending,
+  // so one running total down the list gives each bucket its own cumulative figure.
+  const running = sets.value.map(() => 0)
+  list.forEach(g => {
+    g.totals.forEach((total, i) => { running[i] += total })
+    g.cumulative = [...running]
+  })
+  return list
 })
+
+function pct(count) {
+  return (count / TOTAL_ROLLS * 100).toFixed(1)
+}
+
+// A grouped bucket has two figures worth knowing: how often it comes up exactly, and how often
+// it comes up at all ("n or more"). Showing both at once doubles every row's width, so the two
+// share one column and a toggle picks which is on screen. Exact is the default, matching what
+// the table showed before cumulative figures existed. Only meaningful while grouping is on —
+// an individual combination has no "or more".
+const showCumulative = ref(false)
+
+function groupFigure(group, setIndex) {
+  return showCumulative.value ? group.cumulative[setIndex] : group.totals[setIndex]
+}
+
+// The percentage is what a player actually reads; the raw "n/216" tally is opt-in detail. With
+// it off the figure is just the percentage, so the parenthesis only belongs there when the
+// tally precedes it.
+const showCounts = ref(false)
+
+function pctText(count) {
+  return showCounts.value ? `（${pct(count)}%）` : `${pct(count)}%`
+}
+
+// Narrower when only the percentage is on screen, so the column doesn't sit in dead space.
+const figureColWidth = computed(() => {
+  if (!hasCompare.value) return 'auto'
+  return showCounts.value ? '7.5rem' : '4.5rem'
+})
+
+function openProbTable() {
+  showProbTable.value = true
+  probFilterTypes.value = []
+  groupByType.value = null
+  expandedGroupCounts.clear()
+}
 </script>
 
 <template>
@@ -312,15 +451,32 @@ const groupedProbCombos = computed(() => {
         >
           <img :src="asset(`image/ICON/${ty}.png`)" class="img-icon" :alt="ty">
         </div>
+        <button
+          v-if="groupByType"
+          class="btn secondary"
+          style="padding:0.25rem 0.5rem; font-size:0.6875rem; flex-shrink:0;"
+          @click="showCumulative = !showCumulative"
+        >{{ showCumulative ? t('diceBuilder.showExactProb') : t('diceBuilder.showCumulativeProb') }}</button>
+        <label style="display:flex; align-items:center; gap:0.1875rem; font-size:0.625rem; font-weight:800; color:var(--sub); cursor:pointer; flex-shrink:0;">
+          <input type="checkbox" v-model="showCounts" style="width:0.75rem; height:0.75rem; margin:0;">
+          {{ t('diceBuilder.showCountsLabel') }}
+        </label>
       </div>
     </div>
 
     <div style="width:100%; max-width:40rem; padding:0 0.625rem;">
+      <div v-if="hasCompare" style="display:flex; align-items:center; justify-content:space-between; gap:0.625rem; padding:0 0.125rem 0.25rem; border-bottom:0.125rem solid var(--line);">
+        <span style="font-size:0.6875rem; font-weight:800; color:var(--sub);">{{ t('diceBuilder.probTypeHeader') }}</span>
+        <div style="display:flex; gap:0.5rem; flex-shrink:0;">
+          <span v-for="(label, si) in SET_LABELS" :key="si" :style="{ fontSize: '0.6875rem', fontWeight: 800, color: 'var(--sub)', width: figureColWidth, textAlign: 'right', whiteSpace: 'nowrap' }">{{ t('diceBuilder.set', { label }) }}</span>
+        </div>
+      </div>
+
       <div v-if="groupByType" style="display:flex; flex-direction:column; gap:0.625rem;">
         <div v-for="group in groupedProbCombos" :key="group.n">
           <div
             @click="toggleGroupExpanded(group.n)"
-            style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem; padding:0.3125rem 0.375rem; background:rgba(0,0,0,.05); border-radius:0.375rem; cursor:pointer;"
+            style="display:flex; align-items:center; justify-content:space-between; gap:0.5rem; padding:0.3125rem 0.125rem; background:rgba(0,0,0,.05); border-radius:0.375rem; cursor:pointer;"
           >
             <span style="display:flex; align-items:center; gap:0.3125rem; font-size:0.8125rem; font-weight:800;">
               <span style="font-size:0.625rem; color:var(--sub); width:0.75rem; display:inline-block;">{{ expandedGroupCounts.has(group.n) ? '▼' : '▶' }}</span>
@@ -329,17 +485,27 @@ const groupedProbCombos = computed(() => {
               </span>
               × {{ group.n }}
             </span>
-            <span style="font-size:0.75rem; font-weight:800; color:var(--sub);">{{ group.totalCount }}/{{ TOTAL_ROLLS }}（{{ (group.totalCount / TOTAL_ROLLS * 100).toFixed(1) }}%）</span>
+            <div style="display:flex; gap:0.5rem; flex-shrink:0;">
+              <div
+                v-for="(_, si) in group.totals"
+                :key="si"
+                :style="{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--sub)', width: figureColWidth, textAlign: 'right', whiteSpace: 'nowrap' }"
+              ><span v-if="showCounts">{{ groupFigure(group, si) }}/{{ TOTAL_ROLLS }}</span><span :style="{ fontWeight: 900, color: groupFigure(group, si) === 0 ? 'var(--line)' : 'var(--ink)' }">{{ pctText(groupFigure(group, si)) }}</span></div>
+            </div>
           </div>
           <template v-if="expandedGroupCounts.has(group.n)">
-            <div v-for="combo in group.combos" :key="combo.types.join(',')" style="display:flex; align-items:center; justify-content:space-between; gap:0.625rem; padding:0.25rem 0.125rem 0.25rem 0.875rem; border-bottom:1px solid var(--line);">
+            <div v-for="combo in group.combos" :key="combo.key" style="display:flex; align-items:center; justify-content:space-between; gap:0.625rem; padding:0.25rem 0.125rem 0.25rem 0.875rem; border-bottom:1px solid var(--line);">
               <div style="display:flex; gap:0.1875rem; flex-wrap:wrap;">
                 <div v-for="(ty, ti) in combo.types" :key="ti" style="width:1.375rem; height:1.375rem; border-radius:0.3125rem; overflow:hidden; background:#fff; border:0.09375rem solid var(--line); flex-shrink:0;">
                   <img :src="asset(`image/ICON/${ty}.png`)" class="img-icon" :alt="ty">
                 </div>
               </div>
-              <div style="font-size:0.6875rem; font-weight:700; color:var(--sub); text-align:right; flex-shrink:0;">
-                {{ combo.count }}/{{ TOTAL_ROLLS }}（{{ (combo.count / TOTAL_ROLLS * 100).toFixed(1) }}%）
+              <div style="display:flex; gap:0.5rem; flex-shrink:0;">
+                <div
+                  v-for="(count, si) in combo.counts"
+                  :key="si"
+                  :style="{ fontSize: '0.6875rem', fontWeight: 600, color: count === 0 ? 'var(--line)' : 'var(--sub)', width: figureColWidth, textAlign: 'right', whiteSpace: 'nowrap' }"
+                ><span v-if="showCounts">{{ count }}/{{ TOTAL_ROLLS }}</span><span :style="{ fontWeight: 900, color: count === 0 ? 'var(--line)' : 'var(--ink)' }">{{ pctText(count) }}</span></div>
               </div>
             </div>
           </template>
@@ -347,14 +513,18 @@ const groupedProbCombos = computed(() => {
       </div>
 
       <div v-else style="display:flex; flex-direction:column; gap:0.375rem;">
-        <div v-for="combo in filteredProbCombos" :key="combo.types.join(',')" style="display:flex; align-items:center; justify-content:space-between; gap:0.625rem; padding:0.25rem 0.125rem; border-bottom:1px solid var(--line);">
+        <div v-for="combo in filteredProbCombos" :key="combo.key" style="display:flex; align-items:center; justify-content:space-between; gap:0.625rem; padding:0.25rem 0.125rem; border-bottom:1px solid var(--line);">
           <div style="display:flex; gap:0.1875rem; flex-wrap:wrap;">
             <div v-for="(ty, ti) in combo.types" :key="ti" style="width:1.5rem; height:1.5rem; border-radius:0.3125rem; overflow:hidden; background:#fff; border:0.09375rem solid var(--line); flex-shrink:0;">
               <img :src="asset(`image/ICON/${ty}.png`)" class="img-icon" :alt="ty">
             </div>
           </div>
-          <div style="font-size:0.75rem; font-weight:800; color:var(--sub); text-align:right; flex-shrink:0;">
-            {{ combo.count }}/{{ TOTAL_ROLLS }}（{{ (combo.count / TOTAL_ROLLS * 100).toFixed(1) }}%）
+          <div style="display:flex; gap:0.5rem; flex-shrink:0;">
+            <div
+              v-for="(count, si) in combo.counts"
+              :key="si"
+              :style="{ fontSize: '0.75rem', fontWeight: 600, color: count === 0 ? 'var(--line)' : 'var(--sub)', width: figureColWidth, textAlign: 'right', whiteSpace: 'nowrap' }"
+            ><span v-if="showCounts">{{ count }}/{{ TOTAL_ROLLS }}</span><span :style="{ fontWeight: 900, color: count === 0 ? 'var(--line)' : 'var(--ink)' }">{{ pctText(count) }}</span></div>
           </div>
         </div>
       </div>
@@ -369,53 +539,62 @@ const groupedProbCombos = computed(() => {
     <div class="modal-title" style="margin:0.5rem 0 0.25rem;">{{ t('diceBuilder.title') }}</div>
     <div class="center-hint" style="padding-bottom:0.375rem;">{{ t('diceBuilder.hint') }}</div>
 
-    <div class="select-card" style="width:100%; max-width:47.5rem; align-items:stretch; padding:0.875rem;">
-      <div style="display:grid; grid-template-columns: 4.375rem repeat(6, 1fr); gap:0.5rem 0.375rem; align-items:center;">
-        <div></div>
-        <div v-for="row in FACE_ROWS" :key="row.key" style="font-size:0.8125rem; font-weight:800; color:var(--sub); text-align:center;">{{ t('diceBuilder.face.' + row.labelKey) }}</div>
+    <div v-for="(set, si) in sets" :key="si" style="width:100%; max-width:47.5rem; display:flex; flex-direction:column; align-items:center;">
+      <div class="select-card" style="width:100%; align-items:stretch; padding:0.875rem;">
+        <div v-if="hasCompare" style="font-size:0.875rem; font-weight:800; color:var(--ink); padding-bottom:0.375rem;">{{ t('diceBuilder.set', { label: SET_LABELS[si] }) }}</div>
+        <div style="display:grid; grid-template-columns: 4.375rem repeat(6, 1fr); gap:0.5rem 0.375rem; align-items:center;">
+          <div></div>
+          <div v-for="row in FACE_ROWS" :key="row.key" style="font-size:0.8125rem; font-weight:800; color:var(--sub); text-align:center;">{{ t('diceBuilder.face.' + row.labelKey) }}</div>
 
-        <template v-for="(die, di) in dice" :key="di">
-          <div style="display:flex; flex-direction:column; align-items:center; gap:0.1875rem;">
-            <span style="font-size:0.875rem; font-weight:800;">{{ t('diceBuilder.die', { n: di + 1 }) }}</span>
-            <label v-if="di > 0" style="display:flex; align-items:center; gap:0.1875rem; font-size:0.625rem; font-weight:800; color:var(--sub); cursor:pointer;">
-              <input type="checkbox" :checked="sameAsDie1[di - 1]" @change="onToggleSame(di, $event.target.checked)" style="width:0.75rem; height:0.75rem; margin:0;">
-              {{ t('diceBuilder.sameAsDie1Short') }}
-            </label>
-          </div>
-          <div v-for="row in FACE_ROWS" :key="row.key" style="display:flex; justify-content:center; cursor:pointer;" @click="openPicker(di, row.key)">
-            <div
-              v-if="faceTypes(die, row.key).length > 0"
-              :style="{ position: 'relative', width: CELL + 'rem', height: CELL + 'rem', borderRadius: '0.5rem', overflow: 'hidden', background: '#fff', border: '0.125rem solid var(--line)', flexShrink: 0 }"
-            >
-              <template v-if="faceTypes(die, row.key).length > 1">
-                <div :style="{ position: 'absolute', top: '50%', left: '50%', width: DIVIDER_LEN + 'rem', height: '0.09375rem', background: 'var(--line)', transform: 'translate(-50%,-50%) rotate(-45deg)' }"></div>
-                <img :src="asset(`image/ICON/${faceTypes(die, row.key)[0]}.png`)" class="img-icon" :alt="faceTypes(die, row.key)[0]" :style="{ position: 'absolute', top: INSET + 'rem', left: INSET + 'rem', width: MINI + 'rem', height: MINI + 'rem' }">
-                <img :src="asset(`image/ICON/${faceTypes(die, row.key)[1]}.png`)" class="img-icon" :alt="faceTypes(die, row.key)[1]" :style="{ position: 'absolute', bottom: INSET + 'rem', right: INSET + 'rem', width: MINI + 'rem', height: MINI + 'rem' }">
-              </template>
-              <img v-else :src="asset(`image/ICON/${faceTypes(die, row.key)[0]}.png`)" class="img-icon" :alt="faceTypes(die, row.key)[0]">
+          <template v-for="(die, di) in set.dice" :key="di">
+            <div style="display:flex; flex-direction:column; align-items:center; gap:0.1875rem;">
+              <span style="font-size:0.875rem; font-weight:800;">{{ t('diceBuilder.die', { n: di + 1 }) }}</span>
+              <label v-if="di > 0" style="display:flex; align-items:center; gap:0.1875rem; font-size:0.625rem; font-weight:800; color:var(--sub); cursor:pointer;">
+                <input type="checkbox" :checked="set.sameAsDie1[di - 1]" @change="onToggleSame(si, di, $event.target.checked)" style="width:0.75rem; height:0.75rem; margin:0;">
+                {{ t('diceBuilder.sameAsDie1Short') }}
+              </label>
             </div>
-            <div v-else :style="{ width: CELL + 'rem', height: CELL + 'rem', borderRadius: '0.5rem', border: '0.125rem dashed var(--sub)', flexShrink: 0 }"></div>
-          </div>
-        </template>
-      </div>
-    </div>
-
-    <div v-if="rollResults" style="display:flex; gap:0.875rem; justify-content:center; padding-top:0.75rem;">
-      <div v-for="(res, ri) in rollResults" :key="ri" style="display:flex; flex-direction:column; align-items:center; gap:0.25rem;">
-        <div style="font-size:0.6875rem; font-weight:800; color:var(--sub);">{{ t('diceBuilder.die', { n: ri + 1 }) }}</div>
-        <div :style="{ position: 'relative', width: CELL + 'rem', height: CELL + 'rem', borderRadius: '0.5rem', overflow: 'hidden', background: '#fff', border: '0.125rem solid var(--line)', flexShrink: 0 }">
-          <template v-if="res.types.length > 1">
-            <div :style="{ position: 'absolute', top: '50%', left: '50%', width: DIVIDER_LEN + 'rem', height: '0.09375rem', background: 'var(--line)', transform: 'translate(-50%,-50%) rotate(-45deg)' }"></div>
-            <img :src="asset(`image/ICON/${res.types[0]}.png`)" class="img-icon" :alt="res.types[0]" :style="{ position: 'absolute', top: INSET + 'rem', left: INSET + 'rem', width: MINI + 'rem', height: MINI + 'rem' }">
-            <img :src="asset(`image/ICON/${res.types[1]}.png`)" class="img-icon" :alt="res.types[1]" :style="{ position: 'absolute', bottom: INSET + 'rem', right: INSET + 'rem', width: MINI + 'rem', height: MINI + 'rem' }">
+            <div v-for="row in FACE_ROWS" :key="row.key" style="display:flex; justify-content:center; cursor:pointer;" @click="openPicker(si, di, row.key)">
+              <div
+                v-if="faceTypes(die, row.key).length > 0"
+                :style="{ position: 'relative', width: CELL + 'rem', height: CELL + 'rem', borderRadius: '0.5rem', overflow: 'hidden', background: '#fff', border: '0.125rem solid var(--line)', flexShrink: 0 }"
+              >
+                <template v-if="faceTypes(die, row.key).length > 1">
+                  <div :style="{ position: 'absolute', top: '50%', left: '50%', width: DIVIDER_LEN + 'rem', height: '0.09375rem', background: 'var(--line)', transform: 'translate(-50%,-50%) rotate(-45deg)' }"></div>
+                  <img :src="asset(`image/ICON/${faceTypes(die, row.key)[0]}.png`)" class="img-icon" :alt="faceTypes(die, row.key)[0]" :style="{ position: 'absolute', top: INSET + 'rem', left: INSET + 'rem', width: MINI + 'rem', height: MINI + 'rem' }">
+                  <img :src="asset(`image/ICON/${faceTypes(die, row.key)[1]}.png`)" class="img-icon" :alt="faceTypes(die, row.key)[1]" :style="{ position: 'absolute', bottom: INSET + 'rem', right: INSET + 'rem', width: MINI + 'rem', height: MINI + 'rem' }">
+                </template>
+                <img v-else :src="asset(`image/ICON/${faceTypes(die, row.key)[0]}.png`)" class="img-icon" :alt="faceTypes(die, row.key)[0]">
+              </div>
+              <div v-else :style="{ width: CELL + 'rem', height: CELL + 'rem', borderRadius: '0.5rem', border: '0.125rem dashed var(--sub)', flexShrink: 0 }"></div>
+            </div>
           </template>
-          <img v-else :src="asset(`image/ICON/${res.types[0]}.png`)" class="img-icon" :alt="res.types[0]">
         </div>
       </div>
-      <div style="display:flex; flex-direction:column; align-items:center; gap:0.25rem;">
-        <div style="font-size:0.6875rem; font-weight:800; color:var(--sub);">{{ t('diceBuilder.charaDie') }}</div>
-        <div :style="{ width: CELL + 'rem', height: CELL + 'rem', borderRadius: '0.5rem', overflow: 'hidden', background: '#fff', border: '0.125rem solid var(--line)', flexShrink: 0 }">
-          <img :src="asset(`image/ICON/${charaRollResult}.png`)" class="img-icon" :alt="charaRollResult">
+
+      <button v-if="si === 0 && !hasCompare" class="btn secondary" style="margin-top:0.5rem; padding:0.4375rem 0.875rem; font-size:0.8125rem;" @click="addCompareSet">{{ t('diceBuilder.addCompare') }}</button>
+      <button v-else-if="si === 1" class="btn secondary" style="margin-top:0.5rem; padding:0.4375rem 0.875rem; font-size:0.8125rem;" @click="removeCompareSet">{{ t('diceBuilder.removeCompare') }}</button>
+    </div>
+
+    <div v-if="rollResults" style="display:flex; flex-direction:column; gap:0.5rem; align-items:center; padding-top:0.75rem;">
+      <div v-for="(setResult, si) in rollResults" :key="si" style="display:flex; gap:0.875rem; align-items:flex-end; justify-content:center;">
+        <div v-if="hasCompare" style="font-size:0.75rem; font-weight:800; color:var(--sub); padding-bottom:0.75rem;">{{ t('diceBuilder.set', { label: SET_LABELS[si] }) }}</div>
+        <div v-for="(res, ri) in setResult" :key="ri" style="display:flex; flex-direction:column; align-items:center; gap:0.25rem;">
+          <div style="font-size:0.6875rem; font-weight:800; color:var(--sub);">{{ t('diceBuilder.die', { n: ri + 1 }) }}</div>
+          <div :style="{ position: 'relative', width: CELL + 'rem', height: CELL + 'rem', borderRadius: '0.5rem', overflow: 'hidden', background: '#fff', border: '0.125rem solid var(--line)', flexShrink: 0 }">
+            <template v-if="res.types.length > 1">
+              <div :style="{ position: 'absolute', top: '50%', left: '50%', width: DIVIDER_LEN + 'rem', height: '0.09375rem', background: 'var(--line)', transform: 'translate(-50%,-50%) rotate(-45deg)' }"></div>
+              <img :src="asset(`image/ICON/${res.types[0]}.png`)" class="img-icon" :alt="res.types[0]" :style="{ position: 'absolute', top: INSET + 'rem', left: INSET + 'rem', width: MINI + 'rem', height: MINI + 'rem' }">
+              <img :src="asset(`image/ICON/${res.types[1]}.png`)" class="img-icon" :alt="res.types[1]" :style="{ position: 'absolute', bottom: INSET + 'rem', right: INSET + 'rem', width: MINI + 'rem', height: MINI + 'rem' }">
+            </template>
+            <img v-else :src="asset(`image/ICON/${res.types[0]}.png`)" class="img-icon" :alt="res.types[0]">
+          </div>
+        </div>
+        <div v-if="si === 0" style="display:flex; flex-direction:column; align-items:center; gap:0.25rem;">
+          <div style="font-size:0.6875rem; font-weight:800; color:var(--sub);">{{ t('diceBuilder.charaDie') }}</div>
+          <div :style="{ width: CELL + 'rem', height: CELL + 'rem', borderRadius: '0.5rem', overflow: 'hidden', background: '#fff', border: '0.125rem solid var(--line)', flexShrink: 0 }">
+            <img :src="asset(`image/ICON/${charaRollResult}.png`)" class="img-icon" :alt="charaRollResult">
+          </div>
         </div>
       </div>
     </div>
@@ -423,8 +602,7 @@ const groupedProbCombos = computed(() => {
     <div style="display:flex; gap:0.625rem; justify-content:center; flex-wrap:wrap; padding:0.875rem 0 0.25rem;">
       <button class="btn" @click="rollDice">{{ t('diceBuilder.rollButton') }}</button>
       <button class="btn secondary" @click="showQuickApply = true">{{ t('diceBuilder.quickApplyButton') }}</button>
-      <button class="btn secondary" @click="showProbTable = true; probFilterTypes = []; groupByType = null; expandedGroupCounts.clear()">{{ t('diceBuilder.probButton') }}</button>
-      <button class="btn secondary" @click="reroll">{{ t('diceBuilder.reroll') }}</button>
+      <button class="btn secondary" @click="openProbTable">{{ t('diceBuilder.probButton') }}</button>
       <button class="btn secondary" @click="emit('back')">{{ t('common.back') }}</button>
     </div>
   </div>
@@ -436,6 +614,7 @@ const groupedProbCombos = computed(() => {
         style="position:absolute; top:0.625rem; right:0.625rem; width:1.75rem; height:1.75rem; border:none; border-radius:50%; background:rgba(0,0,0,.08); color:var(--ink); font-size:0.9375rem; font-weight:800; line-height:1; cursor:pointer;"
       >✕</button>
       <div class="modal-title">{{ t(pickerTitleKey) }}</div>
+      <div v-if="hasCompare" style="font-size:0.75rem; font-weight:800; color:var(--sub); text-align:center; margin:-0.25rem 0 0.5rem;">{{ t('diceBuilder.set', { label: SET_LABELS[editingSlot.setIndex] }) }} ・ {{ t('diceBuilder.die', { n: editingSlot.dieIndex + 1 }) }}</div>
 
       <template v-if="currentMeta && currentMeta.kind === 'dual'">
         <div style="font-size:0.75rem; color:var(--sub); text-align:center; margin:-0.25rem 0 0.625rem;">{{ t('diceBuilder.picker.dualHint') }}</div>
@@ -475,24 +654,40 @@ const groupedProbCombos = computed(() => {
     </div>
   </div>
 
-  <div v-if="showQuickApply" class="modal-overlay" @click.self="showQuickApply = false">
+  <div v-if="showQuickApply" class="modal-overlay" @click.self="closeQuickApply">
     <div class="modal-sheet" style="max-height:75%; position:relative;">
       <button
-        @click="showQuickApply = false"
+        @click="closeQuickApply"
         style="position:absolute; top:0.625rem; right:0.625rem; width:1.75rem; height:1.75rem; border:none; border-radius:50%; background:rgba(0,0,0,.08); color:var(--ink); font-size:0.9375rem; font-weight:800; line-height:1; cursor:pointer;"
       >✕</button>
       <div class="modal-title">{{ t('diceBuilder.quickApplyTitle') }}</div>
-      <div style="font-size:0.75rem; color:var(--sub); text-align:center; margin:-0.25rem 0 0.625rem;">{{ t('diceBuilder.quickApplyHint') }}</div>
-      <div style="display:flex; flex-wrap:wrap; gap:0.625rem; justify-content:center;">
-        <div
-          v-for="ty in CHIP_TYPES"
-          :key="ty"
-          @click="applyPureType(ty)"
-          style="width:2.75rem; height:2.75rem; border-radius:0.5rem; overflow:hidden; background:#fff; cursor:pointer; border:0.125rem solid var(--line);"
-        >
-          <img :src="asset(`image/ICON/${ty}.png`)" class="img-icon" :alt="ty">
+
+      <template v-if="quickApplyType === null">
+        <div style="font-size:0.75rem; color:var(--sub); text-align:center; margin:-0.25rem 0 0.625rem;">{{ t('diceBuilder.quickApplyHint') }}</div>
+        <div style="display:flex; flex-wrap:wrap; gap:0.625rem; justify-content:center;">
+          <div
+            v-for="ty in CHIP_TYPES"
+            :key="ty"
+            @click="pickQuickApplyType(ty)"
+            style="width:2.75rem; height:2.75rem; border-radius:0.5rem; overflow:hidden; background:#fff; cursor:pointer; border:0.125rem solid var(--line);"
+          >
+            <img :src="asset(`image/ICON/${ty}.png`)" class="img-icon" :alt="ty">
+          </div>
         </div>
-      </div>
+      </template>
+
+      <template v-else>
+        <div style="display:flex; align-items:center; justify-content:center; gap:0.5rem; margin:-0.25rem 0 0.75rem;">
+          <div style="width:2.25rem; height:2.25rem; border-radius:0.5rem; overflow:hidden; background:#fff; border:0.1875rem solid #AEFF3E; flex-shrink:0;">
+            <img :src="asset(`image/ICON/${quickApplyType}.png`)" class="img-icon" :alt="quickApplyType">
+          </div>
+          <span style="font-size:0.8125rem; font-weight:800; color:var(--sub);">{{ t('diceBuilder.applyToLabel') }}</span>
+        </div>
+        <div style="display:flex; flex-wrap:wrap; gap:0.625rem; justify-content:center;">
+          <button v-for="(label, si) in SET_LABELS" :key="si" class="btn secondary" @click="confirmQuickApply([si])">{{ t('diceBuilder.set', { label }) }}</button>
+          <button class="btn" @click="confirmQuickApply([0, 1])">{{ t('diceBuilder.applyToBoth') }}</button>
+        </div>
+      </template>
     </div>
   </div>
 

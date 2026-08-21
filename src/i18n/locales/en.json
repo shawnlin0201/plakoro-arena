@@ -84,18 +84,26 @@
       "single": "Round",
       "dual": "Square"
     },
-    "reroll": "Reroll",
     "sameAsDie1Short": "Same as Die 1",
     "rollButton": "Simulate Roll",
     "quickApplyButton": "Quick Apply Pure Die",
     "quickApplyTitle": "Quick Apply Pure Die",
     "quickApplyHint": "Pick one energy type to fill Dice 1-3's round and square sockets. If it's a convex-pool type, the convex face gets it too (concave stays); if it's a concave-pool type, the concave face gets it too (convex stays)",
     "charaDie": "Character Die",
+    "set": "Set {label}",
+    "addCompare": "Add a set to compare",
+    "removeCompare": "Remove compare set",
+    "probTypeHeader": "Types",
+    "applyToLabel": "Apply to which set?",
+    "applyToBoth": "Apply to both",
     "probButton": "Probability Table",
     "probTitle": "Type Odds",
     "probHint": "All 3 dice rolled together, tallied by the resulting energy-type combo (sorted by odds)",
     "probFilterLabel": "Only show",
     "probGroupLabel": "Sort by count",
+    "showCumulativeProb": "Show cumulative odds",
+    "showExactProb": "Show exact odds",
+    "showCountsLabel": "Show counts",
     "picker": {
       "convexTitle": "Choose convex energy",
       "concaveTitle": "Choose concave energy",
@@ -173,6 +181,10 @@
       "title": "Opponent can't move",
       "desc": "Every move the opponent has left is sealed, so it can't act.",
       "button": "Skip Opponent's Turn"
+    },
+    "playerSkip": {
+      "notice": "No move available — they're sealed or were used last turn.",
+      "button": "Skip Turn"
     }
   }
 }

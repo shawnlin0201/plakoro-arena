@@ -28,7 +28,7 @@ function pick(c) {
       <div class="pick-bottom">
         <div class="nm-row">
           <span class="nm">{{ c.name }}</span>
-          <span class="nm-wk">{{ t('charSelect.weaknessPrefix') }}<img :src="asset(`image/ICON/${c.weakness}.png`)" class="img-icon nm-wk-icon" :alt="c.weakness">)</span>
+          <span v-if="c.weaknesses.length > 0" class="nm-wk">{{ t('charSelect.weaknessPrefix') }}<img v-for="w in c.weaknesses" :key="w.type" :src="asset(`image/ICON/${w.type}.png`)" class="img-icon nm-wk-icon" :alt="w.type">)</span>
         </div>
       </div>
     </div>

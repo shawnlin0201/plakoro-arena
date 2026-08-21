@@ -84,18 +84,26 @@
       "single": "圓槽",
       "dual": "方槽"
     },
-    "reroll": "重新隨機",
     "sameAsDie1Short": "與骰1相同",
     "rollButton": "模擬擲骰",
     "quickApplyButton": "快速套用純屬骰",
     "quickApplyTitle": "快速套用純屬骰",
     "quickApplyHint": "選一種能量，骰子1~3的圓槽、方槽都會替換成該能量；若該能量屬於凸面固定池則凸槽也替換（凹槽不變），若屬於凹面固定池則凹槽也替換（凸槽不變）",
     "charaDie": "角色骰",
+    "set": "骰組{label}",
+    "addCompare": "新增一組骰子來比較",
+    "removeCompare": "移除比較骰組",
+    "probTypeHeader": "類型",
+    "applyToLabel": "要套用到哪一組？",
+    "applyToBoth": "兩組都套",
     "probButton": "結果機率表",
     "probTitle": "各類型出現機率",
     "probHint": "三顆骰子一起擲，依最終集齊的能量種類組合統計機率（依機率高低排序）",
     "probFilterLabel": "只看",
     "probGroupLabel": "依數量排序",
+    "showCumulativeProb": "顯示累計機率",
+    "showExactProb": "顯示恰好機率",
+    "showCountsLabel": "顯示次數",
     "picker": {
       "convexTitle": "選擇凸面能量",
       "concaveTitle": "選擇凹面能量",
@@ -173,6 +181,10 @@
       "title": "對手無法行動",
       "desc": "對手僅剩的招式都被封印了，無法出招。",
       "button": "跳過對方回合"
+    },
+    "playerSkip": {
+      "notice": "沒有可用的招式（已被封印或上回合使用過）。",
+      "button": "跳過這回合"
     }
   }
 }
