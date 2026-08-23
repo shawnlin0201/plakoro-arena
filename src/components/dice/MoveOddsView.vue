@@ -22,24 +22,45 @@ const selectedCharacter = computed(() =>
   characters.value.find(c => c.id === selectedCharacterId.value) || null
 )
 
-// Which of the three dice actually take part in the roll. A player rarely rolls all three
-// (the first turn of a duel is 2, a tower run starts at 1), and the three dice can be built
-// differently, so it has to be a per-die choice rather than just a count.
-const activeDice = ref([true, true, true])
-const activeCount = computed(() => activeDice.value.filter(Boolean).length)
+// How many times each die gets rolled. Some game rules let a player roll a die more than
+// once, and it's the player's own call how many times each one goes — not just an on/off
+// switch — so this is a per-die count, defaulting to 1 each (i.e. today's normal roll).
+const diceCounts = ref([1, 1, 1])
+const activeCount = computed(() => diceCounts.value.reduce((a, b) => a + b, 0))
 
-function toggleDie(index) {
-  const next = [...activeDice.value]
-  next[index] = !next[index]
-  // Rolling zero dice has no meaning here — keep at least one in play.
-  if (next.some(Boolean)) activeDice.value = next
+// Each extra roll multiplies the outcome space by 6 (enumerateRolls is 6^n), so the per-die
+// and total caps keep worst case (all 3 dice at MAX_PER_DIE) at 6^9 ≈ 10M — comfortably fast
+// for a single synchronous pass, even doubled for a 2-set comparison.
+const MAX_PER_DIE = 4
+const MAX_TOTAL = 9
+
+function incrementDie(index) {
+  if (diceCounts.value[index] >= MAX_PER_DIE) return
+  if (activeCount.value >= MAX_TOTAL) return
+  diceCounts.value[index] += 1
+}
+function decrementDie(index) {
+  // At least one roll has to stay in play for the odds to mean anything.
+  if (diceCounts.value[index] <= 0) return
+  if (diceCounts.value[index] <= 1 && activeCount.value <= 1) return
+  diceCounts.value[index] -= 1
 }
 
 const hasCompare = computed(() => props.sets.length > 1)
 
-// One roll-outcome list per dice set, covering only the dice currently switched on.
+// Rolling a die twice is statistically identical to two dice built the same way each rolled
+// once, so a die just gets repeated in the list per its count.
+function expandDiceByCounts(dice, counts) {
+  const expanded = []
+  dice.forEach((die, i) => {
+    for (let n = 0; n < counts[i]; n++) expanded.push(die)
+  })
+  return expanded
+}
+
+// One roll-outcome list per dice set, covering each die as many times as it's set to roll.
 const rollsPerSet = computed(() =>
-  props.sets.map(set => enumerateRolls(set.dice.filter((_, i) => activeDice.value[i])))
+  props.sets.map(set => enumerateRolls(expandDiceByCounts(set.dice, diceCounts.value)))
 )
 
 const showCounts = ref(false)
@@ -110,14 +131,24 @@ const moveRows = computed(() => {
 
         <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
           <span style="font-size:0.75rem; font-weight:800; color:var(--sub);">{{ t('diceBuilder.moveOdds.diceInPlay') }}</span>
-          <label
-            v-for="(on, di) in activeDice"
+          <div
+            v-for="(count, di) in diceCounts"
             :key="di"
-            style="display:flex; align-items:center; gap:0.1875rem; font-size:0.625rem; font-weight:800; color:var(--sub); cursor:pointer;"
+            style="display:flex; align-items:center; gap:0.25rem; font-size:0.625rem; font-weight:800; color:var(--sub);"
           >
-            <input type="checkbox" :checked="on" @change="toggleDie(di)" style="width:0.75rem; height:0.75rem; margin:0;">
-            {{ t('diceBuilder.die', { n: di + 1 }) }}
-          </label>
+            <span>{{ t('diceBuilder.die', { n: di + 1 }) }}</span>
+            <button
+              type="button"
+              @click="decrementDie(di)"
+              style="width:1rem; height:1rem; line-height:1; border:1px solid var(--line); border-radius:0.25rem; background:#fff; font-weight:800; cursor:pointer; padding:0;"
+            >−</button>
+            <span style="min-width:0.75rem; text-align:center; color:var(--ink);">{{ count }}</span>
+            <button
+              type="button"
+              @click="incrementDie(di)"
+              style="width:1rem; height:1rem; line-height:1; border:1px solid var(--line); border-radius:0.25rem; background:#fff; font-weight:800; cursor:pointer; padding:0;"
+            >+</button>
+          </div>
           <label style="display:flex; align-items:center; gap:0.1875rem; font-size:0.625rem; font-weight:800; color:var(--sub); cursor:pointer;">
             <input type="checkbox" v-model="showCounts" style="width:0.75rem; height:0.75rem; margin:0;">
             {{ t('diceBuilder.showCountsLabel') }}

@@ -16,6 +16,7 @@ import LanguageSwitcher from './components/LanguageSwitcher.vue'
 import ModeSelect from './components/ModeSelect.vue'
 import SoloApp from './components/solo/SoloApp.vue'
 import DiceBuilderApp from './components/dice/DiceBuilderApp.vue'
+import StoreInfoApp from './components/StoreInfoApp.vue'
 
 const { t } = useI18n()
 const characterData = useCharacterData()
@@ -73,6 +74,8 @@ onMounted(() => {
       </template>
 
       <DiceBuilderApp v-else-if="mode === 'diceBuilder'" @back="mode = null" />
+
+      <StoreInfoApp v-else-if="mode === 'storeInfo'" @back="mode = null" />
 
       <SoloApp v-else />
     </div>
