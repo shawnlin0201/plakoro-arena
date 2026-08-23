@@ -72,7 +72,17 @@
   "mode": {
     "duel": "対戦モード",
     "solo": "ソロタワー",
-    "diceBuilder": "ダイス組立シミュレーター"
+    "diceBuilder": "ダイス組立シミュレーター",
+    "storeInfo": "店舗＆大会情報"
+  },
+  "storeInfo": {
+    "title": "店舗＆大会情報",
+    "listButton": "店舗リスト",
+    "listTitle": "店舗リスト",
+    "filterLabel": "タイプで絞り込み",
+    "colName": "店舗名",
+    "colAddress": "住所",
+    "colType": "タイプ"
   },
   "diceBuilder": {
     "title": "ダイス組立シミュレーター",

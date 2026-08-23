@@ -72,7 +72,17 @@
   "mode": {
     "duel": "對戰模式",
     "solo": "單人爬塔",
-    "diceBuilder": "模擬組骰"
+    "diceBuilder": "模擬組骰",
+    "storeInfo": "店家與比賽資訊"
+  },
+  "storeInfo": {
+    "title": "店家與比賽資訊",
+    "listButton": "店家清單",
+    "listTitle": "店家清單",
+    "filterLabel": "篩選類型",
+    "colName": "店家名稱",
+    "colAddress": "地址",
+    "colType": "類型"
   },
   "diceBuilder": {
     "title": "模擬組骰",
