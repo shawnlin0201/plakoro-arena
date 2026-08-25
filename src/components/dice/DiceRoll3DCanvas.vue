@@ -1,6 +1,7 @@
 <script setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useDiceRoll3D } from '../../composables/useDiceRoll3D'
+import { isStagePortrait } from '../../composables/useStageLayout'
 import shakeSoundUrl from '../../assets/shaking-dice-01.mp3'
 
 const emit = defineEmits(['rolled'])
@@ -48,13 +49,26 @@ let lastMoveTime = 0
 let velX = 0
 let velY = 0
 
-// Normalized device coordinates (-1..1) of the pointer, for THREE.Raycaster.
+// Normalized device coordinates (-1..1) of the pointer, for THREE.Raycaster. Pointer events are
+// always in true, unrotated viewport coordinates, but on portrait devices #stage (and everything
+// in it, including this canvas) is rendered rotated 90° (see useStageLayout.js) — so "visually
+// right" as the player sees it is actually a vertical clientY movement in raw event terms, and
+// visually-up/down are swapped with left/right. Correcting for a clean 90° rotation is just
+// swapping which raw axis maps to which NDC axis (with one sign flip); see the two branches below.
 function pointerNDC(e) {
   const rect = canvasRef.value.getBoundingClientRect()
-  return {
-    x: ((e.clientX - rect.left) / rect.width) * 2 - 1,
-    y: -(((e.clientY - rect.top) / rect.height) * 2 - 1)
+  const offsetX = e.clientX - (rect.left + rect.width / 2)
+  const offsetY = e.clientY - (rect.top + rect.height / 2)
+  if (isStagePortrait.value) {
+    return { x: offsetY / (rect.height / 2), y: offsetX / (rect.width / 2) }
   }
+  return { x: offsetX / (rect.width / 2), y: -offsetY / (rect.height / 2) }
+}
+
+// Same rotation correction, but for a movement delta rather than an absolute position — used to
+// turn the raw screen-space drag into a "visually right/down" delta before it feeds the throw.
+function correctForStageRotation(dx, dy) {
+  return isStagePortrait.value ? [dy, -dx] : [dx, dy]
 }
 
 function onPointerDown(e) {
@@ -75,8 +89,7 @@ function onPointerMove(e) {
   if (heldPointerId !== e.pointerId) return
   if (shakeAudio.paused) shakeAudio.play().catch(() => {}) // needs a user gesture; this is one
   const dt = Math.max(1, e.timeStamp - lastMoveTime)
-  const dx = e.clientX - lastClientX
-  const dy = e.clientY - lastClientY
+  const [dx, dy] = correctForStageRotation(e.clientX - lastClientX, e.clientY - lastClientY)
   lastClientX = e.clientX
   lastClientY = e.clientY
   lastMoveTime = e.timeStamp
