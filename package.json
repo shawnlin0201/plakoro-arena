@@ -1,7 +1,7 @@
 {
   "name": "plakoro-battle-vue",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.4.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,7 +10,9 @@
     "fetch-data": "node scripts/fetch-data.mjs"
   },
   "dependencies": {
+    "cannon-es": "^0.20.0",
     "dagre": "^0.8.5",
+    "three": "^0.185.1",
     "vue": "^3.4.31",
     "vue-i18n": "^11.4.8"
   },

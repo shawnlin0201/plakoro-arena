@@ -96,6 +96,8 @@
     },
     "sameAsDie1Short": "與骰1相同",
     "rollButton": "模擬擲骰",
+    "rollingHint": "按住骰子畫面並晃動，放開丟出！",
+    "quickRollButton": "快速投擲",
     "quickApplyButton": "快速套用純屬骰",
     "quickApplyTitle": "快速套用純屬骰",
     "quickApplyHint": "選一種能量，骰子1~3的圓槽、方槽都會替換成該能量；若該能量屬於凸面固定池則凸槽也替換（凹槽不變），若屬於凹面固定池則凹槽也替換（凸槽不變）",
