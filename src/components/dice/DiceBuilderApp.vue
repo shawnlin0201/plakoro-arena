@@ -1,9 +1,14 @@
 <script setup>
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, nextTick, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { randomDie, faceTypes, FACE_KEYS, CONVEX_TYPES, CONCAVE_TYPES, CHIP_TYPES } from '../../game/diceParts'
 import { asset } from '../../data/assetPath'
 import MoveOddsView from './MoveOddsView.vue'
+
+// Three.js + cannon-es (pulled in by DiceRoll3DCanvas and diceTextures) add roughly 600kB to
+// the bundle — code-split so only players who actually open the dice builder and roll pay
+// for it, instead of it loading for every player of the actual battle modes.
+const DiceRoll3DCanvas = defineAsyncComponent(() => import('./DiceRoll3DCanvas.vue'))
 
 const emit = defineEmits(['back'])
 const { t } = useI18n()
@@ -228,22 +233,98 @@ function closeQuickApply() {
 }
 
 // --- roll simulation ---
+// A physics-backed 3D tray (Three.js + cannon-es, see useDiceRoll3D.js) actually decides the
+// outcome now — the dice are really tossed and land on a face — rather than a plain
+// Math.random() pick. It's its own full page (rather than a strip under the dice builder)
+// so the tray gets real space, with the roll results listed beside it.
 const ALL_FACE_KEYS = FACE_KEYS
 const rollResults = ref(null) // [[{ faceKey, types }, x3], ...] — one entry per set | null
+const showDiceRoll3D = ref(false)
+const isRolling = ref(false)
+const diceCanvasRef = ref(null)
+// Bumped every time the tray is (re)opened and bound as DiceRoll3DCanvas's :key, forcing Vue
+// to fully destroy and recreate the component (and its Three.js/cannon-es scene) instead of
+// potentially reusing anything from a previous visit.
+const diceCanvasKey = ref(0)
 
 // The character die (キャラコロ) is a separate, fixed 6-face die — not part of the energy
 // dice being assembled above — using the up/down/left/right/upright/reversed orientation
 // icons that character-die move effects already reference elsewhere in the app. It's rolled
 // once and shared: it belongs to neither set, so comparing two of them would be meaningless.
-const CHARA_DIE_FACES = ['上', '下', '左', '右', '立', '逆']
 const charaRollResult = ref(null)
 
-function rollDice() {
+// DiceRoll3DCanvas is an async component (see the import above), so nextTick() alone isn't
+// enough to guarantee diceCanvasRef is populated yet — nextTick only waits for the *sync*
+// DOM patch, not for the chunk to finish downloading and the component to actually mount.
+function waitForCanvas() {
+  if (diceCanvasRef.value) return Promise.resolve()
+  return new Promise(resolve => {
+    const stop = watch(diceCanvasRef, value => {
+      if (value) {
+        stop()
+        resolve()
+      }
+    })
+  })
+}
+
+function openDiceRoll3D() {
+  // Force a brand new DiceRoll3DCanvas instance (and Three.js/cannon-es scene) every time this
+  // page is opened, rather than risk Vue reusing anything from a previous visit — this is what
+  // was causing the dice to "disappear" after closing and reopening the tray.
+  diceCanvasKey.value += 1
+  diceCanvasRef.value = null
+  rollResults.value = null
+  charaRollResult.value = null
+  showDiceRoll3D.value = true
+  rollDice()
+}
+
+// A plain Math.random() pick, skipping the physics tray entirely — for when the player just
+// wants the outcome without waiting for the toss animation.
+const CHARA_DIE_FACES = ['上', '下', '左', '右', '立', '逆']
+
+function quickRoll() {
   rollResults.value = sets.value.map(set => set.dice.map(die => {
     const faceKey = ALL_FACE_KEYS[Math.floor(Math.random() * ALL_FACE_KEYS.length)]
     return { faceKey, types: faceTypes(die, faceKey) }
   }))
   charaRollResult.value = CHARA_DIE_FACES[Math.floor(Math.random() * CHARA_DIE_FACES.length)]
+}
+
+// Builds fresh face textures for the current dice config and places them in the tray, sitting
+// there until the player actually throws them via the press-and-shake gesture on the canvas
+// (see DiceRoll3DCanvas.vue) — it no longer rolls immediately.
+async function rollDice() {
+  if (isRolling.value) return
+  isRolling.value = true
+  rollResults.value = null
+  charaRollResult.value = null
+  const [{ buildEnergyDieFaces, buildCharaDieFaces }] = await Promise.all([
+    import('../../game/diceTextures'),
+    waitForCanvas()
+  ])
+
+  // Flatten every set's 3 dice plus the shared character die into one ordered list of face
+  // textures — onDiceRolled() slices the eventual result back apart by this same order.
+  const energyDice = sets.value.flatMap(set => set.dice)
+  const [energyFaces, charaFaces] = await Promise.all([
+    Promise.all(energyDice.map(buildEnergyDieFaces)),
+    buildCharaDieFaces()
+  ])
+  diceCanvasRef.value.setDice([...energyFaces, charaFaces])
+  isRolling.value = false
+}
+
+// DiceRoll3DCanvas emits this once the physics settles after a throw, with the logical face
+// name that landed up on each die in the same order rollDice() handed it faces in.
+function onDiceRolled(results) {
+  let i = 0
+  rollResults.value = sets.value.map(set => set.dice.map(die => {
+    const faceKey = results[i++]
+    return { faceKey, types: faceTypes(die, faceKey) }
+  }))
+  charaRollResult.value = results[i]
 }
 
 // --- probability table ---
@@ -408,6 +489,48 @@ function openProbTable() {
 <template>
   <MoveOddsView v-if="showMoveOdds" :sets="sets" :set-labels="SET_LABELS.slice(0, sets.length)" @back="showMoveOdds = false" />
 
+  <div v-else-if="showDiceRoll3D" class="board select-board" style="display:flex; flex-direction:column; align-items:center; min-height:0;">
+    <div class="modal-title" style="margin:0.5rem 0 0.25rem; flex-shrink:0;">{{ t('diceBuilder.rollButton') }}</div>
+
+    <div style="flex:1; min-height:0; width:100%; max-width:56rem; display:flex; gap:0.75rem; padding:0 0.625rem;">
+      <div style="flex:1.6; min-width:0; border-radius:0.75rem; overflow:hidden; background:linear-gradient(180deg,#EDEBE3,#F6F5F0);">
+        <DiceRoll3DCanvas :key="diceCanvasKey" ref="diceCanvasRef" @rolled="onDiceRolled" />
+      </div>
+
+      <div style="flex:1; min-width:0; overflow-y:auto; display:flex; flex-direction:column; gap:0.875rem; padding:0.125rem;">
+        <div v-if="!rollResults" style="font-size:0.8125rem; color:var(--sub); text-align:center; padding-top:1rem;">{{ t('diceBuilder.rollingHint') }}</div>
+        <template v-else>
+          <div v-for="(setResult, si) in rollResults" :key="si" style="display:flex; flex-direction:column; gap:0.5rem;">
+            <div v-if="hasCompare" style="font-size:0.8125rem; font-weight:800; color:var(--ink);">{{ t('diceBuilder.set', { label: SET_LABELS[si] }) }}</div>
+            <div v-for="(res, ri) in setResult" :key="ri" style="display:flex; align-items:center; gap:0.5rem;">
+              <div :style="{ position: 'relative', width: '2.25rem', height: '2.25rem', borderRadius: '0.5rem', overflow: 'hidden', background: '#fff', border: '0.125rem solid var(--line)', flexShrink: 0 }">
+                <template v-if="res.types.length > 1">
+                  <div :style="{ position: 'absolute', top: '50%', left: '50%', width: '3.18rem', height: '0.09375rem', background: 'var(--line)', transform: 'translate(-50%,-50%) rotate(-45deg)' }"></div>
+                  <img :src="asset(`image/ICON/${res.types[0]}.png`)" class="img-icon" :alt="res.types[0]" style="position:absolute; top:0.09375rem; left:0.09375rem; width:0.84375rem; height:0.84375rem;">
+                  <img :src="asset(`image/ICON/${res.types[1]}.png`)" class="img-icon" :alt="res.types[1]" style="position:absolute; bottom:0.09375rem; right:0.09375rem; width:0.84375rem; height:0.84375rem;">
+                </template>
+                <img v-else :src="asset(`image/ICON/${res.types[0]}.png`)" class="img-icon" :alt="res.types[0]">
+              </div>
+              <span style="font-size:0.8125rem; font-weight:800; color:var(--sub);">{{ t('diceBuilder.die', { n: ri + 1 }) }}</span>
+            </div>
+            <div v-if="si === 0" style="display:flex; align-items:center; gap:0.5rem;">
+              <div style="width:2.25rem; height:2.25rem; border-radius:0.5rem; overflow:hidden; background:#fff; border:0.125rem solid var(--line); flex-shrink:0;">
+                <img :src="asset(`image/ICON/${charaRollResult}.png`)" class="img-icon" :alt="charaRollResult">
+              </div>
+              <span style="font-size:0.8125rem; font-weight:800; color:var(--sub);">{{ t('diceBuilder.charaDie') }}</span>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:0.625rem; justify-content:center; padding:0.875rem 0 0.25rem; flex-shrink:0;">
+      <button class="btn" :disabled="isRolling" @click="rollDice">{{ t('diceBuilder.rollButton') }}</button>
+      <button class="btn secondary" @click="quickRoll">{{ t('diceBuilder.quickRollButton') }}</button>
+      <button class="btn secondary" @click="showDiceRoll3D = false">{{ t('common.back') }}</button>
+    </div>
+  </div>
+
   <div v-else-if="showProbTable" class="board select-board" style="overflow-y:auto; align-items:center;">
     <div class="modal-title" style="margin:0.5rem 0 0.25rem;">{{ t('diceBuilder.probTitle') }}</div>
     <div class="center-hint" style="padding-bottom:0.375rem;">{{ t('diceBuilder.probHint') }}</div>
@@ -568,31 +691,8 @@ function openProbTable() {
       <button v-else-if="si === 1" class="btn secondary" style="margin-top:0.5rem; padding:0.4375rem 0.875rem; font-size:0.8125rem;" @click="removeCompareSet">{{ t('diceBuilder.removeCompare') }}</button>
     </div>
 
-    <div v-if="rollResults" style="display:flex; flex-direction:column; gap:0.5rem; align-items:center; padding-top:0.75rem;">
-      <div v-for="(setResult, si) in rollResults" :key="si" style="display:flex; gap:0.875rem; align-items:flex-end; justify-content:center;">
-        <div v-if="hasCompare" style="font-size:0.75rem; font-weight:800; color:var(--sub); padding-bottom:0.75rem;">{{ t('diceBuilder.set', { label: SET_LABELS[si] }) }}</div>
-        <div v-for="(res, ri) in setResult" :key="ri" style="display:flex; flex-direction:column; align-items:center; gap:0.25rem;">
-          <div style="font-size:0.6875rem; font-weight:800; color:var(--sub);">{{ t('diceBuilder.die', { n: ri + 1 }) }}</div>
-          <div :style="{ position: 'relative', width: CELL + 'rem', height: CELL + 'rem', borderRadius: '0.5rem', overflow: 'hidden', background: '#fff', border: '0.125rem solid var(--line)', flexShrink: 0 }">
-            <template v-if="res.types.length > 1">
-              <div :style="{ position: 'absolute', top: '50%', left: '50%', width: DIVIDER_LEN + 'rem', height: '0.09375rem', background: 'var(--line)', transform: 'translate(-50%,-50%) rotate(-45deg)' }"></div>
-              <img :src="asset(`image/ICON/${res.types[0]}.png`)" class="img-icon" :alt="res.types[0]" :style="{ position: 'absolute', top: INSET + 'rem', left: INSET + 'rem', width: MINI + 'rem', height: MINI + 'rem' }">
-              <img :src="asset(`image/ICON/${res.types[1]}.png`)" class="img-icon" :alt="res.types[1]" :style="{ position: 'absolute', bottom: INSET + 'rem', right: INSET + 'rem', width: MINI + 'rem', height: MINI + 'rem' }">
-            </template>
-            <img v-else :src="asset(`image/ICON/${res.types[0]}.png`)" class="img-icon" :alt="res.types[0]">
-          </div>
-        </div>
-        <div v-if="si === 0" style="display:flex; flex-direction:column; align-items:center; gap:0.25rem;">
-          <div style="font-size:0.6875rem; font-weight:800; color:var(--sub);">{{ t('diceBuilder.charaDie') }}</div>
-          <div :style="{ width: CELL + 'rem', height: CELL + 'rem', borderRadius: '0.5rem', overflow: 'hidden', background: '#fff', border: '0.125rem solid var(--line)', flexShrink: 0 }">
-            <img :src="asset(`image/ICON/${charaRollResult}.png`)" class="img-icon" :alt="charaRollResult">
-          </div>
-        </div>
-      </div>
-    </div>
-
     <div style="display:flex; gap:0.625rem; justify-content:center; flex-wrap:wrap; padding:0.875rem 0 0.25rem;">
-      <button class="btn" @click="rollDice">{{ t('diceBuilder.rollButton') }}</button>
+      <button class="btn" @click="openDiceRoll3D">{{ t('diceBuilder.rollButton') }}</button>
       <button class="btn secondary" @click="showQuickApply = true">{{ t('diceBuilder.quickApplyButton') }}</button>
       <button class="btn secondary" @click="openProbTable">{{ t('diceBuilder.probButton') }}</button>
       <button class="btn secondary" @click="showMoveOdds = true">{{ t('diceBuilder.moveOddsButton') }}</button>
