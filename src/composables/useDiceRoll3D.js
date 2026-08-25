@@ -157,19 +157,24 @@ export function useDiceRoll3D(canvasEl) {
       world.addBody(body)
     })
 
-    resizeObserver = new ResizeObserver(onResize)
+    resizeObserver = new ResizeObserver(entries => onResize(entries[0]))
     resizeObserver.observe(canvasEl.value)
 
     animate()
   }
 
-  function onResize() {
-    if (!renderer || !canvasEl.value) return
-    const rect = canvasEl.value.getBoundingClientRect()
-    if (rect.width === 0 || rect.height === 0) return
-    camera.aspect = rect.width / rect.height
+  // Reads the size from the ResizeObserver entry's contentRect rather than
+  // canvasEl.value.getBoundingClientRect() — the app rotates its whole #stage 90° via CSS
+  // transform on portrait devices (see useStageLayout.js), and getBoundingClientRect() reports
+  // the post-transform (rotated) box, which comes back with width/height effectively swapped.
+  // contentRect isn't affected by ancestor transforms, so it stays correct either way.
+  function onResize(entry) {
+    if (!renderer) return
+    const { width, height } = entry.contentRect
+    if (width === 0 || height === 0) return
+    camera.aspect = width / height
     camera.updateProjectionMatrix()
-    renderer.setSize(rect.width, rect.height, false)
+    renderer.setSize(width, height, false)
   }
 
   // `faces` is the { canvases, faceByAxis } shape from diceTextures.js. `offsetX`/`offsetZ` are
