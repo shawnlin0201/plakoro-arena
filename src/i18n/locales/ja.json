@@ -106,6 +106,7 @@
     "rollButton": "ダイスを振る",
     "rollingHint": "サイコロの画面を長押ししてシェイクし、離すと投げます！",
     "quickRollButton": "クイックロール",
+    "throwButton": "投げる",
     "quickApplyButton": "単色ダイスを一括適用",
     "quickApplyTitle": "単色ダイスを一括適用",
     "quickApplyHint": "エネルギーを1つ選ぶと、ダイス1~3の丸穴・角穴が全てそのタイプになります。凸面プールのタイプなら凸面も変わり（凹面は不変）、凹面プールのタイプなら凹面も変わります（凸面は不変）",

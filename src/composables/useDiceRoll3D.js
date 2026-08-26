@@ -248,7 +248,27 @@ export function useDiceRoll3D(canvasEl) {
   // Sets up (or replaces) the dice in the tray from a list of { canvases, faceByAxis }. Placed
   // close together with a small random scatter — like a hand grabbing them as a bundle — rather
   // than spread out in a neat row.
+  // A placement or throw that gets superseded before its dice settle (the player re-throws mid-
+  // fall, or the tray is torn down) would otherwise leave its promise pending forever, and any
+  // caller awaiting it stuck. Settle it with null so "no result" is distinguishable from a real
+  // one, and callers can stop waiting.
+  function abandonPendingRoll() {
+    if (!rollResolve) return
+    const resolve = rollResolve
+    rollResolve = null
+    settleCheckActive = false
+    resolve(null)
+  }
+
+  // Long enough that the dice are unmistakably in motion before allSettled() is consulted —
+  // they spawn above the table with no downward velocity, so the first frames read as "at rest".
+  const SETTLE_CHECK_DELAY_MS = 300
+
+  // Drops a fresh set of dice in from above the table. They fall, tumble and come to rest under
+  // ordinary gravity, and the returned promise reports the faces they land on — placement is a
+  // roll in its own right, not just staging for a later throw.
   function setDice(faceList) {
+    abandonPendingRoll()
     clearDice()
     // Otherwise this stays whatever roll() last left it as, so every placement after the very
     // first one silently skips its landing sound (the collide-sound gate never sees a reset).
@@ -258,6 +278,11 @@ export function useDiceRoll3D(canvasEl) {
       const angle = Math.random() * Math.PI * 2
       const r = Math.random() * clusterRadius
       addDie(faces, Math.cos(angle) * r, Math.sin(angle) * r)
+    })
+    return new Promise(resolve => {
+      rollResolve = resolve
+      settleCheckActive = false
+      setTimeout(() => { settleCheckActive = true }, SETTLE_CHECK_DELAY_MS)
     })
   }
 
@@ -330,6 +355,8 @@ export function useDiceRoll3D(canvasEl) {
   // right/forward basis (flattened to the ground plane) so flicking the mouse toward the far
   // side of the tray actually throws the dice that way, not just a random scatter.
   function roll(screenVX = 0, screenVY = 0) {
+    // A gesture throw can land mid-fall, while setDice()'s drop is still awaiting its result.
+    abandonPendingRoll()
     return new Promise(resolve => {
       throwRight.setFromMatrixColumn(camera.matrixWorld, 0)
       throwForward.setFromMatrixColumn(camera.matrixWorld, 2).negate()
@@ -447,6 +474,9 @@ export function useDiceRoll3D(canvasEl) {
   function dispose() {
     if (frameId) cancelAnimationFrame(frameId)
     if (resizeObserver) resizeObserver.disconnect()
+    // The animation loop is gone, so nothing is left to detect the dice settling — anyone still
+    // awaiting a result would wait forever (e.g. leaving the tray mid-throw).
+    abandonPendingRoll()
     clearDice()
     if (renderer) renderer.dispose()
   }
