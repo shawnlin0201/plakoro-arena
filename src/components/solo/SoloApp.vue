@@ -1,5 +1,5 @@
 <script setup>
-import { provide, inject } from 'vue'
+import { provide, inject, onUnmounted } from 'vue'
 import { useSoloRun } from '../../composables/useSoloRun'
 import SoloCharSelect from './SoloCharSelect.vue'
 import SoloMap from './SoloMap.vue'
@@ -20,6 +20,13 @@ const solo = useSoloRun(characters, moves)
 provide('solo', solo)
 
 const state = solo.state
+
+// The run's state lives at module scope, so it survives this component being destroyed —
+// without clearing it, leaving to the home screen and starting a new run would drop the player
+// straight back into the previous run's map.
+onUnmounted(() => {
+  solo.resetRun()
+})
 </script>
 
 <template>

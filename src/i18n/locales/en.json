@@ -7,12 +7,16 @@
     "success": "Success",
     "fail": "Fail",
     "weaknessColon": "Weakness:",
-    "and": "and"
+    "and": "and",
+    "cancel": "Cancel"
   },
   "app": {
     "loading": "NOW LOADING...",
     "loadErrorTitle": "Failed to load",
-    "retry": "Retry"
+    "retry": "Retry",
+    "backToHome": "Back to Home",
+    "exitConfirmTitle": "Return to home?",
+    "exitConfirmDesc": "Your current progress will be lost."
   },
   "dataErrors": {
     "network": "A network error occurred: {message}",
@@ -74,6 +78,10 @@
     "solo": "Solo Tower",
     "diceBuilder": "Dice Assembly Sim",
     "storeInfo": "Stores & Events"
+  },
+  "credit": {
+    "sources": "Data and images from beymetchannel/PlakoroBattle, BANDAI HOBBY SITE, and the official PLAKORO site. For reference only.",
+    "rights": "©Pokémon. ©Nintendo/Creatures Inc./GAME FREAK inc.　Product images are copyright BANDAI SPIRITS CO., LTD."
   },
   "storeInfo": {
     "title": "Stores & Events",
