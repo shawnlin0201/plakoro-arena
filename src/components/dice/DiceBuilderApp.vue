@@ -292,28 +292,58 @@ function quickRoll() {
   charaRollResult.value = CHARA_DIE_FACES[Math.floor(Math.random() * CHARA_DIE_FACES.length)]
 }
 
-// Builds fresh face textures for the current dice config and places them in the tray, sitting
-// there until the player actually throws them via the press-and-shake gesture on the canvas
-// (see DiceRoll3DCanvas.vue) — it no longer rolls immediately.
+// Builds face textures for the current dice config and drops them into the tray. The drop is
+// itself a roll — the dice fall, tumble and settle, and setDice() resolves with the faces they
+// land on — so opening the tray produces a result without the player doing anything.
 async function rollDice() {
   if (isRolling.value) return
   isRolling.value = true
   rollResults.value = null
   charaRollResult.value = null
-  const [{ buildEnergyDieFaces, buildCharaDieFaces }] = await Promise.all([
-    import('../../game/diceTextures'),
-    waitForCanvas()
-  ])
+  try {
+    const [{ buildEnergyDieFaces, buildCharaDieFaces }] = await Promise.all([
+      import('../../game/diceTextures'),
+      waitForCanvas()
+    ])
 
-  // Flatten every set's 3 dice plus the shared character die into one ordered list of face
-  // textures — onDiceRolled() slices the eventual result back apart by this same order.
-  const energyDice = sets.value.flatMap(set => set.dice)
-  const [energyFaces, charaFaces] = await Promise.all([
-    Promise.all(energyDice.map(buildEnergyDieFaces)),
-    buildCharaDieFaces()
-  ])
-  diceCanvasRef.value.setDice([...energyFaces, charaFaces])
-  isRolling.value = false
+    // Flatten every set's 3 dice plus the shared character die into one ordered list of face
+    // textures — onDiceRolled() slices the eventual result back apart by this same order.
+    const energyDice = sets.value.flatMap(set => set.dice)
+    const [energyFaces, charaFaces] = await Promise.all([
+      Promise.all(energyDice.map(buildEnergyDieFaces)),
+      buildCharaDieFaces()
+    ])
+    placedFaces = [...energyFaces, charaFaces]
+    await diceCanvasRef.value.setDice(placedFaces)
+  } finally {
+    isRolling.value = false
+  }
+}
+
+// The face textures currently in the tray, kept so a button throw can re-drop the same dice
+// without rebuilding all 6 faces per die again (clearDice disposes the old GPU textures, and a
+// fresh CanvasTexture can be built from the same canvas).
+let placedFaces = null
+
+// Button equivalent of the press-and-shake gesture, for players who'd rather press than flick
+// (and for pointer devices where a flick is awkward). It re-drops the dice exactly the way
+// opening the tray does — falling in from above the table and tumbling to a stop — rather than
+// flinging the dice sideways, which read as a different, harsher toss.
+async function throwDice() {
+  if (isRolling.value || !diceCanvasRef.value) return
+  // No textures built yet (the tray was opened but the first drop hasn't finished): fall back
+  // to the full path, which builds them and drops them.
+  if (!placedFaces) return rollDice()
+  isRolling.value = true
+  // Clear last throw's numbers up front — leaving them on screen during the toss reads as if
+  // the new result were already in.
+  rollResults.value = null
+  charaRollResult.value = null
+  try {
+    await diceCanvasRef.value.setDice(placedFaces)
+  } finally {
+    isRolling.value = false
+  }
 }
 
 // DiceRoll3DCanvas emits this once the physics settles after a throw, with the logical face
@@ -525,8 +555,8 @@ function openProbTable() {
     </div>
 
     <div style="display:flex; gap:0.625rem; justify-content:center; padding:0.875rem 0 0.25rem; flex-shrink:0;">
-      <button class="btn" :disabled="isRolling" @click="rollDice">{{ t('diceBuilder.rollButton') }}</button>
-      <button class="btn secondary" @click="quickRoll">{{ t('diceBuilder.quickRollButton') }}</button>
+      <button class="btn" :disabled="isRolling" :style="isRolling ? 'opacity:.45;' : ''" @click="throwDice">{{ t('diceBuilder.throwButton') }}</button>
+      <button class="btn secondary" :disabled="isRolling" :style="isRolling ? 'opacity:.45;' : ''" @click="quickRoll">{{ t('diceBuilder.quickRollButton') }}</button>
       <button class="btn secondary" @click="showDiceRoll3D = false">{{ t('common.back') }}</button>
     </div>
   </div>

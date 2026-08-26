@@ -27,9 +27,13 @@ onBeforeUnmount(() => {
 })
 
 // `faceList` is an array of { canvases, faceByAxis } (see diceTextures.js), one per die to
-// place in the tray.
-function setDice(faceList) {
-  controller.setDice(faceList)
+// place in the tray. The dice drop in from above and tumble to a stop, so this is a roll in
+// itself — it resolves (and emits) with the faces they land on, exactly like roll() does.
+// Resolves with null instead if the drop is superseded before the dice settle.
+async function setDice(faceList) {
+  const results = await controller.setDice(faceList)
+  if (results) emit('rolled', results)
+  return results
 }
 
 // Resolves with the logical face name that landed up on each die, in the same order as the
@@ -37,7 +41,7 @@ function setDice(faceList) {
 // forwarded to the physics roll so a real flick actually throws the dice that way.
 async function roll(screenVX = 0, screenVY = 0) {
   const results = await controller.roll(screenVX, screenVY)
-  emit('rolled', results)
+  if (results) emit('rolled', results)
   return results
 }
 
