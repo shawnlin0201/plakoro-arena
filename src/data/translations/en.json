@@ -35,6 +35,15 @@
     },
     "STC06-001": {
       "name": "Mew"
+    },
+    "STC07-001": {
+      "name": "Gengar"
+    },
+    "STC08-001": {
+      "name": "Metagross"
+    },
+    "STC09-001": {
+      "name": "Lucario"
     }
   },
   "waza": {
@@ -486,6 +495,92 @@
     "EBW01-007": {
       "name": "Furious Swing",
       "chara_effect1": "If your move's energy dice failed on your last turn, adds 40 damage."
+    },
+    "STW07-001": {
+      "name": "Wrap in Gas",
+      "chara_effect1": "Adds 10 damage."
+    },
+    "STW07-002": {
+      "name": "Hollow Shot",
+      "chara_effect1": "Adds 20 damage."
+    },
+    "STW07-003": {
+      "name": "Upside Down",
+      "chara_effect1": "On the opponent's next turn, their character die is fixed to Inverted."
+    },
+    "STW07-004": {
+      "name": "Shadow Bind",
+      "chara_effect1": "On the opponent's next turn, they can't roll the character die."
+    },
+    "STW07-005": {
+      "name": "Sludge Bomb",
+      "chara_effect1": "Adds 20 damage."
+    },
+    "STW07-006": {
+      "name": "Phantom Trick",
+      "chara_effect1": "The opponent rolls the character die 3 times; adds 40 damage each time it shows Inverted or Backward."
+    },
+    "STW07-007": {
+      "name": "Psywave",
+      "chara_effect1": "Adds 40 damage."
+    },
+    "STW08-001": {
+      "name": "Beam",
+      "chara_effect1": "Adds 20 damage."
+    },
+    "STW08-002": {
+      "name": "Arithmetic",
+      "chara_effect1": "On your next turn, your character die shows the same face as the one rolled for this move."
+    },
+    "STW08-003": {
+      "name": "Wide Press",
+      "chara_effect1": "Adds 30 damage."
+    },
+    "STW08-004": {
+      "name": "Straight Stomp",
+      "chara_effect1": "Adds 20 damage."
+    },
+    "STW08-005": {
+      "name": "Meteor Mash",
+      "chara_effect1": "Adds 40 damage."
+    },
+    "STW08-006": {
+      "name": "Heavy Slam",
+      "chara_effect1": "Adds 40 damage.",
+      "chara_effect2": "On your next turn, roll 2 fewer energy dice."
+    },
+    "STW08-007": {
+      "name": "Explosion",
+      "effect": "Also deals 120 damage to this Pokémon.",
+      "chara_effect1": "Removes the damage this move deals to itself."
+    },
+    "STW09-001": {
+      "name": "Kick",
+      "chara_effect1": "Adds 10 damage."
+    },
+    "STW09-002": {
+      "name": "Force Palm",
+      "chara_effect1": "On the opponent's next turn, they roll 1 fewer energy die."
+    },
+    "STW09-003": {
+      "name": "Aura Knuckle",
+      "chara_effect1": "If this Pokémon's remaining HP is 80 or less, adds 30 damage."
+    },
+    "STW09-004": {
+      "name": "Roundhouse Kick",
+      "chara_effect1": "Adds 30 damage."
+    },
+    "STW09-005": {
+      "name": "Aura Thrust",
+      "chara_effect1": "If this Pokémon's remaining HP is 80 or less, on the opponent's next turn, damage taken by this Pokémon is reduced by 20."
+    },
+    "STW09-006": {
+      "name": "Aura Sphere",
+      "chara_effect1": "If this Pokémon's remaining HP is 40 or less, adds 50 damage."
+    },
+    "STW09-007": {
+      "name": "Metal Claw",
+      "chara_effect1": "Adds 40 damage."
     }
   }
 }

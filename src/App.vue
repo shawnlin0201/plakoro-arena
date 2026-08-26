@@ -30,6 +30,23 @@ const { isLoading, loadError } = characterData
 const mode = ref(null)
 const appVersion = __APP_VERSION__
 
+// The duel and solo modes fill the screen and have no back button of their own (unlike the
+// dice builder and store info, which each end their own flow), so they get a shared one here.
+// It asks first: both modes hold real progress, and the button sits near the screen edge where
+// a stray tap during play is easy.
+const HOME_EXIT_MODES = ['duel', 'solo']
+const canExitToHome = computed(() => HOME_EXIT_MODES.includes(mode.value))
+const showExitConfirm = ref(false)
+
+function exitToHome() {
+  // Battle state lives at module scope (a single shared reactive object), so leaving without
+  // resetting would drop the player back into the previous match on re-entry. Solo does the
+  // same for itself in SoloApp's onUnmounted, since its state is created inside that component.
+  battle.resetGame()
+  showExitConfirm.value = false
+  mode.value = null
+}
+
 const stageRef = ref(null)
 useStageLayout(stageRef)
 
@@ -48,6 +65,12 @@ onMounted(() => {
   <div id="stage" ref="stageRef">
     <div id="app">
       <LanguageSwitcher />
+      <button
+        v-if="canExitToHome"
+        class="home-exit-btn"
+        :aria-label="t('app.backToHome')"
+        @click="showExitConfirm = true"
+      >←</button>
       <div style="position:absolute; right:0.375rem; bottom:0.25rem; z-index:300; font-size:0.625rem; font-weight:700; color:rgba(58,58,58,.5); pointer-events:none;">v{{ appVersion }}</div>
 
       <div v-if="isLoading" style="display:flex; height:100%; align-items:center; justify-content:center; font-weight:800; font-size:1rem; color:var(--sub);">{{ t('app.loading') }}</div>
@@ -78,6 +101,58 @@ onMounted(() => {
       <StoreInfoApp v-else-if="mode === 'storeInfo'" @back="mode = null" />
 
       <SoloApp v-else />
+
+      <!-- Above the language switcher's z-index so the switcher can't sit on top of it. -->
+      <div
+        v-if="showExitConfirm"
+        class="modal-overlay"
+        style="z-index:400; align-items:center;"
+        @click.self="showExitConfirm = false"
+      >
+        <div class="exit-confirm-sheet">
+          <div class="exit-confirm-title">{{ t('app.exitConfirmTitle') }}</div>
+          <div class="exit-confirm-desc">{{ t('app.exitConfirmDesc') }}</div>
+          <div class="exit-confirm-actions">
+            <button class="btn secondary" @click="showExitConfirm = false">{{ t('common.cancel') }}</button>
+            <button class="btn" @click="exitToHome">{{ t('app.backToHome') }}</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.home-exit-btn {
+  position: absolute;
+  top: 0.375rem;
+  left: 0.375rem;
+  z-index: 300;
+  border: none;
+  border-radius: 0.625rem;
+  background: rgba(0, 0, 0, .35);
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 800;
+  line-height: 1;
+  padding: 0.3125rem 0.5rem;
+  cursor: pointer;
+}
+.home-exit-btn:active { transform: scale(.94); }
+
+.exit-confirm-sheet {
+  background: var(--bg);
+  border-radius: 1.125rem;
+  box-shadow: var(--shadow);
+  padding: 1.25rem 1.5rem;
+  max-width: 22rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: center;
+}
+.exit-confirm-title { font-size: 1rem; font-weight: 800; color: var(--ink); }
+.exit-confirm-desc { font-size: 0.75rem; color: var(--sub); line-height: 1.6; }
+.exit-confirm-actions { display: flex; gap: 0.625rem; justify-content: center; }
+</style>

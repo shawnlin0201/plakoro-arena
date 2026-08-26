@@ -7,12 +7,16 @@
     "success": "成功",
     "fail": "失敗",
     "weaknessColon": "弱点:",
-    "and": "と"
+    "and": "と",
+    "cancel": "キャンセル"
   },
   "app": {
     "loading": "NOW LOADING...",
     "loadErrorTitle": "LOADINGに失敗しました",
-    "retry": "もう一度読み込む"
+    "retry": "もう一度読み込む",
+    "backToHome": "ホームへ戻る",
+    "exitConfirmTitle": "ホームに戻りますか？",
+    "exitConfirmDesc": "現在の進行状況は失われます。"
   },
   "dataErrors": {
     "network": "通信エラーが発生しました: {message}",
@@ -74,6 +78,10 @@
     "solo": "ソロタワー",
     "diceBuilder": "ダイス組立シミュレーター",
     "storeInfo": "店舗＆大会情報"
+  },
+  "credit": {
+    "sources": "データと画像は beymetchannel/PlakoroBattle、BANDAI HOBBY SITE およびプラコロ公式特設サイトより。参考用です。",
+    "rights": "©Pokémon. ©Nintendo/Creatures Inc./GAME FREAK inc.　商品画像の著作権は BANDAI SPIRITS CO., LTD. に帰属します。"
   },
   "storeInfo": {
     "title": "店舗＆大会情報",

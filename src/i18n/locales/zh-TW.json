@@ -7,12 +7,16 @@
     "success": "成功",
     "fail": "失敗",
     "weaknessColon": "弱點：",
-    "and": "和"
+    "and": "和",
+    "cancel": "取消"
   },
   "app": {
     "loading": "載入中...",
     "loadErrorTitle": "載入失敗",
-    "retry": "重新載入"
+    "retry": "重新載入",
+    "backToHome": "回到首頁",
+    "exitConfirmTitle": "要回到首頁嗎？",
+    "exitConfirmDesc": "目前的進度將會遺失。"
   },
   "dataErrors": {
     "network": "發生連線錯誤：{message}",
@@ -74,6 +78,10 @@
     "solo": "單人爬塔",
     "diceBuilder": "模擬組骰",
     "storeInfo": "店家與比賽資訊"
+  },
+  "credit": {
+    "sources": "資料與圖片來自 beymetchannel/PlakoroBattle、BANDAI HOBBY SITE 及 PLAKORO 官方特設網站，僅供參考。",
+    "rights": "©Pokémon. ©Nintendo/Creatures Inc./GAME FREAK inc.　商品圖片版權屬 BANDAI SPIRITS CO., LTD. 所有。"
   },
   "storeInfo": {
     "title": "店家與比賽資訊",
