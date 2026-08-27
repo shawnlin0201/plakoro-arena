@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, provide, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, onMounted, provide, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useCharacterData } from './composables/useCharacterData'
 import { useBattleState } from './composables/useBattleState'
@@ -17,6 +17,9 @@ import ModeSelect from './components/ModeSelect.vue'
 import SoloApp from './components/solo/SoloApp.vue'
 import DiceBuilderApp from './components/dice/DiceBuilderApp.vue'
 import StoreInfoApp from './components/StoreInfoApp.vue'
+// d3 (scale/shape/array) rides along with this view — code-split so only players who open the
+// price log pay for it, the same treatment the 3D dice tray gets.
+const PriceLogApp = defineAsyncComponent(() => import('./components/pricelog/PriceLogApp.vue'))
 
 const { t } = useI18n()
 const characterData = useCharacterData()
@@ -99,6 +102,8 @@ onMounted(() => {
       <DiceBuilderApp v-else-if="mode === 'diceBuilder'" @back="mode = null" />
 
       <StoreInfoApp v-else-if="mode === 'storeInfo'" @back="mode = null" />
+
+      <PriceLogApp v-else-if="mode === 'priceLog'" @back="mode = null" />
 
       <SoloApp v-else />
 

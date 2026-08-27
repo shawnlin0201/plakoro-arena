@@ -77,7 +77,52 @@
     "duel": "対戦モード",
     "solo": "ソロタワー",
     "diceBuilder": "ダイス組立シミュレーター",
-    "storeInfo": "店舗＆大会情報"
+    "storeInfo": "店舗＆大会情報",
+    "priceLog": "実売価格ログ"
+  },
+  "priceLog": {
+    "title": {
+      "page": "実売価格ログ",
+      "starter": "スターターセット {no} {name}",
+      "expedition": "エクスペディション {no} 中箱",
+      "expeditionSmall": "エクスペディション {no} 小箱"
+    },
+    "hint": "プレイヤーが報告した実際の売買価格と、代理店希望価格の比較",
+    "agentPrice": "代理店価格",
+    "agentPriceDerived": "（推定）",
+    "innerBoxNote": "1中箱 {n} 小箱",
+    "samples": "{n} 件",
+    "basisNote": "{n} 件（{kinds}）から算出",
+    "countNote": "{n} 件（{kinds}）",
+    "listMid": "相場中央値",
+    "vsAgent": "代理店価格比",
+    "noData": "価格データなし",
+    "noMatch": "現在の絞り込み条件に合うデータがありません",
+    "skippedNote": "小箱・単品のデータが {n} 件ありますが、まだ対応していません",
+    "low": "最安",
+    "mid": "中央",
+    "avg": "平均",
+    "statsRange": "{low} – {high}",
+    "noneOfKind": "なし",
+    "high": "最高",
+    "axisPrice": "NT$",
+    "axisDate": "日付",
+    "side": {
+      "deal": "成約",
+      "sell": "出品",
+      "buy": "買取",
+      "preorder": "予約"
+    },
+    "sourceLabel": "出典",
+    "openSource": "元データを見る",
+    "bundleTag": "セット",
+    "ongoing": "出品中",
+    "ongoingNote": "未終了のため本日の日付で表示",
+    "bundleDetail": "{names} と合わせて {n} 点で取引、合計 {total}、ここでは等分した単価",
+    "filter": {
+      "label": "絞り込み",
+      "bundleAvg": "セット販売を等分単価で表示"
+    }
   },
   "credit": {
     "sources": "データと画像は beymetchannel/PlakoroBattle、BANDAI HOBBY SITE およびプラコロ公式特設サイトより。参考用です。",

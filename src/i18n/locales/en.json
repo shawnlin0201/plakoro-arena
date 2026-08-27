@@ -77,7 +77,52 @@
     "duel": "Duel Mode",
     "solo": "Solo Tower",
     "diceBuilder": "Dice Assembly Sim",
-    "storeInfo": "Stores & Events"
+    "storeInfo": "Stores & Events",
+    "priceLog": "Price Log"
+  },
+  "priceLog": {
+    "title": {
+      "page": "Price Log",
+      "starter": "Starter Set {no} {name}",
+      "expedition": "Expedition Box {no} Inner Box",
+      "expeditionSmall": "Expedition Box {no} Small Box"
+    },
+    "hint": "Real prices reported by players, compared against the distributor's suggested price",
+    "agentPrice": "MSRP",
+    "agentPriceDerived": "(est.)",
+    "innerBoxNote": "{n} small boxes per inner box",
+    "samples": "{n} entries",
+    "basisNote": "From {n} entries ({kinds})",
+    "countNote": "{n} entries ({kinds})",
+    "listMid": "Median",
+    "vsAgent": "vs MSRP",
+    "noData": "No price data yet",
+    "noMatch": "Nothing matches the current filters",
+    "skippedNote": "{n} entries for small boxes or single figures — not supported yet",
+    "low": "Low",
+    "mid": "Median",
+    "avg": "Mean",
+    "statsRange": "{low} – {high}",
+    "noneOfKind": "none",
+    "high": "High",
+    "axisPrice": "NT$",
+    "axisDate": "Date",
+    "side": {
+      "deal": "Trade",
+      "sell": "Asking",
+      "buy": "Wanted",
+      "preorder": "Preorder"
+    },
+    "sourceLabel": "Source",
+    "openSource": "View original",
+    "bundleTag": "Bundle",
+    "ongoing": "Live",
+    "ongoingNote": "Still listed — dated today",
+    "bundleDetail": "Sold together with {names} ({n} items) for {total} — shown here as an even split",
+    "filter": {
+      "label": "Filters",
+      "bundleAvg": "Show bundles at their even-split price"
+    }
   },
   "credit": {
     "sources": "Data and images from beymetchannel/PlakoroBattle, BANDAI HOBBY SITE, and the official PLAKORO site. For reference only.",
