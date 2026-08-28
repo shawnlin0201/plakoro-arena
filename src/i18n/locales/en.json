@@ -78,11 +78,11 @@
     "solo": "Solo Tower",
     "diceBuilder": "Dice Assembly Sim",
     "storeInfo": "Stores & Events",
-    "priceLog": "Price Log"
+    "priceLog": "Market"
   },
   "priceLog": {
     "title": {
-      "page": "Price Log",
+      "page": "Market",
       "starter": "Starter Set {no} {name}",
       "expedition": "Expedition Box {no} Inner Box",
       "expeditionSmall": "Expedition Box {no} Small Box"
@@ -109,7 +109,7 @@
     "axisDate": "Date",
     "side": {
       "deal": "Trade",
-      "sell": "Asking",
+      "sell": "Listed",
       "buy": "Wanted",
       "preorder": "Preorder"
     },
@@ -117,6 +117,14 @@
     "openSource": "View original",
     "bundleTag": "Bundle",
     "ongoing": "Live",
+    "soldCount": "{n} sold",
+    "stockCount": "{n} left",
+    "listedCount": "{n} left",
+    "soldOut": "Sold out",
+    "today": "today",
+    "daysAgo": "{n}d ago",
+    "inDays": "in {n} days",
+    "monthsAgo": "{n}mo ago",
     "ongoingNote": "Still listed — dated today",
     "bundleDetail": "Sold together with {names} ({n} items) for {total} — shown here as an even split",
     "filter": {
@@ -223,16 +231,46 @@
       "continue": "Continue"
     },
     "events": {
-      "pokemonCenter": { "text": "You stop by a Pokémon Center, where a kind {name} gives you an apple.", "effect": "Heals 30 HP immediately." },
-      "berryBush": { "text": "You find a berry bush by the road, and {name} shows you which ones are safe to eat.", "effect": "Heals 20 HP immediately." },
-      "oldMaster": { "text": "A mysterious trainer, {name}, teaches you some battle tricks.", "effect": "ATK permanently +10." },
-      "hotSpring": { "text": "You soak in a hot spring together — {name} relaxes right beside you.", "effect": "Heals 40 HP immediately." },
-      "ironWill": { "text": "Watching {name} stand firm in battle gives you newfound confidence.", "effect": "DEF permanently +10." },
-      "treasureChest": { "text": "You find a treasure chest containing training gear left behind by {name}.", "effect": "Max HP permanently +15, and heals the same amount." },
-      "windyHill": { "text": "Up on a windswept hill, you train alongside {name}.", "effect": "ATK permanently +5." },
-      "rainyDay": { "text": "On a rainy day, {name} teaches you how to shield your allies.", "effect": "DEF permanently +5." },
-      "campfireSong": { "text": "{name} sings by the campfire, and it puts your mind at ease.", "effect": "Heals 25 HP immediately." },
-      "secretTraining": { "text": "You join {name} for a secret training session.", "effect": "Max HP permanently +10, and heals the same amount." }
+      "pokemonCenter": {
+        "text": "You stop by a Pokémon Center, where a kind {name} gives you an apple.",
+        "effect": "Heals 30 HP immediately."
+      },
+      "berryBush": {
+        "text": "You find a berry bush by the road, and {name} shows you which ones are safe to eat.",
+        "effect": "Heals 20 HP immediately."
+      },
+      "oldMaster": {
+        "text": "A mysterious trainer, {name}, teaches you some battle tricks.",
+        "effect": "ATK permanently +10."
+      },
+      "hotSpring": {
+        "text": "You soak in a hot spring together — {name} relaxes right beside you.",
+        "effect": "Heals 40 HP immediately."
+      },
+      "ironWill": {
+        "text": "Watching {name} stand firm in battle gives you newfound confidence.",
+        "effect": "DEF permanently +10."
+      },
+      "treasureChest": {
+        "text": "You find a treasure chest containing training gear left behind by {name}.",
+        "effect": "Max HP permanently +15, and heals the same amount."
+      },
+      "windyHill": {
+        "text": "Up on a windswept hill, you train alongside {name}.",
+        "effect": "ATK permanently +5."
+      },
+      "rainyDay": {
+        "text": "On a rainy day, {name} teaches you how to shield your allies.",
+        "effect": "DEF permanently +5."
+      },
+      "campfireSong": {
+        "text": "{name} sings by the campfire, and it puts your mind at ease.",
+        "effect": "Heals 25 HP immediately."
+      },
+      "secretTraining": {
+        "text": "You join {name} for a secret training session.",
+        "effect": "Max HP permanently +10, and heals the same amount."
+      }
     },
     "campfire": {
       "title": "Campfire",

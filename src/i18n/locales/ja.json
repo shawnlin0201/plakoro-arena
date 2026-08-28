@@ -78,11 +78,11 @@
     "solo": "ソロタワー",
     "diceBuilder": "ダイス組立シミュレーター",
     "storeInfo": "店舗＆大会情報",
-    "priceLog": "実売価格ログ"
+    "priceLog": "取引マーケット"
   },
   "priceLog": {
     "title": {
-      "page": "実売価格ログ",
+      "page": "取引マーケット",
       "starter": "スターターセット {no} {name}",
       "expedition": "エクスペディション {no} 中箱",
       "expeditionSmall": "エクスペディション {no} 小箱"
@@ -109,7 +109,7 @@
     "axisDate": "日付",
     "side": {
       "deal": "成約",
-      "sell": "出品",
+      "sell": "出品中",
       "buy": "買取",
       "preorder": "予約"
     },
@@ -117,6 +117,14 @@
     "openSource": "元データを見る",
     "bundleTag": "セット",
     "ongoing": "出品中",
+    "soldCount": "販売済 {n}",
+    "stockCount": "在庫 {n}",
+    "listedCount": "残り {n}",
+    "soldOut": "完売",
+    "today": "今日",
+    "daysAgo": "{n} 日前",
+    "inDays": "{n} 日後",
+    "monthsAgo": "{n} ヶ月前",
     "ongoingNote": "未終了のため本日の日付で表示",
     "bundleDetail": "{names} と合わせて {n} 点で取引、合計 {total}、ここでは等分した単価",
     "filter": {
@@ -223,16 +231,46 @@
       "continue": "つづける"
     },
     "events": {
-      "pokemonCenter": { "text": "ポケモンセンターに立ち寄ると、優しい{name}がりんごをくれた。", "effect": "すぐにHPを30回復する。" },
-      "berryBush": { "text": "道端でキノミの木を見つけ、{name}が食べられる実を教えてくれた。", "effect": "すぐにHPを20回復する。" },
-      "oldMaster": { "text": "謎のトレーナー{name}が戦い方のコツを教えてくれた。", "effect": "攻撃力が永続的に+10される。" },
-      "hotSpring": { "text": "みんなで温泉に入り、{name}も隣でくつろいでいた。", "effect": "すぐにHPを40回復する。" },
-      "ironWill": { "text": "堂々と戦う{name}の姿を見て、自信が湧いてきた。", "effect": "防御力が永続的に+10される。" },
-      "treasureChest": { "text": "宝箱を見つけた。中には{name}が残したトレーニング道具が入っていた。", "effect": "最大HPが永続的に+15され、同じ量だけ回復する。" },
-      "windyHill": { "text": "丘の上で、{name}と一緒に特訓に励んだ。", "effect": "攻撃力が永続的に+5される。" },
-      "rainyDay": { "text": "雨の日、{name}が仲間を守るためのかばい方を教えてくれた。", "effect": "防御力が永続的に+5される。" },
-      "campfireSong": { "text": "焚き火のそばで{name}が歌ってくれて、心が和んだ。", "effect": "すぐにHPを25回復する。" },
-      "secretTraining": { "text": "{name}と一緒に、秘密の特訓に取り組んだ。", "effect": "最大HPが永続的に+10され、同じ量だけ回復する。" }
+      "pokemonCenter": {
+        "text": "ポケモンセンターに立ち寄ると、優しい{name}がりんごをくれた。",
+        "effect": "すぐにHPを30回復する。"
+      },
+      "berryBush": {
+        "text": "道端でキノミの木を見つけ、{name}が食べられる実を教えてくれた。",
+        "effect": "すぐにHPを20回復する。"
+      },
+      "oldMaster": {
+        "text": "謎のトレーナー{name}が戦い方のコツを教えてくれた。",
+        "effect": "攻撃力が永続的に+10される。"
+      },
+      "hotSpring": {
+        "text": "みんなで温泉に入り、{name}も隣でくつろいでいた。",
+        "effect": "すぐにHPを40回復する。"
+      },
+      "ironWill": {
+        "text": "堂々と戦う{name}の姿を見て、自信が湧いてきた。",
+        "effect": "防御力が永続的に+10される。"
+      },
+      "treasureChest": {
+        "text": "宝箱を見つけた。中には{name}が残したトレーニング道具が入っていた。",
+        "effect": "最大HPが永続的に+15され、同じ量だけ回復する。"
+      },
+      "windyHill": {
+        "text": "丘の上で、{name}と一緒に特訓に励んだ。",
+        "effect": "攻撃力が永続的に+5される。"
+      },
+      "rainyDay": {
+        "text": "雨の日、{name}が仲間を守るためのかばい方を教えてくれた。",
+        "effect": "防御力が永続的に+5される。"
+      },
+      "campfireSong": {
+        "text": "焚き火のそばで{name}が歌ってくれて、心が和んだ。",
+        "effect": "すぐにHPを25回復する。"
+      },
+      "secretTraining": {
+        "text": "{name}と一緒に、秘密の特訓に取り組んだ。",
+        "effect": "最大HPが永続的に+10され、同じ量だけ回復する。"
+      }
     },
     "campfire": {
       "title": "たき火",

@@ -96,9 +96,15 @@ export function sheetDate(value) {
   return Number.isNaN(new Date(iso).getTime()) ? null : iso
 }
 
+// Returns null for an empty cell rather than 0, because for some columns those mean opposite
+// things — a stock count of 0 is "sold out" while a blank one is "unknown". `Number('')` is 0,
+// so the empty case has to be caught before parsing.
 export function sheetNumber(value) {
+  const raw = String(value ?? '').trim()
+  if (raw === '') return null
   // Strip currency symbols, thousands separators and stray spaces before parsing.
-  const cleaned = String(value || '').replace(/[^\d.-]/g, '')
+  const cleaned = raw.replace(/[^\d.-]/g, '')
+  if (cleaned === '') return null
   const n = Number(cleaned)
   return Number.isFinite(n) ? n : null
 }

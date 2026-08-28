@@ -5,7 +5,9 @@ import { asset } from '../../data/assetPath'
 import { PRICE_PRODUCTS, PRODUCT_CATEGORIES, PRODUCT_UNITS } from '../../data/priceProducts'
 import { PRICE_SIDES, premiumAgainstAgent, priceStats, sortByTradedAt, statsBySide } from '../../game/priceStats'
 import { fetchPriceLogs } from '../../data/priceLogSource'
+import { money, stockLabel as formatStock } from '../../game/priceFormat'
 import PriceChart from './PriceChart.vue'
+import LogDetailBody from './LogDetailBody.vue'
 
 const emit = defineEmits(['back'])
 const { t } = useI18n()
@@ -39,7 +41,13 @@ const skippedTotal = computed(() =>
 )
 
 const selectedProductId = ref(null)
+// Two separate selections, because the chart and the history are two different interactions.
+// Tapping a point on the chart floats a panel beside it — there is nowhere on a scatter plot to
+// expand into. Tapping a history row expands in place, which keeps the row you tapped under your
+// finger instead of throwing a panel over the list. Sharing one ref made a row click behave like
+// a chart click, which is what put a floating panel over the list.
 const selectedLog = ref(null)
+const expandedId = ref(null)
 
 // Chart/table filters. A bundled row's price is an even split of a lot total, which is an
 // estimate rather than a quoted price — on by default because excluding bundles would discard
@@ -103,7 +111,8 @@ function productImage(p) {
 // actually changes hands for; with none, it falls back to asking prices and says so. Showing a
 // single number pooled from both would let one wishful listing set the tone for the product.
 const rows = computed(() => PRICE_PRODUCTS.map(p => {
-  const logs = applyFilters(logsByProduct.value[p.id] || [])
+  const allLogs = logsByProduct.value[p.id] || []
+  const logs = applyFilters(allLogs)
   const bySide = statsBySide(logs)
   // Trades first — that's what the item actually goes for. Then preorders (a firm shop price),
   // then asking prices, then wanted ads.
@@ -112,6 +121,9 @@ const rows = computed(() => PRICE_PRODUCTS.map(p => {
   return {
     product: p,
     logs,
+    // Kept alongside the filtered set so the filter chips can be built from what the product
+    // actually has, independently of what's currently switched on.
+    allLogs,
     stats: bySide[headlineSide],
     headlineSide,
     totalCount: logs.length,
@@ -130,13 +142,23 @@ const selected = computed(() => rows.value.find(r => r.product.id === selectedPr
 // The detail view works off the filtered set, so the headline figures, the chart and the
 // history always describe the same data — a filter that only moved the chart would make the
 // median above it quietly wrong.
-const filteredLogs = computed(() => (selected.value ? applyFilters(selected.value.logs) : []))
+// `rows` already filtered these; filtering again would be a no-op that reads as if it weren't.
+const filteredLogs = computed(() => (selected.value ? selected.value.logs : []))
 const filteredStats = computed(() => priceStats(filteredLogs.value))
 // Per-kind breakdown: trades and asking prices are read separately, since an unrealistic
 // listing says nothing about what the thing actually changes hands for.
 const sideStats = computed(() => statsBySide(filteredLogs.value))
 // Only kinds that are both switched on and actually have entries get a block.
 const SIDE_ORDER = [PRICE_SIDES.deal, PRICE_SIDES.sell, PRICE_SIDES.preorder, PRICE_SIDES.buy]
+
+// Kinds this product actually has entries for. Must read `allLogs`, not `logs`: `logs` is the
+// filtered set, so building the chips from it made each chip vanish the moment it was switched
+// off — taking away the only control that could switch it back on. Kinds the data never
+// produces (currently 求購, which the sheet has no way to express) simply never appear.
+const availableSides = computed(() => {
+  const present = new Set((selected.value ? selected.value.allLogs : []).map(l => l.side))
+  return SIDE_ORDER.filter(side => present.has(side))
+})
 
 const shownSides = computed(() =>
   SIDE_ORDER
@@ -148,11 +170,13 @@ const hasAnyLogs = computed(() => !!selected.value && selected.value.logs.length
 function openProduct(id) {
   selectedProductId.value = id
   selectedLog.value = null
+  expandedId.value = null
 }
 
 function backToList() {
   selectedProductId.value = null
   selectedLog.value = null
+  expandedId.value = null
 }
 
 // Where the floating panel sits, in px from the top of the chart+history container. Both the
@@ -160,7 +184,6 @@ function backToList() {
 // same coordinate space and the panel always lands next to what was clicked.
 const detailBodyRef = ref(null)
 const chartWrapRef = ref(null)
-const historyRef = ref(null)
 const panelTop = ref('0px')
 const panelLeft = ref('50%')
 const PANEL_HEIGHT_GUESS = 150
@@ -219,13 +242,10 @@ function placePanelNear(anchorEl) {
   )
 }
 
-function pickLog(log, event) {
-  if (selectedLog.value && selectedLog.value.id === log.id) {
-    selectedLog.value = null
-    return
-  }
-  selectedLog.value = log
-  placePanelNear(event && event.currentTarget)
+// History rows are an accordion: no coordinates involved, the detail opens directly beneath the
+// row that was tapped.
+function toggleRow(log) {
+  expandedId.value = expandedId.value === log.id ? null : log.id
 }
 
 // Clicking a point on the chart floats the panel beside that point. PriceChart converts the
@@ -246,10 +266,6 @@ function toggleLog(log, pos) {
     offsetLeftWithin(pos.el, container) + pos.x,
     offsetTopWithin(pos.el, container) + pos.y
   )
-}
-
-function money(n) {
-  return Number.isFinite(n) ? `NT$${n.toLocaleString()}` : '—'
 }
 
 function premiumLabel(amount, agentPrice) {
@@ -280,6 +296,27 @@ function sidesLabel(sides) {
 function formatDate(iso) {
   const d = new Date(iso)
   return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`
+}
+
+// "2026/08/14" alone doesn't say whether a price is current — how long ago it was is the part
+// that decides whether to trust it. Rounded to whole days against local midnight rather than
+// elapsed hours, so an entry logged yesterday evening doesn't read as "today".
+// Bound to the component's `t` so the template can call it with one argument.
+function stockLabel(log) {
+  return formatStock(log, t)
+}
+
+function relativeTime(iso) {
+  const then = new Date(iso)
+  if (Number.isNaN(then.getTime())) return ''
+  const startOfDay = d => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+  const days = Math.round((startOfDay(new Date()) - startOfDay(then)) / 86400000)
+  // Preorders are dated in the future, so the gap can be negative — say when it opens instead
+  // of reporting a nonsensical "-7 days ago".
+  if (days < 0) return t('priceLog.inDays', { n: -days })
+  if (days === 0) return t('priceLog.today')
+  if (days < 30) return t('priceLog.daysAgo', { n: days })
+  return t('priceLog.monthsAgo', { n: Math.round(days / 30) })
 }
 </script>
 
@@ -374,7 +411,7 @@ function formatDate(iso) {
           {{ t('priceLog.filter.bundleAvg') }}
         </label>
         <span
-          v-for="side in SIDE_ORDER"
+          v-for="side in availableSides"
           :key="side"
           @click="toggleSide(side)"
           :style="{
@@ -433,29 +470,35 @@ function formatDate(iso) {
           </div>
         </div>
 
-        <!-- history. Rows are anchors for the floating panel rather than accordions, so the
-             list keeps its shape while a record is open. -->
-        <div ref="historyRef" style="border-top:0.125rem solid var(--line);">
+        <!-- history. An accordion: the detail opens under the row that was tapped, so the row
+             stays where your finger is. A floating panel is the chart's answer, where there's
+             nowhere on a scatter plot to expand into — here there is. -->
+        <div style="border-top:0.125rem solid var(--line);">
           <div
             v-for="log in detailLogs"
             :key="log.id"
             :style="{
               borderBottom:'1px solid var(--line)', cursor:'pointer',
-              background: selectedLog && selectedLog.id === log.id ? 'rgba(174,255,62,.18)' : 'transparent'
+              background: expandedId === log.id ? 'rgba(174,255,62,.18)' : 'transparent'
             }"
-            @click="pickLog(log, $event)"
+            @click="toggleRow(log)"
           >
             <div style="display:flex; align-items:center; gap:0.5rem; padding:0.375rem 0.125rem;">
-              <span :style="{ fontSize:'0.625rem', fontWeight:700, flexShrink:0, width:'4.5rem', color: log.isOngoing ? SIDE_COLOR[log.side] : 'var(--sub)' }">
-                {{ log.isOngoing ? t('priceLog.ongoing') : formatDate(log.tradedAt) }}
-              </span>
+              <span style="font-size:0.625rem; color:var(--sub); font-weight:700; flex-shrink:0; width:4.5rem;">{{ formatDate(log.tradedAt) }}</span>
               <span :style="{ fontSize:'0.625rem', fontWeight:800, color:SIDE_COLOR[log.side], flexShrink:0, width:'2.5rem' }">{{ t('priceLog.side.' + log.side) }}</span>
               <span style="font-size:0.8125rem; font-weight:900; color:var(--ink); flex:1;">{{ money(log.amount) }}</span>
               <span :style="{ fontSize:'0.5625rem', fontWeight:800, color:premiumColor(log.amount, selected.product.agentPrice), flexShrink:0 }">
                 {{ premiumLabel(log.amount, selected.product.agentPrice) }}
               </span>
               <span v-if="log.isBundle" style="font-size:0.5rem; font-weight:800; color:#fff; background:var(--sub); border-radius:0.25rem; padding:0.0625rem 0.25rem; flex-shrink:0;">{{ t('priceLog.bundleTag') }}</span>
+              <span v-if="stockLabel(log)" :style="{ fontSize:'0.5rem', fontWeight:800, flexShrink:0, color: log.isSoldOut ? SIDE_COLOR[PRICE_SIDES.deal] : 'var(--sub)' }">{{ stockLabel(log) }}</span>
               <span style="font-size:0.5625rem; color:var(--sub); font-weight:700; flex-shrink:0;">{{ log.source }}</span>
+              <span :style="{ fontSize:'0.5rem', color:'var(--sub)', flexShrink:0, transform: expandedId === log.id ? 'rotate(180deg)' : 'none' }">▾</span>
+            </div>
+
+            <!-- indented to the price column so the detail reads as belonging to the row above -->
+            <div v-if="expandedId === log.id" style="padding:0 0.125rem 0.5rem 4.5rem;">
+              <LogDetailBody :log="log" :bundle-names="log.isBundle ? log.bundleWith.map(id => rowTitle(id)) : []" />
             </div>
           </div>
 
@@ -481,7 +524,7 @@ function formatDate(iso) {
                 <div style="display:flex; align-items:center; gap:0.375rem; padding-top:0.125rem;">
                   <span :style="{ fontSize:'0.625rem', fontWeight:800, color:SIDE_COLOR[selectedLog.side] }">{{ t('priceLog.side.' + selectedLog.side) }}</span>
                   <span style="font-size:0.625rem; color:var(--sub); font-weight:700;">
-                    {{ selectedLog.isOngoing ? t('priceLog.ongoing') : formatDate(selectedLog.tradedAt) }}
+                    {{ formatDate(selectedLog.tradedAt) }}（{{ relativeTime(selectedLog.tradedAt) }}）
                   </span>
                   <span :style="{ fontSize:'0.625rem', fontWeight:800, color:premiumColor(selectedLog.amount, selected.product.agentPrice) }">
                     {{ premiumLabel(selectedLog.amount, selected.product.agentPrice) }}
@@ -494,26 +537,11 @@ function formatDate(iso) {
               >✕</button>
             </div>
 
-            <div style="display:flex; flex-direction:column; gap:0.25rem; padding-top:0.5rem; border-top:1px solid var(--line); margin-top:0.5rem;">
-              <div style="font-size:0.625rem; color:var(--sub); font-weight:700;">
-                {{ t('priceLog.sourceLabel') }}：{{ selectedLog.source || '—' }}
-              </div>
-              <div v-if="selectedLog.isBundle" style="font-size:0.625rem; color:var(--sub); font-weight:700; line-height:1.5;">
-                {{ t('priceLog.bundleDetail', {
-                  total: money(selectedLog.bundleTotal),
-                  n: selectedLog.bundleSize,
-                  names: selectedLog.bundleWith.map(id => rowTitle(id)).join('、')
-                }) }}
-              </div>
-              <div v-if="selectedLog.isOngoing" style="font-size:0.5625rem; color:var(--sub); font-weight:700;">{{ t('priceLog.ongoingNote') }}</div>
-              <div v-if="selectedLog.note" style="font-size:0.625rem; color:var(--sub); line-height:1.5;">{{ selectedLog.note }}</div>
-              <a
-                v-if="selectedLog.sourceUrl"
-                :href="selectedLog.sourceUrl"
-                target="_blank"
-                rel="noopener noreferrer"
-                style="font-size:0.625rem; color:#2A6FE8; font-weight:800; word-break:break-all;"
-              >{{ t('priceLog.openSource') }} ↗</a>
+            <div style="padding-top:0.5rem; border-top:1px solid var(--line); margin-top:0.5rem;">
+              <LogDetailBody
+                :log="selectedLog"
+                :bundle-names="selectedLog.isBundle ? selectedLog.bundleWith.map(id => rowTitle(id)) : []"
+              />
             </div>
           </div>
         </div>

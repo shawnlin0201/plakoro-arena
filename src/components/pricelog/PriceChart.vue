@@ -109,9 +109,9 @@ const points = computed(() => sorted.value.map(log => ({
   cx: x.value(timeOf(log)),
   cy: y.value(log.amount),
   side: log.side,
-  // Still-listed rows carry today's date because they haven't ended, so they all pile up on the
-  // right edge. Drawing them as squares keeps them from reading as a cluster of same-day events.
-  ongoing: !!log.isOngoing
+  // Still-listed rows are drawn as hollow squares: an open listing is an offer, not a
+  // transaction, and shouldn't read the same as a point where money changed hands.
+  ongoing: !!log.isListed
 })))
 
 // The topmost tick carries the currency so the unit is stated once, in place, instead of

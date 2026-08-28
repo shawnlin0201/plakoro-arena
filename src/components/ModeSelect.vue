@@ -6,13 +6,21 @@ const { t } = useI18n()
 
 // Adding a mode should never mean re-tuning the layout, so the grid is driven off this list
 // rather than hand-written cards.
+//
+// `enabled: false` hides a mode from the menu while leaving it fully built and reachable in
+// code. Deleting the entry instead would leave its component, i18n strings and data loader with
+// no visible caller, which is how features quietly rot — this way re-enabling is one word.
 const MODES = [
   { key: 'duel', icon: '⚔️' },
   { key: 'solo', icon: '🗼' },
   { key: 'diceBuilder', icon: '🎲' },
   { key: 'storeInfo', icon: '🗺️' },
-  { key: 'priceLog', icon: '💰' }
+  // Hidden 2026-08-28: the market data behind it isn't maintainable by hand yet — most listing
+  // sources need a login to snapshot, so the figures would go stale without anyone noticing.
+  { key: 'priceLog', icon: '💰', enabled: false }
 ]
+
+const VISIBLE_MODES = MODES.filter(m => m.enabled !== false)
 </script>
 
 <template>
@@ -23,7 +31,7 @@ const MODES = [
          the cards keep a workable size no matter how many there are. -->
     <div class="mode-grid">
       <button
-        v-for="m in MODES"
+        v-for="m in VISIBLE_MODES"
         :key="m.key"
         class="select-card mode-card"
         @click="emit('pick', m.key)"
