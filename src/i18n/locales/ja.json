@@ -77,7 +77,61 @@
     "duel": "対戦モード",
     "solo": "ソロタワー",
     "diceBuilder": "ダイス組立シミュレーター",
-    "storeInfo": "店舗＆大会情報"
+    "storeInfo": "店舗＆大会情報",
+    "priceLog": "取引マーケット",
+    "tournament": "トーナメント編成"
+  },
+  "priceLog": {
+    "title": {
+      "page": "取引マーケット",
+      "starter": "スターターセット {no} {name}",
+      "expedition": "エクスペディション {no} 中箱",
+      "expeditionSmall": "エクスペディション {no} 小箱"
+    },
+    "hint": "プレイヤーが報告した実際の売買価格と、代理店希望価格の比較",
+    "agentPrice": "代理店価格",
+    "agentPriceDerived": "（推定）",
+    "innerBoxNote": "1中箱 {n} 小箱",
+    "samples": "{n} 件",
+    "basisNote": "{n} 件（{kinds}）から算出",
+    "countNote": "{n} 件（{kinds}）",
+    "listMid": "相場中央値",
+    "vsAgent": "代理店価格比",
+    "noData": "価格データなし",
+    "noMatch": "現在の絞り込み条件に合うデータがありません",
+    "skippedNote": "小箱・単品のデータが {n} 件ありますが、まだ対応していません",
+    "low": "最安",
+    "mid": "中央",
+    "avg": "平均",
+    "statsRange": "{low} – {high}",
+    "noneOfKind": "なし",
+    "high": "最高",
+    "axisPrice": "NT$",
+    "axisDate": "日付",
+    "side": {
+      "deal": "成約",
+      "sell": "出品中",
+      "buy": "買取",
+      "preorder": "予約"
+    },
+    "sourceLabel": "出典",
+    "openSource": "元データを見る",
+    "bundleTag": "セット",
+    "ongoing": "出品中",
+    "soldCount": "販売済 {n}",
+    "stockCount": "在庫 {n}",
+    "listedCount": "残り {n}",
+    "soldOut": "完売",
+    "today": "今日",
+    "daysAgo": "{n} 日前",
+    "inDays": "{n} 日後",
+    "monthsAgo": "{n} ヶ月前",
+    "ongoingNote": "未終了のため本日の日付で表示",
+    "bundleDetail": "{names} と合わせて {n} 点で取引、合計 {total}、ここでは等分した単価",
+    "filter": {
+      "label": "絞り込み",
+      "bundleAvg": "セット販売を等分単価で表示"
+    }
   },
   "credit": {
     "sources": "データと画像は beymetchannel/PlakoroBattle、BANDAI HOBBY SITE およびプラコロ公式特設サイトより。参考用です。",
@@ -145,6 +199,73 @@
       "close": "閉じる"
     }
   },
+  "tournament": {
+    "listTitle": "トーナメント編成",
+    "newTournament": "新しい大会",
+    "empty": "まだ大会がありません",
+    "delete": "削除",
+    "deleteConfirm": "「{name}」を削除しますか？元に戻せません。",
+    "format": {
+      "swiss": "スイス式",
+      "elimination": "シングルエリミネーション"
+    },
+    "roundLabel": "第{n}回戦",
+    "playerCount": "{n}人",
+    "statusInProgress": "進行中",
+    "statusComplete": "終了",
+    "setup": {
+      "title": "新しい大会",
+      "nameLabel": "大会名",
+      "namePlaceholder": "例：8/30 週末杯",
+      "formatLabel": "形式",
+      "playersLabel": "参加者リスト",
+      "playersPlaceholder": "1行に1人ずつ名前を入力",
+      "playersHint": "最低2人必要です",
+      "roundsLabel": "スイス式の回戦数",
+      "roundsHint": "推奨回戦数が自動入力されています。必要に応じて変更してください",
+      "validationTooFewPlayers": "参加者を2人以上入力してください",
+      "createButton": "大会を作成"
+    },
+    "detail": {
+      "roundTab": "今回戦",
+      "tableLabel": "卓{n}",
+      "playersTab": "選手情報",
+      "editName": "名前を編集",
+      "editPlayer": "選手を編集",
+      "confirmRenameTournament": "大会名を「{name}」に変更しますか？",
+      "confirmRenamePlayer": "選手名を「{name}」に変更しますか？",
+      "lotteryTab": "抽選",
+      "drawButton": "抽選する",
+      "lotteryWinner": "おめでとうございます、{name}さん！",
+      "lotteryPoolLabel": "抽選対象",
+      "standingsTab": "順位表",
+      "historyTab": "対戦記録",
+      "bracketTab": "トーナメント表",
+      "bye": "不戦勝",
+      "rematchBadge": "再戦",
+      "resultP1": "P1の勝ち",
+      "resultP2": "P2の勝ち",
+      "resultDraw": "引き分け",
+      "generateNextRound": "次の回戦を生成",
+      "waitingForResults": "この回戦のすべての結果を入力してください",
+      "tournamentComplete": "大会終了",
+      "champion": "優勝：{name}",
+      "eliminationEditWarning": "過去の回戦の結果を変更しても、すでに生成された後の回戦は自動的に再生成されません",
+      "standingsHeaders": {
+        "rank": "順位",
+        "name": "参加者",
+        "points": "ポイント",
+        "record": "勝-分-負",
+        "omwp": "対戦相手勝率",
+        "oomwp": "対戦相手の相手勝率"
+      },
+      "historyHeaders": {
+        "round": "ラウンド",
+        "match": "対戦",
+        "result": "結果"
+      }
+    }
+  },
   "solo": {
     "you": "あなた",
     "opponent": "相手",
@@ -178,16 +299,46 @@
       "continue": "つづける"
     },
     "events": {
-      "pokemonCenter": { "text": "ポケモンセンターに立ち寄ると、優しい{name}がりんごをくれた。", "effect": "すぐにHPを30回復する。" },
-      "berryBush": { "text": "道端でキノミの木を見つけ、{name}が食べられる実を教えてくれた。", "effect": "すぐにHPを20回復する。" },
-      "oldMaster": { "text": "謎のトレーナー{name}が戦い方のコツを教えてくれた。", "effect": "攻撃力が永続的に+10される。" },
-      "hotSpring": { "text": "みんなで温泉に入り、{name}も隣でくつろいでいた。", "effect": "すぐにHPを40回復する。" },
-      "ironWill": { "text": "堂々と戦う{name}の姿を見て、自信が湧いてきた。", "effect": "防御力が永続的に+10される。" },
-      "treasureChest": { "text": "宝箱を見つけた。中には{name}が残したトレーニング道具が入っていた。", "effect": "最大HPが永続的に+15され、同じ量だけ回復する。" },
-      "windyHill": { "text": "丘の上で、{name}と一緒に特訓に励んだ。", "effect": "攻撃力が永続的に+5される。" },
-      "rainyDay": { "text": "雨の日、{name}が仲間を守るためのかばい方を教えてくれた。", "effect": "防御力が永続的に+5される。" },
-      "campfireSong": { "text": "焚き火のそばで{name}が歌ってくれて、心が和んだ。", "effect": "すぐにHPを25回復する。" },
-      "secretTraining": { "text": "{name}と一緒に、秘密の特訓に取り組んだ。", "effect": "最大HPが永続的に+10され、同じ量だけ回復する。" }
+      "pokemonCenter": {
+        "text": "ポケモンセンターに立ち寄ると、優しい{name}がりんごをくれた。",
+        "effect": "すぐにHPを30回復する。"
+      },
+      "berryBush": {
+        "text": "道端でキノミの木を見つけ、{name}が食べられる実を教えてくれた。",
+        "effect": "すぐにHPを20回復する。"
+      },
+      "oldMaster": {
+        "text": "謎のトレーナー{name}が戦い方のコツを教えてくれた。",
+        "effect": "攻撃力が永続的に+10される。"
+      },
+      "hotSpring": {
+        "text": "みんなで温泉に入り、{name}も隣でくつろいでいた。",
+        "effect": "すぐにHPを40回復する。"
+      },
+      "ironWill": {
+        "text": "堂々と戦う{name}の姿を見て、自信が湧いてきた。",
+        "effect": "防御力が永続的に+10される。"
+      },
+      "treasureChest": {
+        "text": "宝箱を見つけた。中には{name}が残したトレーニング道具が入っていた。",
+        "effect": "最大HPが永続的に+15され、同じ量だけ回復する。"
+      },
+      "windyHill": {
+        "text": "丘の上で、{name}と一緒に特訓に励んだ。",
+        "effect": "攻撃力が永続的に+5される。"
+      },
+      "rainyDay": {
+        "text": "雨の日、{name}が仲間を守るためのかばい方を教えてくれた。",
+        "effect": "防御力が永続的に+5される。"
+      },
+      "campfireSong": {
+        "text": "焚き火のそばで{name}が歌ってくれて、心が和んだ。",
+        "effect": "すぐにHPを25回復する。"
+      },
+      "secretTraining": {
+        "text": "{name}と一緒に、秘密の特訓に取り組んだ。",
+        "effect": "最大HPが永続的に+10され、同じ量だけ回復する。"
+      }
     },
     "campfire": {
       "title": "たき火",

@@ -77,7 +77,61 @@
     "duel": "Duel Mode",
     "solo": "Solo Tower",
     "diceBuilder": "Dice Assembly Sim",
-    "storeInfo": "Stores & Events"
+    "storeInfo": "Stores & Events",
+    "priceLog": "Market",
+    "tournament": "Tournament Scheduler"
+  },
+  "priceLog": {
+    "title": {
+      "page": "Market",
+      "starter": "Starter Set {no} {name}",
+      "expedition": "Expedition Box {no} Inner Box",
+      "expeditionSmall": "Expedition Box {no} Small Box"
+    },
+    "hint": "Real prices reported by players, compared against the distributor's suggested price",
+    "agentPrice": "MSRP",
+    "agentPriceDerived": "(est.)",
+    "innerBoxNote": "{n} small boxes per inner box",
+    "samples": "{n} entries",
+    "basisNote": "From {n} entries ({kinds})",
+    "countNote": "{n} entries ({kinds})",
+    "listMid": "Median",
+    "vsAgent": "vs MSRP",
+    "noData": "No price data yet",
+    "noMatch": "Nothing matches the current filters",
+    "skippedNote": "{n} entries for small boxes or single figures — not supported yet",
+    "low": "Low",
+    "mid": "Median",
+    "avg": "Mean",
+    "statsRange": "{low} – {high}",
+    "noneOfKind": "none",
+    "high": "High",
+    "axisPrice": "NT$",
+    "axisDate": "Date",
+    "side": {
+      "deal": "Trade",
+      "sell": "Listed",
+      "buy": "Wanted",
+      "preorder": "Preorder"
+    },
+    "sourceLabel": "Source",
+    "openSource": "View original",
+    "bundleTag": "Bundle",
+    "ongoing": "Live",
+    "soldCount": "{n} sold",
+    "stockCount": "{n} left",
+    "listedCount": "{n} left",
+    "soldOut": "Sold out",
+    "today": "today",
+    "daysAgo": "{n}d ago",
+    "inDays": "in {n} days",
+    "monthsAgo": "{n}mo ago",
+    "ongoingNote": "Still listed — dated today",
+    "bundleDetail": "Sold together with {names} ({n} items) for {total} — shown here as an even split",
+    "filter": {
+      "label": "Filters",
+      "bundleAvg": "Show bundles at their even-split price"
+    }
   },
   "credit": {
     "sources": "Data and images from beymetchannel/PlakoroBattle, BANDAI HOBBY SITE, and the official PLAKORO site. For reference only.",
@@ -145,6 +199,73 @@
       "close": "Close"
     }
   },
+  "tournament": {
+    "listTitle": "Tournament Scheduler",
+    "newTournament": "New Tournament",
+    "empty": "No tournaments yet",
+    "delete": "Delete",
+    "deleteConfirm": "Delete \"{name}\"? This can't be undone.",
+    "format": {
+      "swiss": "Swiss",
+      "elimination": "Single Elimination"
+    },
+    "roundLabel": "Round {n}",
+    "playerCount": "{n} players",
+    "statusInProgress": "In progress",
+    "statusComplete": "Complete",
+    "setup": {
+      "title": "New Tournament",
+      "nameLabel": "Tournament name",
+      "namePlaceholder": "e.g. Weekend Cup 8/30",
+      "formatLabel": "Format",
+      "playersLabel": "Players",
+      "playersPlaceholder": "One player name per line",
+      "playersHint": "At least 2 players required",
+      "roundsLabel": "Swiss rounds",
+      "roundsHint": "A suggested round count is filled in — adjust it if you like",
+      "validationTooFewPlayers": "Enter at least 2 players",
+      "createButton": "Create Tournament"
+    },
+    "detail": {
+      "roundTab": "This Round",
+      "tableLabel": "Table {n}",
+      "playersTab": "Players",
+      "editName": "Edit name",
+      "editPlayer": "Edit player",
+      "confirmRenameTournament": "Rename this tournament to \"{name}\"?",
+      "confirmRenamePlayer": "Rename this player to \"{name}\"?",
+      "lotteryTab": "Prize Draw",
+      "drawButton": "Spin",
+      "lotteryWinner": "Congratulations, {name}!",
+      "lotteryPoolLabel": "Eligible",
+      "standingsTab": "Standings",
+      "historyTab": "Match History",
+      "bracketTab": "Bracket",
+      "bye": "Bye — advances",
+      "rematchBadge": "Rematch",
+      "resultP1": "P1 wins",
+      "resultP2": "P2 wins",
+      "resultDraw": "Draw",
+      "generateNextRound": "Generate Next Round",
+      "waitingForResults": "Enter every match's result first",
+      "tournamentComplete": "Tournament complete",
+      "champion": "Champion: {name}",
+      "eliminationEditWarning": "Editing a past round won't regenerate later rounds that already exist",
+      "standingsHeaders": {
+        "rank": "Rank",
+        "name": "Player",
+        "points": "Points",
+        "record": "W-D-L",
+        "omwp": "OMW%",
+        "oomwp": "OOMW%"
+      },
+      "historyHeaders": {
+        "round": "Round",
+        "match": "Match",
+        "result": "Result"
+      }
+    }
+  },
   "solo": {
     "you": "You",
     "opponent": "Opponent",
@@ -178,16 +299,46 @@
       "continue": "Continue"
     },
     "events": {
-      "pokemonCenter": { "text": "You stop by a Pokémon Center, where a kind {name} gives you an apple.", "effect": "Heals 30 HP immediately." },
-      "berryBush": { "text": "You find a berry bush by the road, and {name} shows you which ones are safe to eat.", "effect": "Heals 20 HP immediately." },
-      "oldMaster": { "text": "A mysterious trainer, {name}, teaches you some battle tricks.", "effect": "ATK permanently +10." },
-      "hotSpring": { "text": "You soak in a hot spring together — {name} relaxes right beside you.", "effect": "Heals 40 HP immediately." },
-      "ironWill": { "text": "Watching {name} stand firm in battle gives you newfound confidence.", "effect": "DEF permanently +10." },
-      "treasureChest": { "text": "You find a treasure chest containing training gear left behind by {name}.", "effect": "Max HP permanently +15, and heals the same amount." },
-      "windyHill": { "text": "Up on a windswept hill, you train alongside {name}.", "effect": "ATK permanently +5." },
-      "rainyDay": { "text": "On a rainy day, {name} teaches you how to shield your allies.", "effect": "DEF permanently +5." },
-      "campfireSong": { "text": "{name} sings by the campfire, and it puts your mind at ease.", "effect": "Heals 25 HP immediately." },
-      "secretTraining": { "text": "You join {name} for a secret training session.", "effect": "Max HP permanently +10, and heals the same amount." }
+      "pokemonCenter": {
+        "text": "You stop by a Pokémon Center, where a kind {name} gives you an apple.",
+        "effect": "Heals 30 HP immediately."
+      },
+      "berryBush": {
+        "text": "You find a berry bush by the road, and {name} shows you which ones are safe to eat.",
+        "effect": "Heals 20 HP immediately."
+      },
+      "oldMaster": {
+        "text": "A mysterious trainer, {name}, teaches you some battle tricks.",
+        "effect": "ATK permanently +10."
+      },
+      "hotSpring": {
+        "text": "You soak in a hot spring together — {name} relaxes right beside you.",
+        "effect": "Heals 40 HP immediately."
+      },
+      "ironWill": {
+        "text": "Watching {name} stand firm in battle gives you newfound confidence.",
+        "effect": "DEF permanently +10."
+      },
+      "treasureChest": {
+        "text": "You find a treasure chest containing training gear left behind by {name}.",
+        "effect": "Max HP permanently +15, and heals the same amount."
+      },
+      "windyHill": {
+        "text": "Up on a windswept hill, you train alongside {name}.",
+        "effect": "ATK permanently +5."
+      },
+      "rainyDay": {
+        "text": "On a rainy day, {name} teaches you how to shield your allies.",
+        "effect": "DEF permanently +5."
+      },
+      "campfireSong": {
+        "text": "{name} sings by the campfire, and it puts your mind at ease.",
+        "effect": "Heals 25 HP immediately."
+      },
+      "secretTraining": {
+        "text": "You join {name} for a secret training session.",
+        "effect": "Max HP permanently +10, and heals the same amount."
+      }
     },
     "campfire": {
       "title": "Campfire",
