@@ -78,7 +78,8 @@
     "solo": "Solo Tower",
     "diceBuilder": "Dice Assembly Sim",
     "storeInfo": "Stores & Events",
-    "priceLog": "Market"
+    "priceLog": "Market",
+    "tournament": "Tournament Scheduler"
   },
   "priceLog": {
     "title": {
@@ -196,6 +197,73 @@
       "dualHint": "Pick an energy type for each half",
       "dualSlotLabel": "Energy {n}",
       "close": "Close"
+    }
+  },
+  "tournament": {
+    "listTitle": "Tournament Scheduler",
+    "newTournament": "New Tournament",
+    "empty": "No tournaments yet",
+    "delete": "Delete",
+    "deleteConfirm": "Delete \"{name}\"? This can't be undone.",
+    "format": {
+      "swiss": "Swiss",
+      "elimination": "Single Elimination"
+    },
+    "roundLabel": "Round {n}",
+    "playerCount": "{n} players",
+    "statusInProgress": "In progress",
+    "statusComplete": "Complete",
+    "setup": {
+      "title": "New Tournament",
+      "nameLabel": "Tournament name",
+      "namePlaceholder": "e.g. Weekend Cup 8/30",
+      "formatLabel": "Format",
+      "playersLabel": "Players",
+      "playersPlaceholder": "One player name per line",
+      "playersHint": "At least 2 players required",
+      "roundsLabel": "Swiss rounds",
+      "roundsHint": "A suggested round count is filled in — adjust it if you like",
+      "validationTooFewPlayers": "Enter at least 2 players",
+      "createButton": "Create Tournament"
+    },
+    "detail": {
+      "roundTab": "This Round",
+      "tableLabel": "Table {n}",
+      "playersTab": "Players",
+      "editName": "Edit name",
+      "editPlayer": "Edit player",
+      "confirmRenameTournament": "Rename this tournament to \"{name}\"?",
+      "confirmRenamePlayer": "Rename this player to \"{name}\"?",
+      "lotteryTab": "Prize Draw",
+      "drawButton": "Spin",
+      "lotteryWinner": "Congratulations, {name}!",
+      "lotteryPoolLabel": "Eligible",
+      "standingsTab": "Standings",
+      "historyTab": "Match History",
+      "bracketTab": "Bracket",
+      "bye": "Bye — advances",
+      "rematchBadge": "Rematch",
+      "resultP1": "P1 wins",
+      "resultP2": "P2 wins",
+      "resultDraw": "Draw",
+      "generateNextRound": "Generate Next Round",
+      "waitingForResults": "Enter every match's result first",
+      "tournamentComplete": "Tournament complete",
+      "champion": "Champion: {name}",
+      "eliminationEditWarning": "Editing a past round won't regenerate later rounds that already exist",
+      "standingsHeaders": {
+        "rank": "Rank",
+        "name": "Player",
+        "points": "Points",
+        "record": "W-D-L",
+        "omwp": "OMW%",
+        "oomwp": "OOMW%"
+      },
+      "historyHeaders": {
+        "round": "Round",
+        "match": "Match",
+        "result": "Result"
+      }
     }
   },
   "solo": {

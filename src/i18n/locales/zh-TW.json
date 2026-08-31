@@ -78,7 +78,8 @@
     "solo": "單人爬塔",
     "diceBuilder": "模擬組骰",
     "storeInfo": "店家與比賽資訊",
-    "priceLog": "交易市場"
+    "priceLog": "交易市場",
+    "tournament": "賽程編排"
   },
   "priceLog": {
     "title": {
@@ -196,6 +197,73 @@
       "dualHint": "分別為上下兩格選擇能量類型",
       "dualSlotLabel": "能量{n}",
       "close": "關閉"
+    }
+  },
+  "tournament": {
+    "listTitle": "賽程編排",
+    "newTournament": "新增賽事",
+    "empty": "尚未建立任何賽事",
+    "delete": "刪除",
+    "deleteConfirm": "確定要刪除「{name}」嗎？此動作無法復原。",
+    "format": {
+      "swiss": "瑞士制",
+      "elimination": "單淘汰賽制"
+    },
+    "roundLabel": "第 {n} 輪",
+    "playerCount": "{n} 人",
+    "statusInProgress": "進行中",
+    "statusComplete": "已結束",
+    "setup": {
+      "title": "新增賽事",
+      "nameLabel": "賽事名稱",
+      "namePlaceholder": "例如：8/30 週末賽",
+      "formatLabel": "賽制",
+      "playersLabel": "選手名單",
+      "playersPlaceholder": "一行一位選手名字",
+      "playersHint": "至少需要 2 位選手",
+      "roundsLabel": "瑞士制輪數",
+      "roundsHint": "建議輪數已自動填入，可自行調整",
+      "validationTooFewPlayers": "請至少輸入 2 位選手",
+      "createButton": "建立賽事"
+    },
+    "detail": {
+      "roundTab": "本輪賽程",
+      "tableLabel": "桌 {n}",
+      "playersTab": "選手資料",
+      "editName": "編輯名稱",
+      "editPlayer": "編輯選手",
+      "confirmRenameTournament": "確定要將賽事名稱改為「{name}」嗎？",
+      "confirmRenamePlayer": "確定要將選手名稱改為「{name}」嗎？",
+      "lotteryTab": "抽獎",
+      "drawButton": "開始抽獎",
+      "lotteryWinner": "恭喜 {name}！",
+      "lotteryPoolLabel": "抽獎資格",
+      "standingsTab": "戰績表",
+      "historyTab": "對局紀錄",
+      "bracketTab": "賽程表",
+      "bye": "輪空晉級",
+      "rematchBadge": "重複對戰",
+      "resultP1": "P1 勝",
+      "resultP2": "P2 勝",
+      "resultDraw": "平手",
+      "generateNextRound": "產生下一輪",
+      "waitingForResults": "請先填完本輪所有結果",
+      "tournamentComplete": "賽事已結束",
+      "champion": "冠軍：{name}",
+      "eliminationEditWarning": "修改過去輪次的結果不會自動重新產生後續已配對的輪次",
+      "standingsHeaders": {
+        "rank": "名次",
+        "name": "選手",
+        "points": "積分",
+        "record": "勝-平-負",
+        "omwp": "對手勝率",
+        "oomwp": "對手的對手勝率"
+      },
+      "historyHeaders": {
+        "round": "輪次",
+        "match": "對戰",
+        "result": "結果"
+      }
     }
   },
   "solo": {

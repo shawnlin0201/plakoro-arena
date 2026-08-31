@@ -17,6 +17,7 @@ import ModeSelect from './components/ModeSelect.vue'
 import SoloApp from './components/solo/SoloApp.vue'
 import DiceBuilderApp from './components/dice/DiceBuilderApp.vue'
 import StoreInfoApp from './components/StoreInfoApp.vue'
+import TournamentApp from './components/tournament/TournamentApp.vue'
 // d3 (scale/shape/array) rides along with this view — code-split so only players who open the
 // price log pay for it, the same treatment the 3D dice tray gets.
 const PriceLogApp = defineAsyncComponent(() => import('./components/pricelog/PriceLogApp.vue'))
@@ -67,7 +68,7 @@ onMounted(() => {
 <template>
   <div id="stage" ref="stageRef">
     <div id="app">
-      <LanguageSwitcher />
+      <LanguageSwitcher v-if="mode === null" />
       <button
         v-if="canExitToHome"
         class="home-exit-btn"
@@ -104,6 +105,8 @@ onMounted(() => {
       <StoreInfoApp v-else-if="mode === 'storeInfo'" @back="mode = null" />
 
       <PriceLogApp v-else-if="mode === 'priceLog'" @back="mode = null" />
+
+      <TournamentApp v-else-if="mode === 'tournament'" @back="mode = null" />
 
       <SoloApp v-else />
 

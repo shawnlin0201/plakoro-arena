@@ -78,7 +78,8 @@
     "solo": "ソロタワー",
     "diceBuilder": "ダイス組立シミュレーター",
     "storeInfo": "店舗＆大会情報",
-    "priceLog": "取引マーケット"
+    "priceLog": "取引マーケット",
+    "tournament": "トーナメント編成"
   },
   "priceLog": {
     "title": {
@@ -196,6 +197,73 @@
       "dualHint": "上下それぞれでエネルギータイプを選択",
       "dualSlotLabel": "エネルギー{n}",
       "close": "閉じる"
+    }
+  },
+  "tournament": {
+    "listTitle": "トーナメント編成",
+    "newTournament": "新しい大会",
+    "empty": "まだ大会がありません",
+    "delete": "削除",
+    "deleteConfirm": "「{name}」を削除しますか？元に戻せません。",
+    "format": {
+      "swiss": "スイス式",
+      "elimination": "シングルエリミネーション"
+    },
+    "roundLabel": "第{n}回戦",
+    "playerCount": "{n}人",
+    "statusInProgress": "進行中",
+    "statusComplete": "終了",
+    "setup": {
+      "title": "新しい大会",
+      "nameLabel": "大会名",
+      "namePlaceholder": "例：8/30 週末杯",
+      "formatLabel": "形式",
+      "playersLabel": "参加者リスト",
+      "playersPlaceholder": "1行に1人ずつ名前を入力",
+      "playersHint": "最低2人必要です",
+      "roundsLabel": "スイス式の回戦数",
+      "roundsHint": "推奨回戦数が自動入力されています。必要に応じて変更してください",
+      "validationTooFewPlayers": "参加者を2人以上入力してください",
+      "createButton": "大会を作成"
+    },
+    "detail": {
+      "roundTab": "今回戦",
+      "tableLabel": "卓{n}",
+      "playersTab": "選手情報",
+      "editName": "名前を編集",
+      "editPlayer": "選手を編集",
+      "confirmRenameTournament": "大会名を「{name}」に変更しますか？",
+      "confirmRenamePlayer": "選手名を「{name}」に変更しますか？",
+      "lotteryTab": "抽選",
+      "drawButton": "抽選する",
+      "lotteryWinner": "おめでとうございます、{name}さん！",
+      "lotteryPoolLabel": "抽選対象",
+      "standingsTab": "順位表",
+      "historyTab": "対戦記録",
+      "bracketTab": "トーナメント表",
+      "bye": "不戦勝",
+      "rematchBadge": "再戦",
+      "resultP1": "P1の勝ち",
+      "resultP2": "P2の勝ち",
+      "resultDraw": "引き分け",
+      "generateNextRound": "次の回戦を生成",
+      "waitingForResults": "この回戦のすべての結果を入力してください",
+      "tournamentComplete": "大会終了",
+      "champion": "優勝：{name}",
+      "eliminationEditWarning": "過去の回戦の結果を変更しても、すでに生成された後の回戦は自動的に再生成されません",
+      "standingsHeaders": {
+        "rank": "順位",
+        "name": "参加者",
+        "points": "ポイント",
+        "record": "勝-分-負",
+        "omwp": "対戦相手勝率",
+        "oomwp": "対戦相手の相手勝率"
+      },
+      "historyHeaders": {
+        "round": "ラウンド",
+        "match": "対戦",
+        "result": "結果"
+      }
     }
   },
   "solo": {
