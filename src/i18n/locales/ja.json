@@ -79,7 +79,10 @@
     "diceBuilder": "ダイス組立シミュレーター",
     "storeInfo": "店舗＆大会情報",
     "priceLog": "取引マーケット",
-    "tournament": "トーナメント編成"
+    "tournament": "トーナメント編成",
+    "tierList": "キャラ強さランキング",
+    "typeChart": "タイプ相性表",
+    "moveAdvisor": "ワザ構成のおすすめ"
   },
   "priceLog": {
     "title": {
@@ -163,7 +166,7 @@
     "throwButton": "投げる",
     "quickApplyButton": "単色ダイスを一括適用",
     "quickApplyTitle": "単色ダイスを一括適用",
-    "quickApplyHint": "エネルギーを1つ選ぶと、ダイス1~3の丸穴・角穴が全てそのタイプになります。凸面プールのタイプなら凸面も変わり（凹面は不変）、凹面プールのタイプなら凹面も変わります（凸面は不変）",
+    "quickApplyHint": "まず主エネルギー、次に副エネルギーを選びます",
     "charaDie": "キャラダイス",
     "set": "ダイスセット{label}",
     "addCompare": "比較用のダイスセットを追加",
@@ -184,7 +187,30 @@
       "diceInPlay": "振るダイス",
       "moveHeader": "ワザ（ダイス{n}個）",
       "successRate": "成功率",
-      "charaDieOdds": "キャラコロ"
+      "charaDieOdds": "キャラコロ",
+      "expectedValue": "期待値",
+      "settings": "計算の前提",
+      "sortByEv": "期待値順に並べる",
+      "countDefensive": "ダメージ軽減を回復として計算",
+      "selfHpLabel": "残りHP",
+      "selfHpAny": "指定なし",
+      "prevEnemyFailed": "前の相手の番、相手のエネコロが失敗した",
+      "prevSelfFailed": "前の自分の番、自分のエネコロが失敗した",
+      "prevPrereqSucceeded": "前の自分の番、指定のワザが成功した",
+      "evHint": "期待値＝（相手に与えるダメージ − 自分が受けるダメージ）の平均に成功率を掛けた値。回復はプラスとして数えます。弱点は計算に入れません。下段の内訳は足すと期待値になります（与ダメ計は小計です）",
+      "noteNeedsHp": "残りHPを入れると計算されます",
+      "noteNeedsPrev": "上の前提条件に基づく数値",
+      "noteMirrorDice": "相手のダイスもこの構成と同じと仮定",
+      "noteUnsupported": "未対応の効果があり、計算に含めていません",
+      "evPartBase": "ワザ",
+      "evPartChara": "キャラコロ",
+      "evPartDamageTotal": "与ダメ計",
+      "evPartSelf": "自分のHP",
+      "evPartDefensive": "軽減",
+      "countTempo": "相手の妨害も価値として計算",
+      "tempoCalculating": "（計算中…）",
+      "evPartTempo": "テンポ",
+      "enemyLastDamageLabel": "相手の前のワザのダメージ"
     },
     "showCumulativeProb": "累計確率で表示",
     "showExactProb": "ちょうどの確率で表示",
@@ -197,7 +223,11 @@
       "dualHint": "上下それぞれでエネルギータイプを選択",
       "dualSlotLabel": "エネルギー{n}",
       "close": "閉じる"
-    }
+    },
+    "quickApplyDieButton": "単色",
+    "quickApplyStepMain": "① 主エネルギー",
+    "quickApplyStepOpposite": "② 副エネルギー（{face}）",
+    "quickApplyKeepOpposite": "スキップ"
   },
   "tournament": {
     "listTitle": "トーナメント編成",
@@ -368,5 +398,43 @@
       "notice": "出せる技がない（封じられている、または前ターン使用）。",
       "button": "ターンをスキップ"
     }
+  },
+  "tierList": {
+    "title": "キャラ強さランキング",
+    "hint": "各ポケモンに合わせた単色ダイス3個で、上位{n}ワザを交互に撃ち続けたときの平均です",
+    "calculating": "計算中…",
+    "fewMoves": "このポケモンのワザは{n}つだけです",
+    "assumptions": "各ポケモンは自分のワザが最も要求するタイプで組んだ単色ダイス3個を振る前提です。弱点と相手のポケモンは計算に入れていません。行をタップすると上位ワザの内訳が開きます",
+    "countIndirect": "ダメージ以外の価値も計算（軽減・妨害）",
+    "metricTopN": "上位{n}ワザ平均",
+    "metricPerTurn": "1ターンの平均",
+    "hintPerTurn": "ゲームをHP帯に分け、その帯で撃てる上位{n}ワザの交互撃ちを、帯の長さで重みづけて合計します",
+    "bandHealthy": "HP高",
+    "bandBelow": "HP{hp}以下",
+    "premiseNote": "条件つきのワザは、自分で仕込める条件（前の番に特定のワザを撃つ）は仕込みの1ターンも込みで計算し、選べない条件（残りHP、前の番のエネコロ失敗）は実際に起きる頻度で重みづけています。頻度はカード全体から算出したもので、HP40以下は25%、HP80以下は50%、エネコロ失敗は16%です",
+    "disclaimer": "ワザの期待値はあくまで目安です。実際の対戦はもっと複雑です",
+    "rotationNote": "同じワザは2回続けて撃てない（前の番に使ったワザは選べない）ので、1ワザの最大値ではなく上位2ワザを交互に撃った平均で計算しています。3ワザは相手にワザを1つ封じられる場合の目安です",
+    "inspect": "ダイス確率表で見る"
+  },
+  "typeChart": {
+    "title": "タイプ相性表",
+    "hint": "各ポケモンのワザが要求するタイプと、弱点（すべて+{n}）",
+    "hintMixed": "各ポケモンのワザが要求するタイプと、弱点",
+    "character": "ポケモン",
+    "main": "メイン",
+    "secondary": "サブ",
+    "weakness": "弱点",
+    "colorlessOnly": "無色のみ"
+  },
+  "moveAdvisor": {
+    "title": "ワザ構成のおすすめ",
+    "hint": "ポケモンを{team}体まで選ぶと、それぞれの期待効益が高い{deck}ワザを出します",
+    "floor": "{n}エネのワザを最低1つ",
+    "calculating": "計算中…",
+    "empty": "上からポケモンを選んでください",
+    "dice": "ダイス{n}",
+    "unmet": "{costs}エネのワザがないため、その条件は外しました",
+    "free": "コストなし",
+    "assumptions": "各ポケモンは自分のワザが最も要求するタイプで組んだ単色ダイス3個を振る前提です。弱点と相手のポケモンは計算に入れていません。ワザ名は実物のカードと合わせるため日本語のまま表示します。"
   }
 }

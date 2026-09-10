@@ -79,7 +79,10 @@
     "diceBuilder": "模擬組骰",
     "storeInfo": "店家與比賽資訊",
     "priceLog": "交易市場",
-    "tournament": "賽程編排"
+    "tournament": "賽程編排",
+    "tierList": "角色強度排行",
+    "typeChart": "屬性克制表",
+    "moveAdvisor": "招式推薦"
   },
   "priceLog": {
     "title": {
@@ -163,7 +166,7 @@
     "throwButton": "擲出骰子",
     "quickApplyButton": "快速套用純屬骰",
     "quickApplyTitle": "快速套用純屬骰",
-    "quickApplyHint": "選一種能量，骰子1~3的圓槽、方槽都會替換成該能量；若該能量屬於凸面固定池則凸槽也替換（凹槽不變），若屬於凹面固定池則凹槽也替換（凸槽不變）",
+    "quickApplyHint": "先選主能量，再選副能量",
     "charaDie": "角色骰",
     "set": "骰組{label}",
     "addCompare": "新增一組骰子來比較",
@@ -184,7 +187,30 @@
       "diceInPlay": "參與擲骰",
       "moveHeader": "招式（{n} 顆骰）",
       "successRate": "成功率",
-      "charaDieOdds": "角色骰"
+      "charaDieOdds": "角色骰",
+      "expectedValue": "期望效益",
+      "settings": "計算前提",
+      "sortByEv": "依期望效益排序",
+      "countDefensive": "減傷折算為回血",
+      "selfHpLabel": "剩餘 HP",
+      "selfHpAny": "不指定",
+      "prevEnemyFailed": "上一個對手回合，對手能量骰失敗",
+      "prevSelfFailed": "上一個自己回合，自己能量骰失敗",
+      "prevPrereqSucceeded": "上一個自己回合，指定招式成功",
+      "evHint": "期望效益＝（對手扣血 − 自己扣血）的平均，再乘上成功率；回血算加分。不計弱點加成。下方的組成相加就是期望效益（傷害總共為小計，不另外相加）",
+      "noteNeedsHp": "填入剩餘 HP 後才會計入",
+      "noteNeedsPrev": "依上方前提條件計算",
+      "noteMirrorDice": "假設對手骰組與本組相同",
+      "noteUnsupported": "有未支援的效果，未計入",
+      "evPartBase": "白板",
+      "evPartChara": "角色骰",
+      "evPartDamageTotal": "傷害總共",
+      "evPartSelf": "自身 HP",
+      "evPartDefensive": "減傷",
+      "countTempo": "把干擾對手折算成傷害",
+      "tempoCalculating": "（計算中…）",
+      "evPartTempo": "干擾",
+      "enemyLastDamageLabel": "對手上一招白板"
     },
     "showCumulativeProb": "顯示累計機率",
     "showExactProb": "顯示恰好機率",
@@ -197,7 +223,11 @@
       "dualHint": "分別為上下兩格選擇能量類型",
       "dualSlotLabel": "能量{n}",
       "close": "關閉"
-    }
+    },
+    "quickApplyDieButton": "純屬骰",
+    "quickApplyStepMain": "① 主能量",
+    "quickApplyStepOpposite": "② 副能量（{face}）",
+    "quickApplyKeepOpposite": "跳過"
   },
   "tournament": {
     "listTitle": "賽程編排",
@@ -368,5 +398,43 @@
       "notice": "沒有可用的招式（已被封印或上回合使用過）。",
       "button": "跳過這回合"
     }
+  },
+  "tierList": {
+    "title": "角色強度排行",
+    "hint": "每隻寶可夢都套用適合自己的純屬骰 3 顆，取最強 {n} 招輪替出招的平均",
+    "calculating": "計算中…",
+    "fewMoves": "這隻寶可夢只有 {n} 招",
+    "assumptions": "每隻寶可夢都假設帶著「自己招式最常要求的屬性」所組成的 3 顆純屬骰。不計弱點、也不指定對手。點一列可以展開背後那幾招",
+    "countIndirect": "把非傷害效益折算成 HP（減傷、干擾）",
+    "metricTopN": "前 {n} 招平均",
+    "metricPerTurn": "平均一回合",
+    "hintPerTurn": "把一場遊戲切成幾段血量區間，每段取「那時候打得出的最強 {n} 招輪替」，再依各段佔比加權",
+    "bandHealthy": "血量高",
+    "bandBelow": "HP {hp} 以下",
+    "premiseNote": "條件式招式：自己湊得到的條件（上回合先打某招）會連同湊條件那一回合一起算，所以臭泥那組 combo 反而輸給直接攻擊；自己選不到的條件（剩餘血量、上回合骰失敗）則依實際發生頻率加權。頻率是從卡池推導的 —— 血量 40 以下佔 25%、80 以下佔 50%、上回合骰失敗 16%",
+    "disclaimer": "招式期望效益僅供參考，實際對戰複雜度高",
+    "rotationNote": "同一招不能連續使用（上回合用過的招會被鎖住），所以算的是最強兩招輪替的平均，而不是單一最強招重複。選 3 招是給「被對手封掉一招」的情況參考",
+    "inspect": "在機率表中查看"
+  },
+  "typeChart": {
+    "title": "屬性克制表",
+    "hint": "每隻寶可夢的招式吃什麼屬性，以及被什麼克制（一律 +{n}）",
+    "hintMixed": "每隻寶可夢的招式吃什麼屬性，以及被什麼克制",
+    "character": "寶可夢",
+    "main": "主屬性",
+    "secondary": "副屬性",
+    "weakness": "弱點",
+    "colorlessOnly": "只吃無色"
+  },
+  "moveAdvisor": {
+    "title": "招式推薦",
+    "hint": "最多選 {team} 隻，各自列出期望效益最高的 {deck} 招",
+    "floor": "至少帶一招 {n} 能量",
+    "calculating": "計算中…",
+    "empty": "從上面挑寶可夢",
+    "dice": "{n} 顆骰",
+    "unmet": "沒有 {costs} 能量的招式，已略過該條件",
+    "free": "免費",
+    "assumptions": "每隻寶可夢都假設帶著「自己招式最常要求的屬性」所組成的 3 顆純屬骰。不計弱點、也不指定對手。招式名保留日文，才對得上實體卡。"
   }
 }
