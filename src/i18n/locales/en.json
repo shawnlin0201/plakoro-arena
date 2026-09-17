@@ -67,7 +67,11 @@
     "bindWazaRemaining": "Choose {remaining} more",
     "eneCountTitle": "Choose the target energy count",
     "charaDiceEnemyPrefix": "Roll the opponent's character die — success if it lands on",
-    "charaDiceEnemySuffix": "."
+    "charaDiceEnemySuffix": ".",
+    "charaDiceComboPrefix": "Roll the opponent's character die {n} times; each landing on",
+    "charaDiceComboSuffix": " adds {dmg} damage. Choose the number of successes.",
+    "charaDiceSelectSelfTitle": "Choose the orientation the character die landed on — yours is fixed to it next turn.",
+    "charaDiceSelectEnemyTitle": "Choose the orientation the character die landed on — the opponent's is fixed to it next turn."
   },
   "win": {
     "victorySuffix": " Wins!",

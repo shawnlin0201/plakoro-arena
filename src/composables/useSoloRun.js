@@ -42,6 +42,8 @@ function newCombatant() {
     committedBannedMoveIds: [],
     committedBannedMoveSourceName: "",
     charaDiceBlocked: false,
+    // See useBattleState: set by FIX_CHARADICE_*, consumed on this player's next turn.
+    fixCharaDice: null,
     attackAnim: null,
     hitBlink: false,
     dmgOverlay: null,
@@ -168,6 +170,7 @@ export function useSoloRun(charactersRef, movesRef) {
     c.committedBannedMoveIds = []
     c.committedBannedMoveSourceName = ""
     c.charaDiceBlocked = false
+    c.fixCharaDice = null
     c.attackAnim = null
     c.hitBlink = false
     c.dmgOverlay = null
@@ -331,7 +334,9 @@ export function useSoloRun(charactersRef, movesRef) {
     showCharaDiceRepeatPrompt,
     showBindWazaPrompt,
     showEneCountPrompt,
-    showCharaDiceEnemyManualPrompt
+    showCharaDiceEnemyManualPrompt,
+    showCharaDiceComboEnemyPrompt,
+    showCharaDiceSelectPrompt
   }
 
   function resolveTurn(result) {
@@ -347,6 +352,7 @@ export function useSoloRun(charactersRef, movesRef) {
     mover.diceMod = 0
     mover.diceModBadges = []
     mover.charaDiceBlocked = false
+    mover.fixCharaDice = null
     state.phase = "resolve"
 
     if (result.kind === "fail") {
@@ -394,6 +400,22 @@ export function useSoloRun(charactersRef, movesRef) {
   function showCharaDiceEnemyManualPrompt(orientations, effectValue, ctx, onPick) {
     const dmgInfo = computeDisplayDamage(ctx.mv, ctx.mover, ctx.opp)
     state.effectPrompt = { kind: "charaDiceEnemyManual", orientations, effectValue, mv: ctx.mv, dmgInfo, mover: ctx.mover, opp: ctx.opp, onPick }
+    state.phase = "effectPrompt"
+  }
+
+  // The opponent rolls their character die n times; the player reports how many landed on one
+  // of `orientations`. A count, not a yes/no — that's what separates it from the prompt above.
+  function showCharaDiceComboEnemyPrompt(n, orientations, effectValue, ctx, onPick) {
+    const dmgInfo = computeDisplayDamage(ctx.mv, ctx.mover, ctx.opp)
+    state.effectPrompt = { kind: "charaDiceComboEnemy", n, orientations, effectValue, mv: ctx.mv, dmgInfo, mover: ctx.mover, opp: ctx.opp, onPick }
+    state.phase = "effectPrompt"
+  }
+
+  // The player reports which orientation their character die actually showed, and that becomes
+  // the orientation their (or the opponent's) die is pinned to next turn.
+  function showCharaDiceSelectPrompt(orientations, effectValue, ctx, target, onPick) {
+    const dmgInfo = computeDisplayDamage(ctx.mv, ctx.mover, ctx.opp)
+    state.effectPrompt = { kind: "charaDiceSelect", orientations, effectValue, target, mv: ctx.mv, dmgInfo, mover: ctx.mover, opp: ctx.opp, onPick }
     state.phase = "effectPrompt"
   }
 

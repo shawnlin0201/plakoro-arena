@@ -24,6 +24,13 @@ export function isCharaColorConditionMet(effType, owner, opponent) {
     const n = parseInt(hpLowMatch[1], 10)
     return owner.hp <= n
   }
+  // Same HP gate, damage-reduction flavour — needed here too, or the row stays unhighlighted
+  // while its condition is actually met and the player can't tell it's live.
+  const reduceTakenHpLowMatch = /^MOD_REDUCE_TAKEN_(\d+)HP_LOW$/.exec(effType)
+  if (reduceTakenHpLowMatch) {
+    const n = parseInt(reduceTakenHpLowMatch[1], 10)
+    return owner.hp <= n
+  }
   return false
 }
 

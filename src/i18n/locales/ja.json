@@ -67,7 +67,11 @@
     "bindWazaRemaining": "あと{remaining}個選んで下さい",
     "eneCountTitle": "対象エネルギー数を選択",
     "charaDiceEnemyPrefix": "相手のキャラコロを振り、",
-    "charaDiceEnemySuffix": "が出たなら成功"
+    "charaDiceEnemySuffix": "が出たなら成功",
+    "charaDiceComboPrefix": "相手のキャラコロを{n}回振り、",
+    "charaDiceComboSuffix": "が出るたびに{dmg}ダメージ追加。成功した数を選択。",
+    "charaDiceSelectSelfTitle": "出たキャラコロの向きを選択。次の自分の番、自分のキャラコロはその向きになります。",
+    "charaDiceSelectEnemyTitle": "出たキャラコロの向きを選択。次の相手の番、相手のキャラコロはその向きになります。"
   },
   "win": {
     "victorySuffix": "勝利！",

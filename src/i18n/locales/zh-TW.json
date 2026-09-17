@@ -67,7 +67,11 @@
     "bindWazaRemaining": "還要選{remaining}個",
     "eneCountTitle": "選擇目標能量數量",
     "charaDiceEnemyPrefix": "讓對手擲角色骰，出現",
-    "charaDiceEnemySuffix": "則成功"
+    "charaDiceEnemySuffix": "則成功",
+    "charaDiceComboPrefix": "讓對手擲{n}次角色骰，每次出現",
+    "charaDiceComboSuffix": "就追加{dmg}傷害。選擇成功的次數。",
+    "charaDiceSelectSelfTitle": "選擇這次角色骰擲出的向，下回合你的角色骰將固定為此向。",
+    "charaDiceSelectEnemyTitle": "選擇這次角色骰擲出的向，下回合對手的角色骰將固定為此向。"
   },
   "win": {
     "victorySuffix": "獲勝！",

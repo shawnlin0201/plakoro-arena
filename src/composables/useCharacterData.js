@@ -4,10 +4,16 @@ import { i18n } from '../i18n'
 import { asset } from '../data/assetPath'
 import charaRaw from '../data/generated/chara.json'
 import wazaRaw from '../data/generated/waza.json'
+import { reportEffectCoverage } from '../game/effectCoverage'
 import translationsEn from '../data/translations/en.json'
 import translationsZhTW from '../data/translations/zh-TW.json'
 
 const TRANSLATIONS = { en: translationsEn, 'zh-TW': translationsZhTW }
+
+// Fresh data can introduce effect types the engine has no handler for, and an unhandled effect
+// fails silently in play. Surfaced here, at import time, so it shows up the moment a dev opens
+// the app rather than only when someone happens to use that one move.
+if (import.meta.env?.DEV) reportEffectCoverage(wazaRaw)
 
 // The generated JSON mirrors whatever the Supabase rows hold, and those have historically
 // carried stray whitespace (e.g. a waza id of "STW05-002\n"). Anything used as a lookup key
