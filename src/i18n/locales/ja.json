@@ -267,7 +267,26 @@
         "round": "ラウンド",
         "match": "対戦",
         "result": "結果"
-      }
+      },
+      "editPairing": "組み合わせを手動調整",
+      "pairingDone": "完了",
+      "swapPickFirst": "2 人を選ぶと席が入れ替わります。その 2 試合の結果は消去されます。",
+      "swapPickSecond": "「{name}」を選択中。もう 1 人選ぶと入れ替わります。",
+      "changeBye": "不戦勝を変更",
+      "rewindTo": "第 {n} 回戦に戻す",
+      "rewindHere": "ここに戻す",
+      "confirmRewind": "第 {n} 回戦に戻すと、それ以降の {rounds} 回戦（{matches} 試合）が削除され、組み直しが必要になります。よろしいですか？",
+      "rewindConfirmBtn": "戻して削除",
+      "drop": "棄権",
+      "undrop": "復帰",
+      "addPlayer": "追加",
+      "addPlayerPlaceholder": "途中参加の選手名",
+      "rosterNote": "参加中 {active} 名／全 {total} 名。棄権者の成績は残りますが、以降の組み合わせには入りません。",
+      "joinCurrentRound": "第 {n} 回戦に直接入れる",
+      "addedPaired": "不戦勝の枠に入り、2 人の対戦になりました。",
+      "addedBye": "偶数だったため、新しい選手が今回は不戦勝です。",
+      "repair": "組み直し",
+      "confirmRepair": "現在の参加者と順位で本回戦を組み直します。入力済みの {n} 試合の結果は消去されます。よろしいですか？"
     }
   },
   "solo": {

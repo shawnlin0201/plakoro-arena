@@ -267,7 +267,26 @@
         "round": "Round",
         "match": "Match",
         "result": "Result"
-      }
+      },
+      "editPairing": "Adjust pairings manually",
+      "pairingDone": "Done",
+      "swapPickFirst": "Tap two players to swap their seats. Both matches lose their recorded result.",
+      "swapPickSecond": "Picked {name} — tap another player to swap.",
+      "changeBye": "Reassign bye",
+      "rewindTo": "Rewind to round {n}",
+      "rewindHere": "Rewind here",
+      "confirmRewind": "Rewinding to round {n} deletes the {rounds} round(s) after it ({matches} matches), which will need re-pairing. Continue?",
+      "rewindConfirmBtn": "Rewind and delete",
+      "drop": "Drop",
+      "undrop": "Re-enter",
+      "addPlayer": "Add",
+      "addPlayerPlaceholder": "Late entrant name",
+      "rosterNote": "{active} active of {total}. A dropped player keeps their results but takes no further pairings.",
+      "joinCurrentRound": "Join round {n} now",
+      "addedPaired": "Took the open bye seat — those two now play each other.",
+      "addedBye": "The round was even, so the new player takes a bye this round.",
+      "repair": "Re-pair",
+      "confirmRepair": "Re-pairing rebuilds this round from the current roster and standings. The {n} result(s) already entered this round will be cleared. Continue?"
     }
   },
   "solo": {

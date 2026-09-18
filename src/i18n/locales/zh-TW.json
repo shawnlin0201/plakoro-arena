@@ -267,7 +267,26 @@
         "round": "輪次",
         "match": "對戰",
         "result": "結果"
-      }
+      },
+      "editPairing": "手動調整配對",
+      "pairingDone": "完成調整",
+      "swapPickFirst": "點選兩位選手即可對調位置。對調後該兩場的成績會清除。",
+      "swapPickSecond": "已選「{name}」，再點一位選手完成對調。",
+      "changeBye": "改由他人輪空",
+      "rewindTo": "退回第 {n} 輪",
+      "rewindHere": "退回這一輪",
+      "confirmRewind": "退回第 {n} 輪後，之後的 {rounds} 輪（共 {matches} 場）將被刪除，需要重新排定。確定嗎？",
+      "rewindConfirmBtn": "退回並刪除",
+      "drop": "退賽",
+      "undrop": "復賽",
+      "addPlayer": "加入",
+      "addPlayerPlaceholder": "中途加入的選手名稱",
+      "rosterNote": "參賽中 {active} 人／共 {total} 人。退賽者保留既有成績，但不再排入之後的輪次。",
+      "joinCurrentRound": "直接排入第 {n} 輪",
+      "addedPaired": "已補上本輪輪空的位置，兩人對戰。",
+      "addedBye": "本輪人數為偶數，新選手本輪輪空。",
+      "repair": "重新配對",
+      "confirmRepair": "重新配對會依目前名冊與積分重排本輪，本輪已登錄的 {n} 場成績將被清除。確定嗎？"
     }
   },
   "solo": {
