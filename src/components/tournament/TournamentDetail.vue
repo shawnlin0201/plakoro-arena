@@ -8,7 +8,12 @@ import {
   isTournamentComplete,
   isRoundComplete,
   championOf,
-  assignTableNumbers
+  assignTableNumbers,
+  addPlayerToRound,
+  rewindToRound,
+  roundsAfter,
+  swapPlayers,
+  giveByeTo
 } from '../../game/tournamentPairing'
 import TournamentLottery from './TournamentLottery.vue'
 
@@ -119,13 +124,143 @@ function emitUpdate() {
   emit('update', local.value)
 }
 
-// Only the current round's results are editable — reaching back into an already-superseded
-// round is a rarer need, and for elimination it would require re-deriving every later round,
-// which is a deliberate v1 simplification (see the plan).
+// Swiss results stay editable in every round, not just the current one. A mis-entered result
+// surfaces late often enough to matter, and correcting it is safe here: computeStandings
+// recomputes from scratch, so points and both tiebreakers follow immediately, while the
+// pairings of rounds people already played stay as they were — which is what a real event does.
+//
+// Elimination is the opposite: round N+1's players ARE round N's winners, so editing a settled
+// result would leave someone who lost still in the bracket. There it goes through a rewind
+// instead, which discards the rounds that were derived from the result being changed.
 function recordResult(match, result) {
   match.result = result
   emitUpdate()
 }
+
+const pastRoundsEditable = computed(() => local.value.format === 'swiss')
+
+// --- rewind: reopen an earlier round and re-pair everything after it ---
+
+const rewindTarget = ref(null)
+const rewindLosses = computed(() => {
+  if (rewindTarget.value === null) return { rounds: 0, matches: 0 }
+  const lost = roundsAfter(local.value, rewindTarget.value)
+  return { rounds: lost.length, matches: lost.reduce((n, r) => n + r.matches.length, 0) }
+})
+
+function confirmRewind() {
+  if (rewindTarget.value === null) return
+  rewindToRound(local.value, rewindTarget.value)
+  rewindTarget.value = null
+  subview.value = 'round'
+  editingPairing.value = false
+  swapFirst.value = null
+  byePicker.value = false
+  emitUpdate()
+}
+
+// Re-pairs the current round from scratch, using the roster and standings as they are now.
+//
+// This is what makes a late entrant's pairing correct rather than merely workable. Slotting
+// someone into the bye seat puts them against whoever happened to be sitting out; Swiss pairs by
+// score group, and a newcomer on zero points belongs with the other players on zero — which,
+// when several arrive together, means they play each other. Only a re-pair produces that.
+const repairConfirm = ref(false)
+const recordedThisRound = computed(() =>
+  currentRound.value ? currentRound.value.matches.filter(m => m.player2Id !== null && m.result).length : 0
+)
+
+function requestRepair() {
+  if (!currentRound.value) return
+  // Nothing to lose when no result has been entered yet — skip the prompt.
+  if (recordedThisRound.value === 0) { doRepair(); return }
+  repairConfirm.value = true
+}
+
+function doRepair() {
+  const n = local.value.rounds.length
+  if (n === 0) return
+  rewindToRound(local.value, n - 1)
+  const round = local.value.format === 'swiss' ? pairSwissRound(local.value) : pairEliminationRound(local.value)
+  if (round) {
+    assignTableNumbers(local.value, round)
+    local.value.rounds.push(round)
+  }
+  repairConfirm.value = false
+  editingPairing.value = false
+  swapFirst.value = null
+  byePicker.value = false
+  lastAddResult.value = null
+  emitUpdate()
+}
+
+// --- manual pairing: tap two players to swap their seats ---
+
+const editingPairing = ref(false)
+const swapFirst = ref(null)
+const byePicker = ref(false)
+
+// Everyone currently in a real match — the candidates for taking over the bye.
+const byeCandidates = computed(() => {
+  if (!currentRound.value) return []
+  return currentRound.value.matches
+    .filter(m => m.player2Id !== null)
+    .flatMap(m => [m.player1Id, m.player2Id])
+})
+
+function togglePairingEdit() {
+  editingPairing.value = !editingPairing.value
+  swapFirst.value = null
+  byePicker.value = false
+}
+
+// Two taps make a swap; tapping the same player again just cancels the selection.
+function tapPlayer(playerId) {
+  if (!editingPairing.value || !currentRound.value) return
+  if (swapFirst.value === null) { swapFirst.value = playerId; return }
+  if (swapFirst.value === playerId) { swapFirst.value = null; return }
+  swapPlayers(local.value, currentRound.value, swapFirst.value, playerId)
+  swapFirst.value = null
+  emitUpdate()
+}
+
+function moveByeTo(playerId) {
+  if (!currentRound.value) return
+  if (giveByeTo(local.value, currentRound.value, playerId)) emitUpdate()
+  byePicker.value = false
+}
+
+// --- roster: add a late entrant, drop someone who left ---
+
+const newPlayerName = ref('')
+// Whether a late entrant joins the round in progress or waits for the next one. Joining now is
+// the default: the common case is someone arriving a few minutes late, and making them sit out
+// a round they could have played is the worse of the two errors.
+const addToCurrentRound = ref(true)
+const lastAddResult = ref(null) // 'paired' | 'bye' | null — what happened to the last entrant
+
+function addPlayer() {
+  const name = newPlayerName.value.trim()
+  if (!name) return
+  const player = { id: crypto.randomUUID(), name }
+  local.value.players.push(player)
+  lastAddResult.value = null
+  if (addToCurrentRound.value && currentRound.value && !complete.value) {
+    const outcome = addPlayerToRound(local.value, currentRound.value, player.id)
+    if (outcome) lastAddResult.value = outcome
+  }
+  newPlayerName.value = ''
+  emitUpdate()
+}
+
+// Flagged, never deleted: the matches they already played stay on the record, because removing
+// them would quietly rewrite every opponent's OMW%/OOMW%.
+function toggleDropped(player) {
+  player.dropped = !player.dropped
+  emitUpdate()
+}
+
+const activeCount = computed(() => local.value.players.filter(p => !p.dropped).length)
 
 let generating = false
 function generateNextRound() {
@@ -202,15 +337,65 @@ function generateNextRound() {
       <!-- Current round — a table row per match rather than a stack of cards, so it doesn't
            spread out the whole page. -->
       <div v-if="subview === 'round' && currentRound" style="overflow-x:auto;">
-        <div style="font-size:0.75rem; font-weight:800; color:var(--sub); margin-bottom:0.375rem;">{{ t('tournament.roundLabel', { n: currentRound.roundNumber }) }}</div>
+        <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.375rem;">
+          <div style="font-size:0.75rem; font-weight:800; color:var(--sub); flex:1;">{{ t('tournament.roundLabel', { n: currentRound.roundNumber }) }}</div>
+          <button
+            :class="['btn', editingPairing ? '' : 'secondary']"
+            style="padding:0.3125rem 0.5rem; font-size:0.625rem; flex-shrink:0;"
+            @click="togglePairingEdit"
+          >{{ editingPairing ? t('tournament.detail.pairingDone') : t('tournament.detail.editPairing') }}</button>
+          <button
+            class="btn secondary"
+            style="padding:0.3125rem 0.5rem; font-size:0.625rem; flex-shrink:0;"
+            @click="requestRepair"
+          >{{ t('tournament.detail.repair') }}</button>
+        </div>
+        <div v-if="editingPairing" style="font-size:0.625rem; color:var(--sub); line-height:1.6; padding-bottom:0.375rem;">
+          {{ swapFirst ? t('tournament.detail.swapPickSecond', { name: playerName(swapFirst) }) : t('tournament.detail.swapPickFirst') }}
+        </div>
+        <!-- Bye reassignment is its own picker: "who should sit out" is a question about one
+             person, where a swap needs two taps and the second one is always the same player. -->
+        <div v-if="byePicker" style="display:flex; flex-wrap:wrap; gap:0.25rem; padding-bottom:0.5rem;">
+          <button
+            v-for="pid in byeCandidates"
+            :key="pid"
+            class="btn secondary"
+            style="padding:0.1875rem 0.4375rem; font-size:0.5625rem;"
+            @click="moveByeTo(pid)"
+          >{{ playerName(pid) }}</button>
+        </div>
         <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
           <tbody>
             <tr v-for="m in currentRound.matches" :key="m.id" style="border-bottom:1px solid var(--line);">
               <td style="padding:0.5rem 0.375rem; color:var(--sub); white-space:nowrap;">
                 {{ m.table !== null ? t('tournament.detail.tableLabel', { n: m.table }) : t('tournament.detail.bye') }}
               </td>
+              <!-- While editing, each name is its own tap target; otherwise it's plain text. -->
               <td style="padding:0.5rem 0.5rem; font-weight:700; color:var(--ink);">
-                <template v-if="m.player2Id === null">{{ playerName(m.player1Id) }}</template>
+                <template v-if="editingPairing">
+                  <span
+                    v-for="(pid, si) in (m.player2Id === null ? [m.player1Id] : [m.player1Id, m.player2Id])"
+                    :key="pid"
+                  >
+                    <span v-if="si === 1" style="color:var(--sub); font-weight:400;"> vs </span>
+                    <span
+                      :style="{
+                        cursor:'pointer', borderRadius:'0.375rem', padding:'0.125rem 0.3125rem',
+                        background: swapFirst === pid ? 'var(--accent, #AEFF3E)' : 'rgba(0,0,0,.06)'
+                      }"
+                      @click="tapPlayer(pid)"
+                    >{{ playerName(pid) }}</span>
+                  </span>
+                </template>
+                <template v-else-if="m.player2Id === null">
+                  {{ playerName(m.player1Id) }}
+                  <button
+                    v-if="currentRound.matches.length > 1"
+                    class="btn secondary"
+                    style="padding:0.125rem 0.3125rem; font-size:0.5625rem; margin-left:0.25rem;"
+                    @click="byePicker = !byePicker"
+                  >{{ t('tournament.detail.changeBye') }}</button>
+                </template>
                 <template v-else>
                   {{ playerName(m.player1Id) }} vs {{ playerName(m.player2Id) }}
                   <span v-if="m.rematch" style="display:inline-block; font-size:0.625rem; font-weight:800; color:#fff; background:var(--danger); border-radius:0.5rem; padding:0.125rem 0.4375rem; margin-left:0.25rem;">{{ t('tournament.detail.rematchBadge') }}</span>
@@ -266,6 +451,17 @@ function generateNextRound() {
           </thead>
           <tbody>
             <template v-for="round in [...local.rounds].reverse()" :key="round.roundNumber">
+              <!-- One rewind control per round, so "go back to round 2 and re-pair from there"
+                   is reachable without hunting for it. -->
+              <tr v-if="round.roundNumber < local.rounds.length">
+                <td colspan="3" style="padding:0.25rem 0.5rem; text-align:right;">
+                  <button
+                    class="btn secondary"
+                    style="padding:0.1875rem 0.4375rem; font-size:0.5625rem;"
+                    @click="rewindTarget = round.roundNumber"
+                  >{{ t('tournament.detail.rewindTo', { n: round.roundNumber }) }}</button>
+                </td>
+              </tr>
               <tr v-for="m in round.matches" :key="m.id" style="border-bottom:1px solid var(--line);">
                 <td style="padding:0.375rem 0.5rem; color:var(--sub);">{{ round.roundNumber }}</td>
                 <td style="padding:0.375rem 0.5rem; font-weight:700;">
@@ -276,8 +472,16 @@ function generateNextRound() {
                     <span :style="{ color: nameColor(m, 'p2') }">{{ playerName(m.player2Id) }}</span>
                   </template>
                 </td>
-                <td style="padding:0.375rem 0.5rem; color:var(--sub);">
+                <!-- Swiss: the result stays editable here, because correcting it only moves the
+                     standings. Elimination shows it read-only — changing it there needs a
+                     rewind, since later rounds were derived from it. -->
+                <td style="padding:0.375rem 0.5rem; color:var(--sub); white-space:nowrap;">
                   <template v-if="m.player2Id === null">{{ t('tournament.detail.bye') }}</template>
+                  <template v-else-if="pastRoundsEditable">
+                    <button :class="['btn', m.result === 'p1' ? '' : 'secondary']" style="padding:0.1875rem 0.3125rem; font-size:0.5625rem;" @click="recordResult(m, 'p1')">{{ t('tournament.detail.resultP1') }}</button>
+                    <button :class="['btn', m.result === 'draw' ? '' : 'secondary']" style="padding:0.1875rem 0.3125rem; font-size:0.5625rem;" @click="recordResult(m, 'draw')">{{ t('tournament.detail.resultDraw') }}</button>
+                    <button :class="['btn', m.result === 'p2' ? '' : 'secondary']" style="padding:0.1875rem 0.3125rem; font-size:0.5625rem;" @click="recordResult(m, 'p2')">{{ t('tournament.detail.resultP2') }}</button>
+                  </template>
                   <template v-else-if="m.result === 'draw'">{{ t('tournament.detail.resultDraw') }}</template>
                   <template v-else-if="m.result === 'p1'">{{ playerName(m.player1Id) }}</template>
                   <template v-else-if="m.result === 'p2'">{{ playerName(m.player2Id) }}</template>
@@ -307,9 +511,42 @@ function generateNextRound() {
           >
           <span
             v-else
-            style="flex:1; min-width:0; font-size:0.8125rem; font-weight:700; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer;"
+            :style="{
+              flex:1, minWidth:0, fontSize:'0.8125rem', fontWeight:700, overflow:'hidden',
+              textOverflow:'ellipsis', whiteSpace:'nowrap', cursor:'pointer',
+              color: p.dropped ? 'var(--sub)' : 'var(--ink)',
+              textDecoration: p.dropped ? 'line-through' : 'none'
+            }"
             @click="startEditPlayer(p)"
           >{{ p.name }}</span>
+          <button
+            class="btn secondary"
+            style="padding:0.25rem 0.4375rem; font-size:0.5625rem; flex-shrink:0;"
+            @click="toggleDropped(p)"
+          >{{ p.dropped ? t('tournament.detail.undrop') : t('tournament.detail.drop') }}</button>
+        </div>
+
+        <!-- Late entrants join from the next round; they simply start on zero. -->
+        <div style="display:flex; align-items:center; gap:0.5rem; padding-top:0.25rem;">
+          <input
+            v-model="newPlayerName"
+            :placeholder="t('tournament.detail.addPlayerPlaceholder')"
+            @keyup.enter="addPlayer"
+            style="flex:1; min-width:0; font-size:0.8125rem; font-weight:700; padding:0.375rem 0.5rem; border-radius:0.375rem; border:0.125rem solid var(--line); background:#fff; color:var(--ink);"
+          >
+          <button class="btn" style="padding:0.375rem 0.625rem; font-size:0.6875rem; flex-shrink:0;" :disabled="!newPlayerName.trim()" @click="addPlayer">{{ t('tournament.detail.addPlayer') }}</button>
+        </div>
+        <label v-if="currentRound && !complete" style="display:flex; align-items:center; gap:0.3125rem; font-size:0.625rem; font-weight:700; color:var(--sub); cursor:pointer;">
+          <input type="checkbox" v-model="addToCurrentRound" style="width:0.75rem; height:0.75rem; margin:0;">
+          {{ t('tournament.detail.joinCurrentRound', { n: currentRound.roundNumber }) }}
+        </label>
+        <!-- Says which of the two things happened, since it depends on whether the round was
+             odd or even and the organizer shouldn't have to go and look. -->
+        <div v-if="lastAddResult" style="font-size:0.625rem; font-weight:800; color:var(--ink); line-height:1.6;">
+          {{ lastAddResult === 'paired' ? t('tournament.detail.addedPaired') : t('tournament.detail.addedBye') }}
+        </div>
+        <div style="font-size:0.625rem; color:var(--sub); line-height:1.6;">
+          {{ t('tournament.detail.rosterNote', { active: activeCount, total: local.players.length }) }}
         </div>
       </div>
 
@@ -321,6 +558,14 @@ function generateNextRound() {
       <div v-else-if="subview === 'bracket'" style="display:flex; gap:0.625rem; overflow-x:auto; padding-bottom:0.5rem;">
         <div v-for="round in local.rounds" :key="round.roundNumber" style="min-width:7.5rem; flex-shrink:0; display:flex; flex-direction:column; gap:0.375rem;">
           <div style="font-size:0.6875rem; font-weight:800; color:var(--sub); text-align:center;">{{ t('tournament.roundLabel', { n: round.roundNumber }) }}</div>
+          <!-- The bracket is elimination's history view, so the rewind control lives here for
+               that format — a wrong result can only be corrected by re-deriving what came after. -->
+          <button
+            v-if="round.roundNumber < local.rounds.length"
+            class="btn secondary"
+            style="padding:0.1875rem 0.375rem; font-size:0.5625rem;"
+            @click="rewindTarget = round.roundNumber"
+          >{{ t('tournament.detail.rewindHere') }}</button>
           <div
             v-for="m in round.matches"
             :key="m.id"
@@ -363,6 +608,32 @@ function generateNextRound() {
         <div style="display:flex; gap:0.625rem; justify-content:center;">
           <button class="btn secondary" @click="cancelEdit">{{ t('common.cancel') }}</button>
           <button class="btn" @click="confirmEdit">{{ t('common.confirm') }}</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Re-pairing discards this round's pairings; it only asks when results would be lost. -->
+    <div v-if="repairConfirm" class="modal-overlay" style="align-items:center;" @click.self="repairConfirm = false">
+      <div style="background:var(--bg); border-radius:1.125rem; box-shadow:var(--shadow); padding:1.25rem 1.5rem; max-width:22rem; display:flex; flex-direction:column; align-items:center; gap:0.75rem; text-align:center;">
+        <div style="font-size:0.8125rem; font-weight:700; color:var(--ink); line-height:1.6;">
+          {{ t('tournament.detail.confirmRepair', { n: recordedThisRound }) }}
+        </div>
+        <div style="display:flex; gap:0.625rem; justify-content:center;">
+          <button class="btn secondary" @click="repairConfirm = false">{{ t('common.cancel') }}</button>
+          <button class="btn fail" @click="doRepair">{{ t('tournament.detail.repair') }}</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rewinding throws away recorded results, so it says how many before doing it. -->
+    <div v-if="rewindTarget !== null" class="modal-overlay" style="align-items:center;" @click.self="rewindTarget = null">
+      <div style="background:var(--bg); border-radius:1.125rem; box-shadow:var(--shadow); padding:1.25rem 1.5rem; max-width:22rem; display:flex; flex-direction:column; align-items:center; gap:0.75rem; text-align:center;">
+        <div style="font-size:0.8125rem; font-weight:700; color:var(--ink); line-height:1.6;">
+          {{ t('tournament.detail.confirmRewind', { n: rewindTarget, rounds: rewindLosses.rounds, matches: rewindLosses.matches }) }}
+        </div>
+        <div style="display:flex; gap:0.625rem; justify-content:center;">
+          <button class="btn secondary" @click="rewindTarget = null">{{ t('common.cancel') }}</button>
+          <button class="btn fail" @click="confirmRewind">{{ t('tournament.detail.rewindConfirmBtn') }}</button>
         </div>
       </div>
     </div>

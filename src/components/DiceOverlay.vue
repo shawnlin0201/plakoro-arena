@@ -3,6 +3,7 @@ import { computed, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { typeBgColor } from '../data/constants'
 import { isCharaColorConditionMet } from '../game/damage'
+import { charaDiceOrientationAllowed } from '../game/effectQueue'
 import { asset } from '../data/assetPath'
 
 const battle = inject('battle')
@@ -32,7 +33,14 @@ const successDmgClass = computed(() => {
   return m === 'weak' ? 'weak' : m === 'up' ? 'up' : m === 'down' ? 'down' : ''
 })
 
+// A pinned character die (FIX_CHARADICE_*) leaves only the rows covering the pinned
+// orientations selectable, unlike charaDiceBlocked which disables the lot.
+function charaAvailable(ce) {
+  return hasChara.value && charaDiceOrientationAllowed(ce.orientations, p.value.fixCharaDice)
+}
+
 function charaHighlighted(ce) {
+  if (!charaAvailable(ce)) return false
   return isCharaColorConditionMet(ce.type, p.value, opp.value)
 }
 
@@ -40,7 +48,7 @@ function pickSuccessOnly() {
   battle.resolveTurn({ kind: 'success', dmgInfo: dmgInfo.value })
 }
 function pickChara(ce) {
-  if (!hasChara.value) return
+  if (!charaAvailable(ce)) return
   battle.resolveTurn({ kind: 'chara', ce, dmgInfo: dmgInfo.value })
 }
 function pickFail() {
@@ -98,8 +106,8 @@ function goBack() {
             v-for="(ce, i) in mv.chara"
             :key="i"
             class="dr-chara-btn"
-            :class="{ 'chara-unavailable': !hasChara }"
-            :disabled="!hasChara"
+            :class="{ 'chara-unavailable': !charaAvailable(ce) }"
+            :disabled="!charaAvailable(ce)"
             @click="pickChara(ce)"
           >
             <div class="dr-chara-btn-icons">

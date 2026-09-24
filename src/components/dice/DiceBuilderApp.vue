@@ -4,6 +4,8 @@ import { useI18n } from 'vue-i18n'
 import { randomDie, faceTypes, FACE_KEYS, CONVEX_TYPES, CONCAVE_TYPES, CHIP_TYPES } from '../../game/diceParts'
 import { asset } from '../../data/assetPath'
 import MoveOddsView from './MoveOddsView.vue'
+import DicePartsPlanView from './DicePartsPlanView.vue'
+import ChipIcon from './ChipIcon.vue'
 
 // Three.js + cannon-es (pulled in by DiceRoll3DCanvas and diceTextures) add roughly 600kB to
 // the bundle — code-split so only players who actually open the dice builder and roll pay
@@ -98,12 +100,9 @@ const FACE_LABEL_KEYS = {
 }
 const FACE_ROWS = FACE_KEYS.map(key => ({ key, labelKey: FACE_LABEL_KEYS[key] }))
 
-// A single source of truth for the face-cell size, in rem — everything else (the dual-slot
-// mini icons, their inset, and the divider line's length) is derived from it proportionally.
+// The face-cell size, in rem. ChipIcon derives everything inside a chip from the size it's
+// given, so this is the only measurement the grid has to decide.
 const CELL = 2.5
-const MINI = CELL * 9 / 24
-const INSET = CELL * 1 / 24
-const DIVIDER_LEN = CELL * Math.SQRT2
 
 // --- energy picker popup ---
 // convex/concave faces are fixed to their own type pool (5-way / 4-way single pick).
@@ -364,6 +363,7 @@ function onDiceRolled(results) {
 // 216 outcomes get grouped/tallied by that resulting type set.
 const showProbTable = ref(false)
 const showMoveOdds = ref(false)
+const showPartsPlan = ref(false)
 const TOTAL_ROLLS = ALL_FACE_KEYS.length ** 3
 
 function sortByChipOrder(types) {
@@ -519,6 +519,8 @@ function openProbTable() {
 <template>
   <MoveOddsView v-if="showMoveOdds" :sets="sets" :set-labels="SET_LABELS.slice(0, sets.length)" @back="showMoveOdds = false" />
 
+  <DicePartsPlanView v-else-if="showPartsPlan" :sets="sets" :set-labels="SET_LABELS.slice(0, sets.length)" @back="showPartsPlan = false" />
+
   <div v-else-if="showDiceRoll3D" class="board select-board" style="display:flex; flex-direction:column; align-items:center; min-height:0;">
     <div class="modal-title" style="margin:0.5rem 0 0.25rem; flex-shrink:0;">{{ t('diceBuilder.rollButton') }}</div>
 
@@ -533,14 +535,7 @@ function openProbTable() {
           <div v-for="(setResult, si) in rollResults" :key="si" style="display:flex; flex-direction:column; gap:0.5rem;">
             <div v-if="hasCompare" style="font-size:0.8125rem; font-weight:800; color:var(--ink);">{{ t('diceBuilder.set', { label: SET_LABELS[si] }) }}</div>
             <div v-for="(res, ri) in setResult" :key="ri" style="display:flex; align-items:center; gap:0.5rem;">
-              <div :style="{ position: 'relative', width: '2.25rem', height: '2.25rem', borderRadius: '0.5rem', overflow: 'hidden', background: '#fff', border: '0.125rem solid var(--line)', flexShrink: 0 }">
-                <template v-if="res.types.length > 1">
-                  <div :style="{ position: 'absolute', top: '50%', left: '50%', width: '3.18rem', height: '0.09375rem', background: 'var(--line)', transform: 'translate(-50%,-50%) rotate(-45deg)' }"></div>
-                  <img :src="asset(`image/ICON/${res.types[0]}.png`)" class="img-icon" :alt="res.types[0]" style="position:absolute; top:0.09375rem; left:0.09375rem; width:0.84375rem; height:0.84375rem;">
-                  <img :src="asset(`image/ICON/${res.types[1]}.png`)" class="img-icon" :alt="res.types[1]" style="position:absolute; bottom:0.09375rem; right:0.09375rem; width:0.84375rem; height:0.84375rem;">
-                </template>
-                <img v-else :src="asset(`image/ICON/${res.types[0]}.png`)" class="img-icon" :alt="res.types[0]">
-              </div>
+              <ChipIcon :types="res.types" :size="2.25" />
               <span style="font-size:0.8125rem; font-weight:800; color:var(--sub);">{{ t('diceBuilder.die', { n: ri + 1 }) }}</span>
             </div>
             <div v-if="si === 0" style="display:flex; align-items:center; gap:0.5rem;">
@@ -700,17 +695,11 @@ function openProbTable() {
               </label>
             </div>
             <div v-for="row in FACE_ROWS" :key="row.key" style="display:flex; justify-content:center; cursor:pointer;" @click="openPicker(si, di, row.key)">
-              <div
+              <ChipIcon
                 v-if="faceTypes(die, row.key).length > 0"
-                :style="{ position: 'relative', width: CELL + 'rem', height: CELL + 'rem', borderRadius: '0.5rem', overflow: 'hidden', background: '#fff', border: '0.125rem solid var(--line)', flexShrink: 0 }"
-              >
-                <template v-if="faceTypes(die, row.key).length > 1">
-                  <div :style="{ position: 'absolute', top: '50%', left: '50%', width: DIVIDER_LEN + 'rem', height: '0.09375rem', background: 'var(--line)', transform: 'translate(-50%,-50%) rotate(-45deg)' }"></div>
-                  <img :src="asset(`image/ICON/${faceTypes(die, row.key)[0]}.png`)" class="img-icon" :alt="faceTypes(die, row.key)[0]" :style="{ position: 'absolute', top: INSET + 'rem', left: INSET + 'rem', width: MINI + 'rem', height: MINI + 'rem' }">
-                  <img :src="asset(`image/ICON/${faceTypes(die, row.key)[1]}.png`)" class="img-icon" :alt="faceTypes(die, row.key)[1]" :style="{ position: 'absolute', bottom: INSET + 'rem', right: INSET + 'rem', width: MINI + 'rem', height: MINI + 'rem' }">
-                </template>
-                <img v-else :src="asset(`image/ICON/${faceTypes(die, row.key)[0]}.png`)" class="img-icon" :alt="faceTypes(die, row.key)[0]">
-              </div>
+                :types="faceTypes(die, row.key)"
+                :size="CELL"
+              />
               <div v-else :style="{ width: CELL + 'rem', height: CELL + 'rem', borderRadius: '0.5rem', border: '0.125rem dashed var(--sub)', flexShrink: 0 }"></div>
             </div>
           </template>
@@ -726,6 +715,7 @@ function openProbTable() {
       <button class="btn secondary" @click="showQuickApply = true">{{ t('diceBuilder.quickApplyButton') }}</button>
       <button class="btn secondary" @click="openProbTable">{{ t('diceBuilder.probButton') }}</button>
       <button class="btn secondary" @click="showMoveOdds = true">{{ t('diceBuilder.moveOddsButton') }}</button>
+      <button class="btn secondary" @click="showPartsPlan = true">{{ t('diceBuilder.partsPlanButton') }}</button>
       <button class="btn secondary" @click="emit('back')">{{ t('common.back') }}</button>
     </div>
   </div>

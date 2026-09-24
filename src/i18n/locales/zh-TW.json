@@ -67,7 +67,11 @@
     "bindWazaRemaining": "還要選{remaining}個",
     "eneCountTitle": "選擇目標能量數量",
     "charaDiceEnemyPrefix": "讓對手擲角色骰，出現",
-    "charaDiceEnemySuffix": "則成功"
+    "charaDiceEnemySuffix": "則成功",
+    "charaDiceComboPrefix": "讓對手擲{n}次角色骰，每次出現",
+    "charaDiceComboSuffix": "就追加{dmg}傷害。選擇成功的次數。",
+    "charaDiceSelectSelfTitle": "選擇這次角色骰擲出的向，下回合你的角色骰將固定為此向。",
+    "charaDiceSelectEnemyTitle": "選擇這次角色骰擲出的向，下回合對手的角色骰將固定為此向。"
   },
   "win": {
     "victorySuffix": "獲勝！",
@@ -197,7 +201,8 @@
       "dualHint": "分別為上下兩格選擇能量類型",
       "dualSlotLabel": "能量{n}",
       "close": "關閉"
-    }
+    },
+    "partsPlanButton": "購入零件"
   },
   "tournament": {
     "listTitle": "賽程編排",
@@ -263,7 +268,26 @@
         "round": "輪次",
         "match": "對戰",
         "result": "結果"
-      }
+      },
+      "editPairing": "手動調整配對",
+      "pairingDone": "完成調整",
+      "swapPickFirst": "點選兩位選手即可對調位置。對調後該兩場的成績會清除。",
+      "swapPickSecond": "已選「{name}」，再點一位選手完成對調。",
+      "changeBye": "改由他人輪空",
+      "rewindTo": "退回第 {n} 輪",
+      "rewindHere": "退回這一輪",
+      "confirmRewind": "退回第 {n} 輪後，之後的 {rounds} 輪（共 {matches} 場）將被刪除，需要重新排定。確定嗎？",
+      "rewindConfirmBtn": "退回並刪除",
+      "drop": "退賽",
+      "undrop": "復賽",
+      "addPlayer": "加入",
+      "addPlayerPlaceholder": "中途加入的選手名稱",
+      "rosterNote": "參賽中 {active} 人／共 {total} 人。退賽者保留既有成績，但不再排入之後的輪次。",
+      "joinCurrentRound": "直接排入第 {n} 輪",
+      "addedPaired": "已補上本輪輪空的位置，兩人對戰。",
+      "addedBye": "本輪人數為偶數，新選手本輪輪空。",
+      "repair": "重新配對",
+      "confirmRepair": "重新配對會依目前名冊與積分重排本輪，本輪已登錄的 {n} 場成績將被清除。確定嗎？"
     }
   },
   "solo": {
@@ -368,5 +392,36 @@
       "notice": "沒有可用的招式（已被封印或上回合使用過）。",
       "button": "跳過這回合"
     }
+  },
+  "partsPlan": {
+    "title": "購入零件",
+    "needTitle": "這組骰需要",
+    "ownedTitle": "我已擁有（以盒計）",
+    "buyTitle": "還需要購買",
+    "pieces": "共 {n} 件",
+    "boxes": "{n} 盒",
+    "clearOwned": "清空",
+    "kind": {
+      "convex": "凸面",
+      "concave": "凹面",
+      "single": "單晶片",
+      "dual": "雙晶片"
+    },
+    "anyConvex": "凸面（任意）",
+    "anyConcave": "凹面（任意）",
+    "total": "合計 {boxes} 盒",
+    "alreadyHave": "現有零件已足夠，不用再買。",
+    "approximate": "商品組合數過多，此為找到的最佳解，未必是絕對最少盒數。",
+    "unbuyable": "目前上市的商品中，沒有任何一款含有：",
+    "releaseDate": "{date} 發售",
+    "releaseMonth": "{y} 年 {m} 月發售",
+    "laterOption": "等 {names} 上市後，改成 {boxes} 盒就能湊齊。",
+    "category": {
+      "starter": "啟程套組（預組）",
+      "expeditionSmall": "探險盒組",
+      "dx": "DX 啟程套組"
+    },
+    "preferVariety": "盡量分散套組",
+    "varietyLimit": "（最少仍需同款 {n} 盒）"
   }
 }

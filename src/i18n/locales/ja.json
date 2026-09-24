@@ -67,7 +67,11 @@
     "bindWazaRemaining": "あと{remaining}個選んで下さい",
     "eneCountTitle": "対象エネルギー数を選択",
     "charaDiceEnemyPrefix": "相手のキャラコロを振り、",
-    "charaDiceEnemySuffix": "が出たなら成功"
+    "charaDiceEnemySuffix": "が出たなら成功",
+    "charaDiceComboPrefix": "相手のキャラコロを{n}回振り、",
+    "charaDiceComboSuffix": "が出るたびに{dmg}ダメージ追加。成功した数を選択。",
+    "charaDiceSelectSelfTitle": "出たキャラコロの向きを選択。次の自分の番、自分のキャラコロはその向きになります。",
+    "charaDiceSelectEnemyTitle": "出たキャラコロの向きを選択。次の相手の番、相手のキャラコロはその向きになります。"
   },
   "win": {
     "victorySuffix": "勝利！",
@@ -197,7 +201,8 @@
       "dualHint": "上下それぞれでエネルギータイプを選択",
       "dualSlotLabel": "エネルギー{n}",
       "close": "閉じる"
-    }
+    },
+    "partsPlanButton": "パーツ購入"
   },
   "tournament": {
     "listTitle": "トーナメント編成",
@@ -263,7 +268,26 @@
         "round": "ラウンド",
         "match": "対戦",
         "result": "結果"
-      }
+      },
+      "editPairing": "組み合わせを手動調整",
+      "pairingDone": "完了",
+      "swapPickFirst": "2 人を選ぶと席が入れ替わります。その 2 試合の結果は消去されます。",
+      "swapPickSecond": "「{name}」を選択中。もう 1 人選ぶと入れ替わります。",
+      "changeBye": "不戦勝を変更",
+      "rewindTo": "第 {n} 回戦に戻す",
+      "rewindHere": "ここに戻す",
+      "confirmRewind": "第 {n} 回戦に戻すと、それ以降の {rounds} 回戦（{matches} 試合）が削除され、組み直しが必要になります。よろしいですか？",
+      "rewindConfirmBtn": "戻して削除",
+      "drop": "棄権",
+      "undrop": "復帰",
+      "addPlayer": "追加",
+      "addPlayerPlaceholder": "途中参加の選手名",
+      "rosterNote": "参加中 {active} 名／全 {total} 名。棄権者の成績は残りますが、以降の組み合わせには入りません。",
+      "joinCurrentRound": "第 {n} 回戦に直接入れる",
+      "addedPaired": "不戦勝の枠に入り、2 人の対戦になりました。",
+      "addedBye": "偶数だったため、新しい選手が今回は不戦勝です。",
+      "repair": "組み直し",
+      "confirmRepair": "現在の参加者と順位で本回戦を組み直します。入力済みの {n} 試合の結果は消去されます。よろしいですか？"
     }
   },
   "solo": {
@@ -368,5 +392,37 @@
       "notice": "出せる技がない（封じられている、または前ターン使用）。",
       "button": "ターンをスキップ"
     }
+  },
+  "partsPlan": {
+    "title": "パーツ購入",
+    "needTitle": "この構成に必要",
+    "ownedTitle": "所持（箱単位）",
+    "buyTitle": "追加購入",
+    "pieces": "計 {n} 個",
+    "boxes": "{n} 箱",
+    "clearOwned": "クリア",
+    "kind": {
+      "convex": "凸面",
+      "concave": "凹面",
+      "single": "単エネチップ",
+      "dual": "双エネチップ"
+    },
+    "anyConvex": "凸面（任意）",
+    "anyConcave": "凹面（任意）",
+    "total": "合計 {boxes} 箱",
+    "alreadyHave": "必要なパーツは揃っています。",
+    "approximate": "組み合わせが多いため、見つかった最良案です（最少箱数の保証はありません）。",
+    "unbuyable": "発売中の商品には含まれていません：",
+    "note": "固定面は所属プールのみ（凸面＝草炎水雷鋼、凹面＝悪闘超空）。単一タイプの骰は必ず1面が無駄になり、その面はどの半骰でも構いません。内容は pla-koro.com による公式商品写真の集計です。",
+    "releaseDate": "{date} 発売",
+    "releaseMonth": "{y}年{m}月 発売",
+    "laterOption": "{names} の発売後なら {boxes} 箱で揃います。",
+    "category": {
+      "starter": "スタートセット",
+      "expeditionSmall": "探検パック",
+      "dx": "DX スタートセット"
+    },
+    "preferVariety": "なるべく別のセットに分散",
+    "varietyLimit": "（同じセットが最低 {n} 箱必要）"
   }
 }
