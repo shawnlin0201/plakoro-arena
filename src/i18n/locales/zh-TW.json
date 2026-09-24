@@ -201,7 +201,8 @@
       "dualHint": "分別為上下兩格選擇能量類型",
       "dualSlotLabel": "能量{n}",
       "close": "關閉"
-    }
+    },
+    "partsPlanButton": "購入零件"
   },
   "tournament": {
     "listTitle": "賽程編排",
@@ -391,5 +392,36 @@
       "notice": "沒有可用的招式（已被封印或上回合使用過）。",
       "button": "跳過這回合"
     }
+  },
+  "partsPlan": {
+    "title": "購入零件",
+    "needTitle": "這組骰需要",
+    "ownedTitle": "我已擁有（以盒計）",
+    "buyTitle": "還需要購買",
+    "pieces": "共 {n} 件",
+    "boxes": "{n} 盒",
+    "clearOwned": "清空",
+    "kind": {
+      "convex": "凸面",
+      "concave": "凹面",
+      "single": "單晶片",
+      "dual": "雙晶片"
+    },
+    "anyConvex": "凸面（任意）",
+    "anyConcave": "凹面（任意）",
+    "total": "合計 {boxes} 盒",
+    "alreadyHave": "現有零件已足夠，不用再買。",
+    "approximate": "商品組合數過多，此為找到的最佳解，未必是絕對最少盒數。",
+    "unbuyable": "目前上市的商品中，沒有任何一款含有：",
+    "releaseDate": "{date} 發售",
+    "releaseMonth": "{y} 年 {m} 月發售",
+    "laterOption": "等 {names} 上市後，改成 {boxes} 盒就能湊齊。",
+    "category": {
+      "starter": "啟程套組（預組）",
+      "expeditionSmall": "探險盒組",
+      "dx": "DX 啟程套組"
+    },
+    "preferVariety": "盡量分散套組",
+    "varietyLimit": "（最少仍需同款 {n} 盒）"
   }
 }

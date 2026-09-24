@@ -201,7 +201,8 @@
       "dualHint": "Pick an energy type for each half",
       "dualSlotLabel": "Energy {n}",
       "close": "Close"
-    }
+    },
+    "partsPlanButton": "Buy parts"
   },
   "tournament": {
     "listTitle": "Tournament Scheduler",
@@ -391,5 +392,37 @@
       "notice": "No move available — they're sealed or were used last turn.",
       "button": "Skip Turn"
     }
+  },
+  "partsPlan": {
+    "title": "Buy parts",
+    "needTitle": "This build needs",
+    "ownedTitle": "Already own (by box)",
+    "buyTitle": "Still to buy",
+    "pieces": "{n} pieces",
+    "boxes": "{n} boxes",
+    "clearOwned": "Clear",
+    "kind": {
+      "convex": "Convex",
+      "concave": "Concave",
+      "single": "Single chip",
+      "dual": "Dual chip"
+    },
+    "anyConvex": "Convex (any)",
+    "anyConcave": "Concave (any)",
+    "total": "{boxes} boxes total",
+    "alreadyHave": "You already have every part. Nothing to buy.",
+    "approximate": "Too many combinations to search exhaustively — this is the best found, not provably the fewest boxes.",
+    "unbuyable": "No product on sale yet contains:",
+    "note": "A fixed face only takes its own pool (convex = grass/fire/water/lightning/steel, concave = dark/fighting/psychic/flying), so a single-type die always has one dead face — any half will do for it. Contents counted from official product photos by pla-koro.com.",
+    "releaseDate": "out {date}",
+    "releaseMonth": "out {m}/{y}",
+    "laterOption": "Once {names} is out, {boxes} boxes would cover it instead.",
+    "category": {
+      "starter": "Start sets",
+      "expeditionSmall": "Adventure boxes",
+      "dx": "DX start set"
+    },
+    "preferVariety": "Spread across different sets",
+    "varietyLimit": "(still needs {n} of one set)"
   }
 }
