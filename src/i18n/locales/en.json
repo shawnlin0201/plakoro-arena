@@ -32,16 +32,31 @@
   "select": {
     "pickPokemon": "Pick a<br>Pokémon",
     "startFirst": "Go First",
-    "credit": "Image source: official \"Pokémon Zukan\" site"
+    "credit": "Image source: official \"Pokémon Zukan\" site",
+    "opponentWaiting": "Opponent hasn't picked yet",
+    "opponentPicking": "Opponent is picking…",
+    "opponentLocked": "Opponent is ready",
+    "ready": "Ready",
+    "readyWaiting": "Ready, waiting for opponent…",
+    "firstPickTitle": "Drawing who goes first!",
+    "firstPickResult": "Going first: {name}",
+    "setupEnergyDice": "Set Up Energy Dice",
+    "editEnergyDice": "Edit energy dice"
   },
   "charSelect": {
     "title": "Choose a Pokémon",
     "empty": "No Pokémon available to choose. Please check that characters are registered in the database.",
     "weaknessPrefix": "(Weak:"
   },
+  "energyDice": {
+    "title": "Set up your energy dice",
+    "hint": "Tap any face to change its energy — these 3 dice get thrown for the whole match.",
+    "confirm": "Done"
+  },
   "moveSelect": {
     "title": "Choose 4 moves for {name}",
-    "confirm": "Confirm selected moves"
+    "confirm": "Confirm selected moves",
+    "opponentThinking": "Opponent is choosing a move…"
   },
   "moveCard": {
     "usedLastTurn": "Used last turn",
@@ -54,7 +69,10 @@
     "charaDiceCheck": "Character Die Check",
     "successOnly": "Move only (no character die effect)",
     "energyShortage": "Not Enough Energy",
-    "moveFail": "Move Fails"
+    "moveFail": "Move Fails",
+    "throwCharaDie": "Throw Dice",
+    "opponentResolving": "Opponent is resolving their move…",
+    "opponentRolled": "Opponent's roll result"
   },
   "effectPrompt": {
     "diceRollLabel": "{n}",
@@ -72,6 +90,20 @@
     "charaDiceComboSuffix": " adds {dmg} damage. Choose the number of successes.",
     "charaDiceSelectSelfTitle": "Choose the orientation the character die landed on — yours is fixed to it next turn.",
     "charaDiceSelectEnemyTitle": "Choose the orientation the character die landed on — the opponent's is fixed to it next turn."
+  },
+  "turnResult": {
+    "title": "Turn Result",
+    "waiting": "Waiting for the opponent to confirm…"
+  },
+  "diceTask": {
+    "charaYourTurn": "Your turn to throw the character die",
+    "charaWaiting": "Opponent is throwing the character die…",
+    "charaOrientationHint": "Success if it lands on:",
+    "charaProgressCount": "{count} success(es) so far, {remaining} more throw(s) to go",
+    "charaProgressRepeat": "{count} success(es) in a row — keep going until it misses",
+    "throwAgain": "Throw Again",
+    "energyYourTurn": "Your turn to throw {n} energy dice",
+    "energyWaiting": "Opponent is throwing {n} energy dice…"
   },
   "win": {
     "victorySuffix": " Wins!",

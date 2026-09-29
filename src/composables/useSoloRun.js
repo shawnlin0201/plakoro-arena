@@ -374,8 +374,8 @@ export function useSoloRun(charactersRef, movesRef) {
 
   // --- effect prompts (same shapes as duel mode) ---
 
-  function showDicePrompt(maxNum, multiplier, onPick) {
-    state.effectPrompt = { kind: "diceNumber", max: maxNum, multiplier, onPick }
+  function showDicePrompt(n, multiplier, ctx, onPick) {
+    state.effectPrompt = { kind: "diceNumber", max: n * 2, multiplier, onPick }
     state.phase = "effectPrompt"
   }
   function showCharaDiceCountPrompt(n, effectValue, ctx, onPick) {

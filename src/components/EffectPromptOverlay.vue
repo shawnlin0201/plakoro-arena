@@ -5,10 +5,16 @@ import MoveCard from './MoveCard.vue'
 import { asset } from '../data/assetPath'
 
 const battle = inject('battle')
+const online = inject('online')
 const { moves } = inject('characterData')
 const { t } = useI18n()
 const state = battle.state
 const ep = computed(() => state.effectPrompt)
+
+// bindWaza is the one prompt kind still standing in for a genuine choice rather than a die read
+// (see useBattleState.js) — it's the opponent's own choice of which of THEIR moves to sacrifice,
+// so only ep.targetKey's own client may pick a row; the other side gets a read-only wait state.
+const isBindTarget = computed(() => ep.value.kind !== 'bindWaza' || !online.myKey.value || online.myKey.value === ep.value.targetKey)
 
 const diceCountLabel = computed(() => t('effectPrompt.diceRollLabel', { n: ep.value.max === 6 ? 3 : ep.value.max === 4 ? 2 : 1 }))
 const diceSub = computed(() => ep.value.max === 2 ? t('effectPrompt.diceSubSingle') : t('effectPrompt.diceSubMulti'))
@@ -77,7 +83,7 @@ function pickBindMove(mid) {
 
     <template v-else-if="ep.kind === 'bindWaza'">
       <div class="overlay-title">{{ t('effectPrompt.bindWazaTitle') }}</div>
-      <div class="overlay-sub">{{ t('effectPrompt.bindWazaRemaining', { remaining: bindRemaining }) }}</div>
+      <div class="overlay-sub">{{ isBindTarget ? t('effectPrompt.bindWazaRemaining', { remaining: bindRemaining }) : t('turnResult.waiting') }}</div>
       <div class="ms-grid" style="margin-top:0.625rem; width:100%; max-width:40rem; flex:1 1 auto; min-height:0;">
         <MoveCard
           v-for="row in bindMoveRows"
@@ -86,8 +92,8 @@ function pickBindMove(mid) {
           :dmg-info="row.dmgInfo"
           :owner="target"
           :opponent="targetOpp"
-          :disabled="row.disabled"
-          :clickable="!row.disabled"
+          :disabled="row.disabled || !isBindTarget"
+          :clickable="!row.disabled && isBindTarget"
           @pick="pickBindMove"
         />
       </div>

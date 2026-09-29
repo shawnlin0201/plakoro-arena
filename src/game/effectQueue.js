@@ -37,7 +37,7 @@ export function runEffectQueue(queue, idx, ctx, hooks, done) {
   const enemyDiceMatch = /^DAMAGE_BY_ENEMY_(\d+)DICE$/.exec(eff.type)
   if (enemyDiceMatch) {
     const n = parseInt(enemyDiceMatch[1], 10)
-    hooks.showDicePrompt(n * 2, eff.value, num => {
+    hooks.showDicePrompt(n, eff.value, ctx, num => {
       ctx.dmgToOpp += num * eff.value
       next()
     })

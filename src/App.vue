@@ -3,12 +3,17 @@ import { computed, defineAsyncComponent, onMounted, provide, ref, watch } from '
 import { useI18n } from 'vue-i18n'
 import { useCharacterData } from './composables/useCharacterData'
 import { useBattleState } from './composables/useBattleState'
+import { useOnlineRoom } from './composables/useOnlineRoom'
 import { useStageLayout } from './composables/useStageLayout'
 import Board from './components/Board.vue'
+import OnlineRoomPanel from './components/OnlineRoomPanel.vue'
+import FirstPickWheel from './components/FirstPickWheel.vue'
 import SelectBoard from './components/SelectBoard.vue'
 import MoveSelectPanel from './components/MoveSelectPanel.vue'
 import DiceOverlay from './components/DiceOverlay.vue'
 import EffectPromptOverlay from './components/EffectPromptOverlay.vue'
+import TurnResultOverlay from './components/TurnResultOverlay.vue'
+import ExtraRollOverlay from './components/ExtraRollOverlay.vue'
 import WinScreen from './components/WinScreen.vue'
 import Modal from './components/Modal.vue'
 import TurnCutIn from './components/TurnCutIn.vue'
@@ -25,8 +30,10 @@ const PriceLogApp = defineAsyncComponent(() => import('./components/pricelog/Pri
 const { t } = useI18n()
 const characterData = useCharacterData()
 const battle = useBattleState(characterData.moves)
-provide('battle', battle)
+const online = useOnlineRoom(battle)
+provide('battle', online.battle)
 provide('characterData', characterData)
+provide('online', online)
 
 const state = battle.state
 const { isLoading, loadError } = characterData
@@ -54,7 +61,16 @@ function exitToHome() {
 const stageRef = ref(null)
 useStageLayout(stageRef)
 
-const inBattleBoard = computed(() => ['moveSelect', 'diceRoll', 'resolve', 'effectPrompt'].includes(state.phase))
+const inBattleBoard = computed(() => ['moveSelect', 'diceRoll', 'resolve', 'effectPrompt', 'charaThrowTask', 'energyThrowTask', 'turnResultConfirm'].includes(state.phase))
+
+// Each side has their own modal slot (state.modals.A / .B) so opening one never closes the
+// other's — this picks out whichever slot this client should actually render: your own seat
+// when online, or whichever one is open when hotseat (only one is ever open at a time there,
+// since it's a single shared device).
+const activeModalKey = computed(() => {
+  if (online.myKey.value) return state.modals[online.myKey.value] ? online.myKey.value : null
+  return state.modals.A ? 'A' : (state.modals.B ? 'B' : null)
+})
 
 watch(() => t('appTitle'), (title) => {
   document.title = title
@@ -88,15 +104,22 @@ onMounted(() => {
       <ModeSelect v-else-if="mode === null" @pick="mode = $event" />
 
       <template v-else-if="mode === 'duel'">
+        <OnlineRoomPanel :online="online" />
         <SelectBoard v-if="state.phase === 'select'" />
+        <FirstPickWheel v-else-if="state.phase === 'drawingFirst'" :winner-key="state.pendingFirstPick" />
         <Board v-else :turn-mode="inBattleBoard" />
 
         <MoveSelectPanel v-if="state.phase === 'moveSelect'" />
         <DiceOverlay v-if="state.phase === 'diceRoll'" />
-        <MoveSelectPanel v-if="state.phase === 'resolve' || state.phase === 'effectPrompt'" resolve-phase />
+        <MoveSelectPanel
+          v-if="['resolve', 'effectPrompt', 'charaThrowTask', 'energyThrowTask', 'turnResultConfirm'].includes(state.phase)"
+          resolve-phase
+        />
         <EffectPromptOverlay v-if="state.phase === 'effectPrompt'" />
+        <ExtraRollOverlay v-if="state.phase === 'charaThrowTask' || state.phase === 'energyThrowTask'" />
+        <TurnResultOverlay v-if="state.phase === 'turnResultConfirm'" />
         <WinScreen v-if="state.phase === 'win'" />
-        <Modal v-if="state.modal" />
+        <Modal v-if="activeModalKey" :player-key="activeModalKey" />
         <TurnCutIn v-if="state.turnCutIn" />
       </template>
 

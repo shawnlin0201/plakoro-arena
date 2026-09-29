@@ -32,16 +32,31 @@
   "select": {
     "pickPokemon": "選擇<br>寶可夢",
     "startFirst": "先攻開始",
-    "credit": "圖片來源：官方網站「Pokémon圖鑑」"
+    "credit": "圖片來源：官方網站「Pokémon圖鑑」",
+    "opponentWaiting": "對方尚未選擇",
+    "opponentPicking": "對方選擇中…",
+    "opponentLocked": "對方已選好",
+    "ready": "準備完成",
+    "readyWaiting": "已準備，等待對方…",
+    "firstPickTitle": "抽籤決定先攻！",
+    "firstPickResult": "先攻：{name}",
+    "setupEnergyDice": "設定能量骰",
+    "editEnergyDice": "修改能量骰"
   },
   "charSelect": {
     "title": "選擇寶可夢",
     "empty": "沒有可選擇的寶可夢，請確認資料庫中已登錄角色資料。",
     "weaknessPrefix": "（弱點："
   },
+  "energyDice": {
+    "title": "設定你的能量骰",
+    "hint": "點任一面調整能量，整場對戰都會用這 3 顆骰子擲骰。",
+    "confirm": "完成設定"
+  },
   "moveSelect": {
     "title": "為{name}選擇4個招式",
-    "confirm": "以所選招式確定"
+    "confirm": "以所選招式確定",
+    "opponentThinking": "對方選擇招式中…"
   },
   "moveCard": {
     "usedLastTurn": "上回合已使用",
@@ -54,7 +69,10 @@
     "charaDiceCheck": "角色骰判定",
     "successOnly": "僅使用招式（無角色骰效果）",
     "energyShortage": "能量不足",
-    "moveFail": "招式失敗"
+    "moveFail": "招式失敗",
+    "throwCharaDie": "丟擲骰子",
+    "opponentResolving": "對方判定招式中…",
+    "opponentRolled": "對方的擲骰結果"
   },
   "effectPrompt": {
     "diceRollLabel": "{n}個",
@@ -72,6 +90,20 @@
     "charaDiceComboSuffix": "就追加{dmg}傷害。選擇成功的次數。",
     "charaDiceSelectSelfTitle": "選擇這次角色骰擲出的向，下回合你的角色骰將固定為此向。",
     "charaDiceSelectEnemyTitle": "選擇這次角色骰擲出的向，下回合對手的角色骰將固定為此向。"
+  },
+  "turnResult": {
+    "title": "本回合結果",
+    "waiting": "等待對方確認結果…"
+  },
+  "diceTask": {
+    "charaYourTurn": "輪到你擲角色骰",
+    "charaWaiting": "對方正在擲角色骰…",
+    "charaOrientationHint": "擲出以下方向則成功：",
+    "charaProgressCount": "已成功{count}次，還需再擲{remaining}次",
+    "charaProgressRepeat": "已連續成功{count}次，繼續擲到失手為止",
+    "throwAgain": "再擲一次",
+    "energyYourTurn": "輪到你擲{n}顆能量骰",
+    "energyWaiting": "對方正在擲{n}顆能量骰…"
   },
   "win": {
     "victorySuffix": "獲勝！",
