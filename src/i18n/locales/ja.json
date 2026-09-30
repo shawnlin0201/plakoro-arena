@@ -32,16 +32,31 @@
   "select": {
     "pickPokemon": "ポケモンを<br>選ぶ",
     "startFirst": "先攻で開始",
-    "credit": "画像出典：公式サイト「ポケモンずかん」"
+    "credit": "画像出典：公式サイト「ポケモンずかん」",
+    "opponentWaiting": "相手はまだ選択していません",
+    "opponentPicking": "相手が選択中…",
+    "opponentLocked": "相手の準備完了",
+    "ready": "準備完了",
+    "readyWaiting": "準備完了、相手を待っています…",
+    "firstPickTitle": "抽選で先攻を決定！",
+    "firstPickResult": "先攻：{name}",
+    "setupEnergyDice": "エネコロを設定",
+    "editEnergyDice": "エネコロを編集"
   },
   "charSelect": {
     "title": "ポケモンを選択",
     "empty": "選択できるポケモンがありません。データベースにキャラクターが登録されているかご確認ください。",
     "weaknessPrefix": "(弱点:"
   },
+  "energyDice": {
+    "title": "エネコロを設定しよう",
+    "hint": "面をタップしてエネルギーを変更。この3個を対戦中ずっと使います。",
+    "confirm": "設定完了"
+  },
   "moveSelect": {
     "title": "{name} のワザを4つ選択",
-    "confirm": "選択したワザで確定"
+    "confirm": "選択したワザで確定",
+    "opponentThinking": "相手がワザを選択中…"
   },
   "moveCard": {
     "usedLastTurn": "前ターン使用",
@@ -54,7 +69,10 @@
     "charaDiceCheck": "キャラコロチェック",
     "successOnly": "ワザのみ（キャラコロ効果なし）",
     "energyShortage": "エネ不足",
-    "moveFail": "ワザ失敗"
+    "moveFail": "ワザ失敗",
+    "throwCharaDie": "サイコロを振る",
+    "opponentResolving": "相手がワザを判定中…",
+    "opponentRolled": "相手のロール結果"
   },
   "effectPrompt": {
     "diceRollLabel": "{n}個",
@@ -72,6 +90,20 @@
     "charaDiceComboSuffix": "が出るたびに{dmg}ダメージ追加。成功した数を選択。",
     "charaDiceSelectSelfTitle": "出たキャラコロの向きを選択。次の自分の番、自分のキャラコロはその向きになります。",
     "charaDiceSelectEnemyTitle": "出たキャラコロの向きを選択。次の相手の番、相手のキャラコロはその向きになります。"
+  },
+  "turnResult": {
+    "title": "このターンの結果",
+    "waiting": "相手の確認を待っています…"
+  },
+  "diceTask": {
+    "charaYourTurn": "あなたの番です。キャラコロを振ってください",
+    "charaWaiting": "相手がキャラコロを振っています…",
+    "charaOrientationHint": "出たら成功：",
+    "charaProgressCount": "成功{count}回、残り{remaining}回",
+    "charaProgressRepeat": "連続成功{count}回、失敗するまで続けます",
+    "throwAgain": "もう一度振る",
+    "energyYourTurn": "あなたの番です。エネコロを{n}個振ってください",
+    "energyWaiting": "相手がエネコロを{n}個振っています…"
   },
   "win": {
     "victorySuffix": "勝利！",
