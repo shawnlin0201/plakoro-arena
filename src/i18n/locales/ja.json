@@ -118,7 +118,8 @@
     "priceLog": "取引マーケット",
     "tournament": "トーナメント編成",
     "tierList": "キャラ強さランキング",
-    "typeChart": "タイプ相性表"
+    "typeChart": "タイプ相性表",
+    "tierMaker": "Tierメーカー"
   },
   "priceLog": {
     "title": {
@@ -377,6 +378,18 @@
     "secondary": "サブ",
     "weakness": "弱点",
     "colorlessOnly": "無色のみ"
+  },
+  "tierMaker": {
+    "title": "Tierメーカー",
+    "titlePlaceholder": "タイトルを入力",
+    "rosterLabel": "キャラクター一覧",
+    "addTier": "階層を追加",
+    "newTierLabel": "新規",
+    "deleteTier": "階層を削除",
+    "resetButton": "配置をリセット",
+    "resetConfirm": "もう一度タップで確定",
+    "exportButton": "画像として書き出す",
+    "exporting": "書き出し中…"
   },
   "solo": {
     "you": "あなた",

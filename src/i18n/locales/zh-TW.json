@@ -118,7 +118,8 @@
     "priceLog": "交易市場",
     "tournament": "賽程編排",
     "tierList": "角色強度排行",
-    "typeChart": "屬性克制表"
+    "typeChart": "屬性克制表",
+    "tierMaker": "Tier 製作器"
   },
   "priceLog": {
     "title": {
@@ -377,6 +378,18 @@
     "secondary": "副屬性",
     "weakness": "弱點",
     "colorlessOnly": "只吃無色"
+  },
+  "tierMaker": {
+    "title": "Tier 製作器",
+    "titlePlaceholder": "輸入標題",
+    "rosterLabel": "角色清單",
+    "addTier": "新增階別",
+    "newTierLabel": "新階別",
+    "deleteTier": "刪除階別",
+    "resetButton": "清空排列",
+    "resetConfirm": "再按一次確定清空",
+    "exportButton": "匯出圖片",
+    "exporting": "匯出中…"
   },
   "solo": {
     "you": "你",
