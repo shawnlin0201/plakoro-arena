@@ -5,6 +5,7 @@ import { loadTournaments, saveTournament, deleteTournament } from '../../data/to
 import { pairSwissRound, pairEliminationRound, isTournamentComplete, assignTableNumbers } from '../../game/tournamentPairing'
 import TournamentSetup from './TournamentSetup.vue'
 import TournamentDetail from './TournamentDetail.vue'
+import TournamentImportModal from './TournamentImportModal.vue'
 
 const emit = defineEmits(['back'])
 const { t } = useI18n()
@@ -13,6 +14,7 @@ const view = ref('list') // 'list' | 'setup' | 'detail'
 const tournaments = ref(loadTournaments())
 const activeTournament = ref(null)
 const confirmDeleteId = ref(null)
+const importOpen = ref(false)
 
 function openTournament(tour) {
   activeTournament.value = tour
@@ -35,6 +37,20 @@ function onUpdate(updated) {
   const idx = tournaments.value.findIndex(x => x.id === updated.id)
   if (idx >= 0) tournaments.value[idx] = updated
   activeTournament.value = updated
+}
+
+// Imported tournaments arrive with fresh ids, so nothing here can overwrite an existing one —
+// importing the same file twice leaves two copies rather than silently replacing a day's work.
+// Deleting the spare is one click; recovering results that were overwritten is not possible.
+function onImport(tours) {
+  tours.forEach(tour => {
+    saveTournament(tour)
+    tournaments.value.push(tour)
+  })
+  importOpen.value = false
+  // Straight into it when there's one, which is the common case. A batch stays on the list, so
+  // the organiser can see everything that landed.
+  if (tours.length === 1) openTournament(tours[0])
 }
 
 function confirmDelete() {
@@ -83,8 +99,15 @@ function statusLabel(tour) {
 
     <div style="display:flex; gap:0.625rem; justify-content:center; padding:0.75rem 0 0.25rem; flex-shrink:0;">
       <button class="btn" @click="view = 'setup'">{{ t('tournament.newTournament') }}</button>
+      <button class="btn secondary" @click="importOpen = true">{{ t('tournament.import.button') }}</button>
       <button class="btn secondary" @click="emit('back')">{{ t('common.back') }}</button>
     </div>
+
+    <TournamentImportModal
+      v-if="importOpen"
+      @close="importOpen = false"
+      @import="onImport"
+    />
 
     <div v-if="confirmDeleteId" class="modal-overlay" style="align-items:center;" @click.self="confirmDeleteId = null">
       <div style="background:var(--bg); border-radius:1.125rem; box-shadow:var(--shadow); padding:1.25rem 1.5rem; max-width:22rem; display:flex; flex-direction:column; align-items:center; gap:0.75rem; text-align:center;">

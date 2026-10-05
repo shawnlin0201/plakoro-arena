@@ -288,7 +288,7 @@
       "formatLabel": "Format",
       "playersLabel": "Players",
       "playersPlaceholder": "One player name per line",
-      "playersHint": "At least 2 players required",
+      "playersHint": "One per line. Append a roster code after a semicolon if you have one, e.g. “Ming;P000003”. Two columns pasted from a spreadsheet also work.",
       "roundsLabel": "Swiss rounds",
       "roundsHint": "A suggested round count is filled in — adjust it if you like",
       "validationTooFewPlayers": "Enter at least 2 players",
@@ -350,7 +350,39 @@
       "addedPaired": "Took the open bye seat — those two now play each other.",
       "addedBye": "The round was even, so the new player takes a bye this round.",
       "repair": "Re-pair",
-      "confirmRepair": "Re-pairing rebuilds this round from the current roster and standings. The {n} result(s) already entered this round will be cleared. Continue?"
+      "confirmRepair": "Re-pairing rebuilds this round from the current roster and standings. The {n} result(s) already entered this round will be cleared. Continue?",
+      "codePlaceholder": "Code"
+    },
+    "export": {
+      "title": "Export tournament",
+      "button": "Export",
+      "hint": "The whole event as one file — players, every round’s pairings, every result. Import it back to carry on.",
+      "summary": "{players} players · {rounds} rounds",
+      "saveFile": "Download file",
+      "copyFile": "Copy contents",
+      "copied": "Copied",
+      "unplayed": "{n} matches have no result yet; they export as unplayed."
+    },
+    "import": {
+      "button": "Import",
+      "title": "Import tournaments",
+      "hint": "Load exported tournament files — several at once. Each is judged on its own; a bad file doesn’t stop the rest.",
+      "pickFiles": "Choose files…",
+      "pastePlaceholder": "Or paste contents here",
+      "addPasted": "Add",
+      "pastedLabel": "Pasted text",
+      "summary": "{players} players · {rounds} rounds · {played} recorded",
+      "skipping": "{n} files will be skipped",
+      "confirm": "Import",
+      "confirmMany": "Import {n}",
+      "error": {
+        "notJson": "Not valid JSON — the copy may have been cut short.",
+        "wrongFormat": "Not a tournament file from this tool.",
+        "tooNew": "From a newer version than this one can read.",
+        "malformed": "The tournament data is incomplete; the file may be truncated.",
+        "unknownPlayer": "A match names someone who is not in the player list",
+        "unreadable": "The file could not be read."
+      }
     }
   },
   "tierList": {

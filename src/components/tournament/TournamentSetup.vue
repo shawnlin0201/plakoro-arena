@@ -1,6 +1,9 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+// Registration is when a player's roster code actually exists — they say it as they sign in.
+// Recovering it later means matching on a name they may not have used last time.
+import { parsePlayerLine } from '../../data/tournaments'
 
 const emit = defineEmits(['created', 'back'])
 const { t } = useI18n()
@@ -14,7 +17,8 @@ const showValidation = ref(false)
 
 // Names are deliberately not deduped — two real players can share a nickname, and pairing/
 // results are keyed off generated ids, not the name string.
-const parsedPlayers = computed(() => playersText.value.split('\n').map(s => s.trim()).filter(Boolean))
+const parsedPlayers = computed(() =>
+  playersText.value.split('\n').map(parsePlayerLine).filter(p => p.name))
 
 const suggestedRounds = computed(() => Math.max(1, Math.ceil(Math.log2(Math.max(2, parsedPlayers.value.length)))))
 
@@ -36,7 +40,7 @@ function submit() {
     name: name.value.trim() || t('tournament.setup.namePlaceholder'),
     format: format.value,
     createdAt: Date.now(),
-    players: parsedPlayers.value.map(n => ({ id: crypto.randomUUID(), name: n })),
+    players: parsedPlayers.value.map(p => ({ id: crypto.randomUUID(), name: p.name, code: p.code })),
     rounds: [],
     swissTotalRounds: format.value === 'swiss' ? effectiveRounds.value : undefined
   })
@@ -84,6 +88,7 @@ function submit() {
           rows="6"
           style="font-size:0.8125rem; font-weight:600; padding:0.5rem 0.625rem; border-radius:0.625rem; border:0.125rem solid var(--line); background:#fff; color:var(--ink); resize:vertical; font-family:inherit;"
         ></textarea>
+        <div style="font-size:0.5625rem; color:var(--sub); font-weight:700; line-height:1.6;">{{ t('tournament.setup.playersHint') }}</div>
         <span style="font-size:0.6875rem; color:var(--sub);">{{ t('tournament.setup.playersHint') }} · {{ t('tournament.playerCount', { n: parsedPlayers.length }) }}</span>
         <span v-if="showValidation && !canSubmit" style="font-size:0.6875rem; color:var(--danger); font-weight:800;">{{ t('tournament.setup.validationTooFewPlayers') }}</span>
       </div>

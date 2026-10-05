@@ -288,7 +288,7 @@
       "formatLabel": "形式",
       "playersLabel": "参加者リスト",
       "playersPlaceholder": "1行に1人ずつ名前を入力",
-      "playersHint": "最低2人必要です",
+      "playersHint": "1行に1名。コードがあればセミコロンに続けて記入します（例「ミン;P000003」）。表計算から2列を貼り付けても構いません。",
       "roundsLabel": "スイス式の回戦数",
       "roundsHint": "推奨回戦数が自動入力されています。必要に応じて変更してください",
       "validationTooFewPlayers": "参加者を2人以上入力してください",
@@ -350,7 +350,39 @@
       "addedPaired": "不戦勝の枠に入り、2 人の対戦になりました。",
       "addedBye": "偶数だったため、新しい選手が今回は不戦勝です。",
       "repair": "組み直し",
-      "confirmRepair": "現在の参加者と順位で本回戦を組み直します。入力済みの {n} 試合の結果は消去されます。よろしいですか？"
+      "confirmRepair": "現在の参加者と順位で本回戦を組み直します。入力済みの {n} 試合の結果は消去されます。よろしいですか？",
+      "codePlaceholder": "コード"
+    },
+    "export": {
+      "title": "大会を書き出す",
+      "button": "書き出し",
+      "hint": "大会まるごとを1ファイルに —— 選手、各回戦の組み合わせ、全試合結果。読み込めば続きから再開できます。",
+      "summary": "{players}人 · {rounds}回戦",
+      "saveFile": "ファイルを保存",
+      "copyFile": "内容をコピー",
+      "copied": "コピーしました",
+      "unplayed": "{n}試合が未登録です。未実施として書き出されます。"
+    },
+    "import": {
+      "button": "読み込み",
+      "title": "大会を読み込む",
+      "hint": "書き出した大会ファイルを読み込みます。複数同時に選べます。ファイルごとに判定し、壊れた1つが他に影響しません。",
+      "pickFiles": "ファイルを選択…（複数可）",
+      "pastePlaceholder": "または内容をここに貼り付け",
+      "addPasted": "追加",
+      "pastedLabel": "貼り付けた内容",
+      "summary": "{players}人 · {rounds}回戦 · {played}試合記録済み",
+      "skipping": "{n}件のファイルをスキップします",
+      "confirm": "読み込む",
+      "confirmMany": "{n}件を読み込む",
+      "error": {
+        "notJson": "有効な JSON ではありません。コピーが途中で切れた可能性があります。",
+        "wrongFormat": "このツールが書き出した大会ファイルではありません。",
+        "tooNew": "新しいバージョンのファイルです。読み込めません。",
+        "malformed": "大会データが不完全です。ファイルが途中で切れている可能性があります。",
+        "unknownPlayer": "選手リストにない人が試合に出てきます",
+        "unreadable": "ファイルを読み込めませんでした。"
+      }
     }
   },
   "tierList": {

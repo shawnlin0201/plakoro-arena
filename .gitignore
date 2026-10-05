@@ -1,2 +1,11 @@
 /node_modules
 /reference
+
+# Tournament files exported from the app. They carry real players' names, and they are each
+# organiser's own data rather than part of the project.
+/tournament-exports
+
+# Nothing in the project reads these any more, but a local one may still exist from earlier
+# experiments and would carry a credential.
+.env
+.env.*

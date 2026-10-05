@@ -288,7 +288,7 @@
       "formatLabel": "賽制",
       "playersLabel": "選手名單",
       "playersPlaceholder": "一行一位選手名字",
-      "playersHint": "至少需要 2 位選手",
+      "playersHint": "一行一位。有選手代碼的話用分號接在後面，例如「小明;P000003」。也可以直接從試算表複製兩欄貼上。",
       "roundsLabel": "瑞士制輪數",
       "roundsHint": "建議輪數已自動填入，可自行調整",
       "validationTooFewPlayers": "請至少輸入 2 位選手",
@@ -350,7 +350,39 @@
       "addedPaired": "已補上本輪輪空的位置，兩人對戰。",
       "addedBye": "本輪人數為偶數，新選手本輪輪空。",
       "repair": "重新配對",
-      "confirmRepair": "重新配對會依目前名冊與積分重排本輪，本輪已登錄的 {n} 場成績將被清除。確定嗎？"
+      "confirmRepair": "重新配對會依目前名冊與積分重排本輪，本輪已登錄的 {n} 場成績將被清除。確定嗎？",
+      "codePlaceholder": "代碼"
+    },
+    "export": {
+      "title": "匯出賽事",
+      "button": "匯出賽事",
+      "hint": "整場賽事存成一個檔案 —— 選手、每輪配對、每場成績都在裡面。之後匯入回來可以繼續跑。",
+      "summary": "{players} 人 · {rounds} 輪",
+      "saveFile": "下載檔案",
+      "copyFile": "複製內容",
+      "copied": "已複製",
+      "unplayed": "還有 {n} 場沒登錄成績，會以「尚未進行」的狀態匯出。"
+    },
+    "import": {
+      "button": "匯入賽事",
+      "title": "匯入賽事",
+      "hint": "讀取匯出的賽事檔案，可一次選多個。每個檔案各自判斷，壞掉的不會影響其他檔。",
+      "pickFiles": "選擇檔案…（可多選）",
+      "pastePlaceholder": "或把內容貼在這裡",
+      "addPasted": "加入",
+      "pastedLabel": "貼上的內容",
+      "summary": "{players} 人 · {rounds} 輪 · 已登錄 {played} 場",
+      "skipping": "{n} 個檔案會被略過",
+      "confirm": "匯入",
+      "confirmMany": "匯入 {n} 場",
+      "error": {
+        "notJson": "不是有效的 JSON，可能貼的時候少了一段。",
+        "wrongFormat": "不是本工具匯出的賽事檔案。",
+        "tooNew": "來自比較新的版本，這裡讀不了。",
+        "malformed": "賽事資料不完整，檔案可能被截斷。",
+        "unknownPlayer": "對戰裡出現不在選手名單中的人",
+        "unreadable": "檔案讀不開。"
+      }
     }
   },
   "tierList": {

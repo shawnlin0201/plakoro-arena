@@ -15,7 +15,9 @@ import {
   swapPlayers,
   giveByeTo
 } from '../../game/tournamentPairing'
+import { parsePlayerLine } from '../../data/tournaments'
 import TournamentLottery from './TournamentLottery.vue'
+import TournamentExportModal from './TournamentExportModal.vue'
 
 const props = defineProps({ tournament: { type: Object, required: true } })
 const emit = defineEmits(['update', 'back'])
@@ -141,6 +143,11 @@ const pastRoundsEditable = computed(() => local.value.format === 'swiss')
 
 // --- rewind: reopen an earlier round and re-pair everything after it ---
 
+// Save the tournament as a file. Available whenever a round has been played rather than only
+// when complete — the point of exporting mid-event is to move it to another device, which is
+// exactly when it isn't finished.
+const exportOpen = ref(false)
+
 const rewindTarget = ref(null)
 const rewindLosses = computed(() => {
   if (rewindTarget.value === null) return { rounds: 0, matches: 0 }
@@ -240,9 +247,11 @@ const addToCurrentRound = ref(true)
 const lastAddResult = ref(null) // 'paired' | 'bye' | null — what happened to the last entrant
 
 function addPlayer() {
-  const name = newPlayerName.value.trim()
+  // Same `name;code` shorthand the setup screen accepts, so a late entrant can be added in one
+  // keystroke rather than typed then edited.
+  const { name, code } = parsePlayerLine(newPlayerName.value)
   if (!name) return
-  const player = { id: crypto.randomUUID(), name }
+  const player = { id: crypto.randomUUID(), name, ...(code ? { code } : {}) }
   local.value.players.push(player)
   lastAddResult.value = null
   if (addToCurrentRound.value && currentRound.value && !complete.value) {
@@ -250,6 +259,15 @@ function addPlayer() {
     if (outcome) lastAddResult.value = outcome
   }
   newPlayerName.value = ''
+  emitUpdate()
+}
+
+// Stored trimmed and uppercased: a player code is a case-insensitive identifier, and a stray
+// space or lowercase letter typed at a busy sign-in desk would otherwise fail to match.
+function setPlayerCode(player, value) {
+  const code = String(value || '').trim().toUpperCase()
+  if (code) player.code = code
+  else delete player.code
   emitUpdate()
 }
 
@@ -519,6 +537,15 @@ function generateNextRound() {
             }"
             @click="startEditPlayer(p)"
           >{{ p.name }}</span>
+          <!-- The player's id in whatever shared roster the organiser submits to. Edited here
+               rather than only at setup, because a player often gives it after sign-in — and
+               getting it right is what links this result to the rest of their record. -->
+          <input
+            :value="p.code || ''"
+            :placeholder="t('tournament.detail.codePlaceholder')"
+            @input="e => setPlayerCode(p, e.target.value)"
+            style="width:5.5rem; flex-shrink:0; font-size:0.625rem; font-weight:800; padding:0.25rem 0.3125rem; border-radius:0.375rem; border:0.125rem solid var(--line); background:#fff; color:var(--ink); text-align:center;"
+          >
           <button
             class="btn secondary"
             style="padding:0.25rem 0.4375rem; font-size:0.5625rem; flex-shrink:0;"
@@ -594,6 +621,12 @@ function generateNextRound() {
           :disabled="!lotteryRef?.canSpin || lotteryRef?.spinning"
           @click="lotteryRef.startSpin()"
         >{{ t('tournament.detail.drawButton') }}</button>
+        <button
+          v-if="local.rounds.length"
+          class="btn secondary"
+          style="padding:0.5rem 0.875rem; font-size:0.8125rem;"
+          @click="exportOpen = true"
+        >{{ t('tournament.export.button') }}</button>
         <button class="btn secondary" style="padding:0.5rem 0.875rem; font-size:0.8125rem;" @click="emit('back')">{{ t('common.back') }}</button>
       </div>
     </div>
@@ -624,6 +657,12 @@ function generateNextRound() {
         </div>
       </div>
     </div>
+
+    <TournamentExportModal
+      v-if="exportOpen"
+      :tournament="local"
+      @close="exportOpen = false"
+    />
 
     <!-- Rewinding throws away recorded results, so it says how many before doing it. -->
     <div v-if="rewindTarget !== null" class="modal-overlay" style="align-items:center;" @click.self="rewindTarget = null">
