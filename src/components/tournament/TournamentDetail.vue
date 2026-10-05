@@ -15,9 +15,11 @@ import {
   swapPlayers,
   giveByeTo
 } from '../../game/tournamentPairing'
-import { parsePlayerLine } from '../../data/tournaments'
+import { parsePlayerLine, loadTournaments } from '../../data/tournaments'
+import { aggregatePlayers, identityOf } from '../../game/playerBadges'
 import TournamentLottery from './TournamentLottery.vue'
 import TournamentExportModal from './TournamentExportModal.vue'
+import PlayerBanner from './PlayerBanner.vue'
 
 const props = defineProps({ tournament: { type: Object, required: true } })
 const emit = defineEmits(['update', 'back'])
@@ -140,6 +142,22 @@ function recordResult(match, result) {
 }
 
 const pastRoundsEditable = computed(() => local.value.format === 'swiss')
+
+// --- player banners ---
+//
+// A banner is cross-event, so it needs every tournament on the device, not this one. The stored
+// copy of the tournament being viewed is swapped for the live one: results entered in the last
+// few seconds have not been persisted yet, and a banner that lags the table it sits in looks
+// broken even though the number is merely stale.
+const banners = computed(() => {
+  const others = loadTournaments().filter(x => x.id !== local.value.id)
+  return aggregatePlayers([...others, local.value])
+})
+
+function bannerFor(playerId) {
+  const p = local.value.players.find(x => x.id === playerId)
+  return p ? banners.value.get(identityOf(p)) : null
+}
 
 // --- rewind: reopen an earlier round and re-pair everything after it ---
 
@@ -388,7 +406,9 @@ function generateNextRound() {
               <td style="padding:0.5rem 0.375rem; color:var(--sub); white-space:nowrap;">
                 {{ m.table !== null ? t('tournament.detail.tableLabel', { n: m.table }) : t('tournament.detail.bye') }}
               </td>
-              <!-- While editing, each name is its own tap target; otherwise it's plain text. -->
+              <!-- While editing, each name is its own tap target — a plain pill, because
+                   swapping is two taps and the nameplate's emblem would be one more thing
+                   between them. Otherwise the name is shown as the player's nameplate. -->
               <td style="padding:0.5rem 0.5rem; font-weight:700; color:var(--ink);">
                 <template v-if="editingPairing">
                   <span
@@ -406,7 +426,7 @@ function generateNextRound() {
                   </span>
                 </template>
                 <template v-else-if="m.player2Id === null">
-                  {{ playerName(m.player1Id) }}
+                  <PlayerBanner v-if="bannerFor(m.player1Id)" :record="bannerFor(m.player1Id)" />
                   <button
                     v-if="currentRound.matches.length > 1"
                     class="btn secondary"
@@ -415,7 +435,9 @@ function generateNextRound() {
                   >{{ t('tournament.detail.changeBye') }}</button>
                 </template>
                 <template v-else>
-                  {{ playerName(m.player1Id) }} vs {{ playerName(m.player2Id) }}
+                  <PlayerBanner v-if="bannerFor(m.player1Id)" :record="bannerFor(m.player1Id)" />
+                  <span style="color:var(--sub); font-weight:400; padding:0 0.25rem;">vs</span>
+                  <PlayerBanner v-if="bannerFor(m.player2Id)" :record="bannerFor(m.player2Id)" />
                   <span v-if="m.rematch" style="display:inline-block; font-size:0.625rem; font-weight:800; color:#fff; background:var(--danger); border-radius:0.5rem; padding:0.125rem 0.4375rem; margin-left:0.25rem;">{{ t('tournament.detail.rematchBadge') }}</span>
                 </template>
               </td>

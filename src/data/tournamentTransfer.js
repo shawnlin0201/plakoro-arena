@@ -56,6 +56,11 @@ export function serialize(tournament) {
     // thing nobody can reconstruct a year later.
     ...(tournament.venue ? { venue: tournament.venue } : {}),
     system: tournament.system || tournament.format || 'swiss',
+    // How many rounds the Swiss event is scheduled for. Not derivable from the rounds already
+    // played — three rounds played is a finished three-round event or the middle of a five —
+    // and "is this finished" turns on it: standings, the champion, and whether another round
+    // can be generated. Elimination ends when one match remains, so it needs no target.
+    ...(tournament.swissTotalRounds ? { totalRounds: tournament.swissTotalRounds } : {}),
 
     // Optional fields are omitted rather than written as null, so a plain tournament of players
     // who all played to the end reads as exactly that.
@@ -154,6 +159,11 @@ export function fromObject(data) {
   if (unknown.size) return { ok: false, reason: 'unknownPlayer', names: [...unknown] }
 
   const system = SYSTEMS.includes(data.system) ? data.system : 'swiss'
+  // Files written before this field existed fall back to the rounds they contain. For the
+  // finished events those files record that is the right answer; a mid-event export from that
+  // era would read as complete, which is the lesser of the two errors — the alternative leaves
+  // the tournament permanently unfinishable.
+  const totalRounds = Number(data.totalRounds) || rounds.length || 1
   return {
     ok: true,
     exportedAt: data.exportedAt,
@@ -166,6 +176,7 @@ export function fromObject(data) {
       createdAt: data.date ? new Date(`${data.date}T00:00:00`).toISOString() : new Date().toISOString(),
       ...(data.venue ? { venue: String(data.venue).trim() } : {}),
       format: system,
+      ...(system === 'swiss' ? { swissTotalRounds: totalRounds } : {}),
       players,
       rounds
     }

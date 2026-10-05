@@ -383,6 +383,22 @@
         "unknownPlayer": "選手リストにない人が試合に出てきます",
         "unreadable": "ファイルを読み込めませんでした。"
       }
+    },
+    "banner": {
+      "events": "{n}大会",
+      "medal": {
+        "gold": "優勝",
+        "silver": "準優勝",
+        "bronze": "第3位"
+      },
+      "title": {
+        "dynasty": "連覇中",
+        "champion": "優勝者",
+        "undefeated": "無敗",
+        "podium": "入賞常連",
+        "regular": "常連",
+        "rookie": "新人"
+      }
     }
   },
   "tierList": {

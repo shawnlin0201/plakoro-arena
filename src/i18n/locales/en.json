@@ -383,6 +383,22 @@
         "unknownPlayer": "A match names someone who is not in the player list",
         "unreadable": "The file could not be read."
       }
+    },
+    "banner": {
+      "events": "{n} events",
+      "medal": {
+        "gold": "1st place",
+        "silver": "2nd place",
+        "bronze": "3rd place"
+      },
+      "title": {
+        "dynasty": "Defending",
+        "champion": "Champion",
+        "undefeated": "Undefeated",
+        "podium": "Podium regular",
+        "regular": "Regular",
+        "rookie": "Newcomer"
+      }
     }
   },
   "tierList": {

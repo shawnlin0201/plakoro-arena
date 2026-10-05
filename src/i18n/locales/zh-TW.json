@@ -383,6 +383,22 @@
         "unknownPlayer": "對戰裡出現不在選手名單中的人",
         "unreadable": "檔案讀不開。"
       }
+    },
+    "banner": {
+      "events": "{n} 場",
+      "medal": {
+        "gold": "冠軍",
+        "silver": "亞軍",
+        "bronze": "季軍"
+      },
+      "title": {
+        "dynasty": "衛冕者",
+        "champion": "優勝者",
+        "undefeated": "不敗",
+        "podium": "頒獎台常客",
+        "regular": "常客",
+        "rookie": "新人"
+      }
     }
   },
   "tierList": {
