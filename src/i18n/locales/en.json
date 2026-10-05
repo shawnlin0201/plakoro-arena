@@ -118,7 +118,8 @@
     "priceLog": "Market",
     "tournament": "Tournament Scheduler",
     "tierList": "Character strength ranking",
-    "typeChart": "Type matchups"
+    "typeChart": "Type matchups",
+    "tierMaker": "Tier Maker"
   },
   "priceLog": {
     "title": {
@@ -425,6 +426,18 @@
     "secondary": "Sub",
     "weakness": "Weak to",
     "colorlessOnly": "colourless only"
+  },
+  "tierMaker": {
+    "title": "Tier Maker",
+    "titlePlaceholder": "Enter a title",
+    "rosterLabel": "Character List",
+    "addTier": "Add tier",
+    "newTierLabel": "New",
+    "deleteTier": "Delete tier",
+    "resetButton": "Clear all",
+    "resetConfirm": "Tap again to confirm",
+    "exportButton": "Export image",
+    "exporting": "Exporting…"
   },
   "solo": {
     "you": "You",

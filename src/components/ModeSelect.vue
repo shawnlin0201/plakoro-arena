@@ -20,7 +20,8 @@ const MODES = [
   { key: 'priceLog', icon: '💰', enabled: false },
   { key: 'tournament', icon: '📋' },
   { key: 'tierList', icon: '📊' },
-  { key: 'typeChart', icon: '🔰' }
+  { key: 'typeChart', icon: '🔰' },
+  { key: 'tierMaker', icon: '🏆' }
 ]
 
 const VISIBLE_MODES = MODES.filter(m => m.enabled !== false)
