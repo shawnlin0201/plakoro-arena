@@ -1,206 +1,261 @@
 <script setup>
-// A player's nameplate: who they are across events, not how they are doing in this one.
-// Emblem, name, earned title, and medals, in one rectangle that sits in a pairing row.
+// Renders one nameplate. Everything shown arrives in the `nameplate` object — this component
+// derives nothing, which is what lets the same shape be stored, edited and sent elsewhere
+// without the rendering and the data drifting apart.
 //
-// Everything shown is derived from the records; nothing here can be claimed, which is the only
-// thing that makes a title worth carrying. When players can edit their own, the emblem is what
-// opens up — the medals never do.
+// Its one job beyond layout is resolving ids to assets: the object carries `background:
+// "champion"`, not a URL, because a bundled URL carries a content hash and changes on every
+// rebuild.
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { medalTally, emblemOf, titleKeyOf, GOLD, SILVER, BRONZE } from '../../game/playerBadges'
+import bgChampion from '../../assets/banner-bg/2026-9-champion.jpg'
+import bgWinner from '../../assets/banner-bg/2026-9-winner.jpg'
+import bgParticipants from '../../assets/banner-bg/2026-9-participants.jpg'
+import bgDefault from '../../assets/banner-bg/2026-9-default.jpg'
+import avChampion from '../../assets/avatar/2026-9-champion.jpg'
+import avWinner from '../../assets/avatar/2026-9-winner.jpg'
+import avParticipants from '../../assets/avatar/2026-9-participants.jpg'
+import avDefault from '../../assets/avatar/2026-9-default.jpg'
+import bdChampion from '../../assets/avatar-border/2026-9-champion.png'
+
+const BG = { champion: bgChampion, winner: bgWinner, participants: bgParticipants, default: bgDefault }
+const AV = { champion: avChampion, winner: avWinner, participants: avParticipants, default: avDefault }
+// Only some tiers have a frame. A missing one is the normal case, not a gap to fill — the
+// plain ring stands in, and the frame is what marks the tiers that have earned one.
+const BORDER = { champion: bdChampion }
 
 const props = defineProps({
-  record: { type: Object, required: true },
+  nameplate: { type: Object, required: true },
   size: { type: String, default: 'md' }
 })
 
 const { t } = useI18n()
 
-const tally = computed(() => medalTally(props.record))
-const emblem = computed(() => emblemOf(props.record))
-const titleKey = computed(() => titleKeyOf(props.record))
+const flagBg = computed(() => BG[props.nameplate.background] || BG.default)
+const avatar = computed(() => AV[props.nameplate.avatar] || AV.default)
+const avatarBorder = computed(() => BORDER[props.nameplate.avatar] || null)
 
-// The plate takes the colour of the best medal its owner holds, so a champion's is
-// recognisable down the table without reading it. Everyone else's stays quiet so that works.
-const TIER_COLOR = {
-  [GOLD]: { base: '#C9971C', deep: '#8A6400', ink: '#FFF8E3' },
-  [SILVER]: { base: '#9BA2AE', deep: '#6B7280', ink: '#FBFCFE' },
-  [BRONZE]: { base: '#B4794B', deep: '#7D5230', ink: '#FFF4EA' }
-}
-const NEUTRAL = { base: '#8C8A80', deep: '#5E5C55', ink: '#FAFAF6' }
-
-const color = computed(() => {
-  const r = props.record
-  if (r[GOLD]) return TIER_COLOR[GOLD]
-  if (r[SILVER]) return TIER_COLOR[SILVER]
-  if (r[BRONZE]) return TIER_COLOR[BRONZE]
-  return NEUTRAL
+// Literal text wins over a key: an event-specific title names a tournament, which no
+// translation key can carry.
+const titleText = computed(() => {
+  const ti = props.nameplate.title
+  if (!ti) return ''
+  return ti.text || t(`tournament.banner.title.${ti.key}`)
 })
 
-// Drawn rather than set as glyphs: a font may not carry the character, and an emblem that
-// renders as a box is worse than no emblem.
-const EMBLEM_PATH = {
-  bolt: 'M13 2 4 13h5l-1 9 9-11h-5z',
-  shield: 'M12 2 4 5v7c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V5z',
-  star: 'm12 2 2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.2 5.9 20.6l1.4-6.8L2.2 9.1l6.9-.8z',
-  crown: 'M3 7l4 4 5-7 5 7 4-4-2 12H5z',
-  wing: 'M2 12c6-7 13-9 20-9-3 7-9 12-16 13l-2 4z',
-  flame: 'M12 2c4 5 7 7 7 12a7 7 0 1 1-14 0c0-3 2-5 3-7 1 2 2 3 3 3 0-3 0-5 1-8z',
-  wave: 'M2 9c3-3 5-3 8 0s5 3 8 0l4-2v6l-4 2c-3 3-5 3-8 0s-5-3-8 0z',
-  leaf: 'M20 3C9 3 3 9 3 17c0 2 1 4 1 4s2-9 10-12c-5 4-7 8-7 12 9 0 13-7 13-18z'
-}
+// One number instead of three. Gold/silver/bronze split across a strip this small reads as
+// clutter, and on a plate carrying "Meetup#1 優勝" the placement is already stated — what the
+// strip adds is how often it has happened.
+const top3 = computed(() => {
+  const m = props.nameplate.medals || {}
+  return (m.gold || 0) + (m.silver || 0) + (m.bronze || 0)
+})
+
 </script>
 
 <template>
-  <span
-    :class="['plate', size]"
-    :style="{ '--base': color.base, '--deep': color.deep, '--on': color.ink }"
-  >
-    <span class="emblem">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path :d="EMBLEM_PATH[emblem]" /></svg>
-    </span>
+  <span :class="['flag', size]" :style="{ '--bg': `url(${flagBg})` }">
+    <!-- A scrim under the text. The artwork is busiest where it is brightest, and a name laid
+         straight onto it is unreadable wherever that falls. -->
+    <span class="scrim" aria-hidden="true"></span>
 
-    <span class="body">
-      <span class="top">
-        <span class="name">{{ record.name }}</span>
-        <span v-if="record.code" class="code">{{ record.code }}</span>
+    <span class="main">
+      <span :class="['av', { framed: avatarBorder }]">
+        <img class="avatar" :src="avatar" alt="" loading="lazy" decoding="async">
+        <img v-if="avatarBorder" class="av-frame" :src="avatarBorder" alt="" aria-hidden="true" loading="lazy" decoding="async">
       </span>
-      <span class="bottom">
-        <span v-if="titleKey" class="title">{{ t('tournament.banner.title.' + titleKey) }}</span>
-        <span class="meta">{{ t('tournament.banner.events', { n: record.events }) }}</span>
+      <span class="body">
+        <span class="name">{{ nameplate.name }}</span>
+        <span v-if="titleText" :class="['title', nameplate.title.rank]">{{ titleText }}</span>
       </span>
     </span>
 
-    <span v-if="tally.length" class="medals">
-      <span v-for="m in tally" :key="m.tier" :class="['medal', m.tier]" :title="t('tournament.banner.medal.' + m.tier)">
-        <i></i><b v-if="m.n > 1">{{ m.n }}</b>
+    <!-- Under the avatar, spanning the flag: what the player has won, and how often they win. -->
+    <span class="stats">
+      <span v-if="nameplate.winRate !== null" class="stat">
+        {{ t('tournament.banner.winRate') }} {{ nameplate.winRate }}%
       </span>
+      <span v-if="top3" class="stat">{{ t('tournament.banner.top3') }} {{ top3 }}</span>
     </span>
   </span>
 </template>
 
 <style scoped>
-/* One number drives the plate. The emblem block is a square of it, type and medals are
-   fractions of it, so resizing is a single edit rather than a sweep. */
-.plate {
+/* One number drives the flag; everything on it is a fraction of that, so resizing is a single
+   edit rather than a sweep. */
+.flag {
   --h: 3.75rem;
+  --border: 0.125rem;
+  position: relative;
   display: inline-flex;
-  align-items: stretch;
+  /* Two registers stacked: the avatar and name on top, the stats strip under them. A row
+     would put the stats beside the name instead of below the avatar. No align-items, so the
+     children stretch to the full width and the strip starts at the left edge. */
+  flex-direction: column;
+  /* Pinned apart rather than centred: the strip belongs at the foot of the flag, and centring
+     floated it up against the name. */
+  justify-content: space-between;
   height: var(--h);
-  min-width: 15rem;
+  /* The artwork's own 2048x768, so `cover` has nothing to crop. Written as an explicit width
+     rather than aspect-ratio: on an inline-flex box the ratio loses to the content's
+     min-content width, which is how the plates ended up 325-418px wide depending on how long
+     each player's title happened to be. A stated width wins, and the text truncates instead. */
+  width: calc(var(--h) * 2048 / 768);
   max-width: 100%;
+  padding: 0.375rem 0.5rem 0.3125rem;
   vertical-align: middle;
-  border-radius: 0.375rem;
-  overflow: hidden;
-  background: var(--card);
-  box-shadow: inset 0 0 0 0.0625rem var(--line);
   line-height: 1;
+  background: var(--bg) center / cover no-repeat;
+  /* A real border rather than an inset shadow, so artwork can take it over later: set
+     border-image-source (plus slice/repeat) and these same widths become the frame. Until then
+     it is a flat edge. box-sizing keeps --h the outer height either way. */
+  box-sizing: border-box;
+  border: var(--border) solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 0.0625rem 0.1875rem rgba(60, 60, 50, 0.3);
 }
-.plate.lg { --h: 4.5rem; min-width: 18rem; }
+.flag.lg { --h: 4.5rem; }
 
-.emblem {
+.scrim {
+  position: absolute;
+  /* Not inset:0 — that resolves against the padding box and leaves the border ring showing
+     raw artwork. Pulled out by the border width so the scrim reaches the outer edge. */
+  inset: calc(-1 * var(--border));
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.5) 55%, rgba(0, 0, 0, 0.15) 100%);
+}
+
+/* How far the frame overhangs the avatar. Measured from the artwork: its clear window is
+   80.5% of its width, so the frame has to be drawn ~1.24x the avatar for the opening to line
+   up with the picture's edge. One variable, because tuning it by eye is one number. */
+.av {
+  --frame-scale: 1.24;
+  position: relative;
   flex-shrink: 0;
-  width: var(--h);
-  display: grid;
-  place-items: center;
-  background: linear-gradient(160deg, var(--base), var(--deep));
+  display: block;
+  width: calc(var(--h) * 0.42);
+  height: calc(var(--h) * 0.42);
 }
-.emblem svg { width: 48%; height: 48%; fill: var(--on); opacity: 0.94; }
+.avatar {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 0.25rem;
+  object-fit: cover;
+  /* The avatar art is as dark as the flag it sits on, so the ring is what separates them —
+     a white backing would only show through as a halo at the rounded corners. */
+  box-shadow: 0 0 0 0.0625rem rgba(255, 255, 255, 0.45), 0 0.0625rem 0.1875rem rgba(0, 0, 0, 0.5);
+}
+/* A framed avatar drops the ring: the frame is already the edge, and a white line under gold
+   ornament reads as a mistake. */
+.av.framed .avatar {
+  box-shadow: none;
+  border-radius: 0.1875rem;
+}
+.av-frame {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(100% * var(--frame-scale));
+  height: calc(100% * var(--frame-scale));
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  /* Above the picture, but the strip below must still be clickable through the overhang. */
+  z-index: 1;
+}
 
-.body {
+.main {
+  position: relative;
+  display: flex;
+  align-items: center;
   flex: 1;
+  min-height: 0;
+  gap: 0.4375rem;
+  min-width: 0;
+}
+.body {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 0.1875rem;
-  /* A hairline in the plate's own colour, tying the field to the emblem block. */
-  border-left: 0.1875rem solid var(--base);
-  padding: 0.3125rem 0.5rem;
+  align-items: flex-start;
+  gap: 0.125rem;
 }
-.top, .bottom { display: flex; align-items: baseline; gap: 0.3125rem; min-width: 0; }
+
+/* The strip under the avatar. No rule above it — a line there separated the strip from the
+   avatar it belongs to, and the smaller type already reads as a second register. */
+.stats {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 0.375rem;
+  min-width: 0;
+  overflow: hidden;
+}
+/* One weight, one colour. The strip is a footnote to the name above it; colouring the
+   numbers made it compete with the title, which is the part that is supposed to stand out. */
+.stat {
+  font-size: 0.375rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.58);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  text-shadow: 0 0.0625rem 0.125rem rgba(0, 0, 0, 0.6);
+}
 
 .name {
-  font-size: 1.0625rem;
-  font-weight: 900;
-  color: var(--ink);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #fff;
   line-height: 1.2;
+  letter-spacing: 0.01em;
+  text-shadow: 0 0.0625rem 0.1875rem rgba(0, 0, 0, 0.7);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+/* Coloured by what the title is worth. The scarce colours have to stay scarce — most players
+   carry a plain one, which is what makes the gold on a champion's banner mean anything. */
+.title {
+  font-size: 0.5rem;
+  font-weight: 500;
+  color: var(--tint);
+  border: 0.0625rem solid color-mix(in srgb, var(--tint) 40%, transparent);
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 0.1875rem;
+  padding: 0.03125rem 0.25rem;
+  white-space: nowrap;
+  /* Allowed to shrink and clip. Pinned at flex-shrink:0 it would push the plate wider than
+     the artwork's ratio, which is the thing the fixed width exists to prevent. */
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 0.0625rem 0.125rem rgba(0, 0, 0, 0.6);
+}
+.title.plain  { --tint: rgba(255, 255, 255, 0.78); }
+.title.silver { --tint: #D5DAE3; }
+.title.bronze { --tint: #DB9A68; }
+.title.epic   { --tint: #CE93E8; }
+.title.gold   { --tint: #F0C244; }
+/* The only one that gets a glow — one tier above gold, and there is no colour left that reads
+   as rarer than gold on its own. */
+.title.legend {
+  --tint: #FFDC73;
+  background: linear-gradient(180deg, rgba(120, 85, 0, 0.55), rgba(0, 0, 0, 0.45));
+  border-color: rgba(255, 220, 115, 0.65);
+  box-shadow: 0 0 0.375rem rgba(255, 210, 90, 0.45);
 }
 .code {
-  font-size: 0.5625rem;
-  font-weight: 800;
+  position: absolute;
+  right: 0.5rem;
+  bottom: 0.3125rem;
+  font-size: 0.4375rem;
+  font-weight: 500;
   letter-spacing: 0.06em;
-  color: var(--sub);
+  color: #fff;
+  text-shadow: 0 0.0625rem 0.1875rem rgba(0, 0, 0, 0.9);
   font-variant-numeric: tabular-nums;
-  flex-shrink: 0;
-}
-.title {
-  font-size: 0.625rem;
-  font-weight: 900;
-  color: var(--deep);
-  background: color-mix(in srgb, var(--base) 20%, transparent);
-  border-radius: 0.1875rem;
-  padding: 0.0625rem 0.3125rem;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.meta {
-  font-size: 0.5625rem;
-  font-weight: 700;
-  color: var(--sub);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  pointer-events: none;
 }
 
-.medals {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.1875rem;
-  padding: 0 0.625rem 0 0.125rem;
-}
-.medal { display: inline-flex; align-items: center; gap: 0.0625rem; }
-/* The disc and the ribbon behind it, big enough here to read as a medal rather than a dot. */
-.medal i {
-  width: 0.9375rem;
-  height: 0.9375rem;
-  border-radius: 50%;
-  display: block;
-  position: relative;
-  box-shadow: inset 0 -0.0625rem 0 rgba(0, 0, 0, 0.28);
-}
-.medal i::before {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: -0.3125rem;
-  width: 0.375rem;
-  height: 0.375rem;
-  transform: translateX(-50%) rotate(45deg);
-  background: inherit;
-  filter: brightness(0.78);
-  border-radius: 0.0625rem;
-}
-.medal i::after {
-  /* Redraws the disc over the ribbon's lower corner, so the ribbon reads as going behind it. */
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: inherit;
-}
-.medal b {
-  font-size: 0.625rem;
-  font-weight: 900;
-  color: var(--sub);
-  font-variant-numeric: tabular-nums;
-}
-.medal.gold i { background: #C9971C; }
-.medal.silver i { background: #9BA2AE; }
-.medal.bronze i { background: #B4794B; }
+
 </style>

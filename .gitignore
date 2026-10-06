@@ -9,3 +9,7 @@
 # experiments and would carry a credential.
 .env
 .env.*
+
+# Full-resolution nameplate artwork. The build uses the compressed copies beside it; these are
+# 14 MB of source that git has no reason to carry.
+/src/assets/_original

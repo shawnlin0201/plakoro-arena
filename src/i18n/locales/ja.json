@@ -352,7 +352,11 @@
       "addedBye": "偶数だったため、新しい選手が今回は不戦勝です。",
       "repair": "組み直し",
       "confirmRepair": "現在の参加者と順位で本回戦を組み直します。入力済みの {n} 試合の結果は消去されます。よろしいですか？",
-      "codePlaceholder": "コード"
+      "codePlaceholder": "コード",
+      "saveImage": "画像を保存",
+      "savingImage": "生成中…",
+      "savePlayerImage": "この選手の画像を保存",
+      "savePlayerImageShort": "画像"
     },
     "export": {
       "title": "大会を書き出す",
@@ -386,12 +390,6 @@
       }
     },
     "banner": {
-      "events": "{n}大会",
-      "medal": {
-        "gold": "優勝",
-        "silver": "準優勝",
-        "bronze": "第3位"
-      },
       "title": {
         "dynasty": "連覇中",
         "champion": "優勝者",
@@ -399,7 +397,9 @@
         "podium": "入賞常連",
         "regular": "常連",
         "rookie": "新人"
-      }
+      },
+      "winRate": "Win Rate:",
+      "top3": "Podiums:"
     }
   },
   "tierList": {

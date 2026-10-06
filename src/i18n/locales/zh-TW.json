@@ -352,7 +352,11 @@
       "addedBye": "本輪人數為偶數，新選手本輪輪空。",
       "repair": "重新配對",
       "confirmRepair": "重新配對會依目前名冊與積分重排本輪，本輪已登錄的 {n} 場成績將被清除。確定嗎？",
-      "codePlaceholder": "代碼"
+      "codePlaceholder": "代碼",
+      "saveImage": "匯出圖片",
+      "savingImage": "產生中…",
+      "savePlayerImage": "匯出這位選手的圖片",
+      "savePlayerImageShort": "圖片"
     },
     "export": {
       "title": "匯出賽事",
@@ -386,12 +390,6 @@
       }
     },
     "banner": {
-      "events": "{n} 場",
-      "medal": {
-        "gold": "冠軍",
-        "silver": "亞軍",
-        "bronze": "季軍"
-      },
       "title": {
         "dynasty": "衛冕者",
         "champion": "優勝者",
@@ -399,7 +397,9 @@
         "podium": "頒獎台常客",
         "regular": "常客",
         "rookie": "新人"
-      }
+      },
+      "winRate": "Win Rate:",
+      "top3": "Podiums:"
     }
   },
   "tierList": {

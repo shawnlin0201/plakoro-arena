@@ -171,32 +171,26 @@ export function medalTally(rec) {
 // Checked hardest-first and only one is shown: a banner carrying four titles says nothing. When
 // players can set their own, this becomes the default they start from and the pool they are
 // allowed to choose between.
+//
+// `rank` is what the title is worth, and the banner colours it accordingly. Without it every
+// title looked identical, so "新人" arrived in the same gold as "衛冕者" — which drains the
+// gold of any meaning, since the whole point of a rare colour is that most people don't have
+// it. Two titles can share a rank; what must not happen is everything sharing one.
+export const TITLE_RANKS = ['legend', 'gold', 'epic', 'silver', 'bronze', 'plain']
+
 const TITLES = [
-  { key: 'dynasty',   test: r => r.streak >= 2 },
-  { key: 'champion',  test: r => r[GOLD] >= 1 },
-  { key: 'undefeated',test: r => r.events >= 1 && r.losses === 0 && r.wins >= 3 },
-  { key: 'podium',    test: r => r[SILVER] + r[BRONZE] >= 1 },
-  { key: 'regular',   test: r => r.events >= 3 },
-  { key: 'rookie',    test: r => r.events === 1 }
+  { key: 'dynasty',    rank: 'legend', test: r => r.streak >= 2 },
+  { key: 'champion',   rank: 'gold',   test: r => r[GOLD] >= 1 },
+  // Not a placement, so not a metal — a distinct colour of its own.
+  { key: 'undefeated', rank: 'epic',   test: r => r.events >= 1 && r.losses === 0 && r.wins >= 3 },
+  { key: 'podium',     rank: 'silver', test: r => r[SILVER] + r[BRONZE] >= 1 },
+  { key: 'regular',    rank: 'plain',  test: r => r.events >= 3 },
+  { key: 'rookie',     rank: 'plain',  test: r => r.events === 1 }
 ]
 
-export function titleKeyOf(rec) {
-  return TITLES.find(t => t.test(rec))?.key || null
-}
-
-// The emblem on the flag. Derived from identity so it is stable — the same player carries the
-// same mark at every event, which is what makes it recognisable across a room.
-//
-// A placeholder with a real job: until players can choose, an assigned mark still distinguishes
-// one banner from the next at a glance, and the slot it occupies is the one their own choice
-// will fill later.
-export const EMBLEMS = ['bolt', 'shield', 'star', 'crown', 'wing', 'flame', 'wave', 'leaf']
-
-export function emblemOf(rec) {
-  const s = rec.key || rec.name || ''
-  let h = 0
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0
-  return EMBLEMS[h % EMBLEMS.length]
+export function titleOf(rec) {
+  const hit = TITLES.find(t => t.test(rec))
+  return hit ? { key: hit.key, rank: hit.rank } : null
 }
 
 // Leaderboard order: golds, then silvers, then bronzes, then win rate, then events. The same

@@ -15,8 +15,9 @@ import {
   swapPlayers,
   giveByeTo
 } from '../../game/tournamentPairing'
-import { parsePlayerLine, loadTournaments } from '../../data/tournaments'
-import { aggregatePlayers, identityOf } from '../../game/playerBadges'
+import { parsePlayerLine } from '../../data/tournaments'
+import { lookupNameplate } from '../../data/nameplateStore'
+import { renderRoundImage, renderStandingsImage, renderPlayerImage, sheetFileName, playerImageFileName } from '../../game/roundImage'
 import TournamentLottery from './TournamentLottery.vue'
 import TournamentExportModal from './TournamentExportModal.vue'
 import PlayerBanner from './PlayerBanner.vue'
@@ -143,20 +144,60 @@ function recordResult(match, result) {
 
 const pastRoundsEditable = computed(() => local.value.format === 'swiss')
 
-// --- player banners ---
+// --- player nameplates ---
 //
-// A banner is cross-event, so it needs every tournament on the device, not this one. The stored
-// copy of the tournament being viewed is swapped for the live one: results entered in the last
-// few seconds have not been persisted yet, and a banner that lags the table it sits in looks
-// broken even though the number is merely stale.
-const banners = computed(() => {
-  const others = loadTournaments().filter(x => x.id !== local.value.id)
-  return aggregatePlayers([...others, local.value])
-})
-
+// The tournament knows a player's name and code; the nameplate store knows everything else.
+// Looked up rather than computed here, so the day this moves to a real backend the screens
+// below do not change.
 function bannerFor(playerId) {
   const p = local.value.players.find(x => x.id === playerId)
-  return p ? banners.value.get(identityOf(p)) : null
+  return p ? lookupNameplate(p) : null
+}
+
+// A round's pairings, or the standings, as a PNG for printing or pinning up. Drawn rather
+// than screenshotted, so it comes out at a size that can be read across a table and carries
+// none of the app's buttons.
+const savingImage = ref(false)
+
+async function saveSheet(render, fileName) {
+  if (savingImage.value) return
+  savingImage.value = true
+  try {
+    const blob = await render()
+    if (!blob) return
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = fileName
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    // Revoked on the next tick: doing it synchronously can cancel the download in some
+    // browsers before they have read the blob.
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+  } finally {
+    savingImage.value = false
+  }
+}
+
+function saveRoundImage() {
+  if (!currentRound.value) return
+  return saveSheet(
+    () => renderRoundImage({ tournament: local.value, round: currentRound.value, plateFor: bannerFor, t }),
+    sheetFileName(local.value, `R${currentRound.value.roundNumber}`))
+}
+
+function saveStandingsImage() {
+  return saveSheet(
+    () => renderStandingsImage({ tournament: local.value, standings: standings.value, plateFor: bannerFor, t }),
+    sheetFileName(local.value, 'standings'))
+}
+
+// One player's nameplate, for them rather than for the room.
+function savePlayerImage(player) {
+  const nameplate = bannerFor(player.id)
+  if (!nameplate) return
+  return saveSheet(() => renderPlayerImage({ nameplate, t }), playerImageFileName(nameplate))
 }
 
 // --- rewind: reopen an earlier round and re-pair everything after it ---
@@ -385,6 +426,12 @@ function generateNextRound() {
             style="padding:0.3125rem 0.5rem; font-size:0.625rem; flex-shrink:0;"
             @click="requestRepair"
           >{{ t('tournament.detail.repair') }}</button>
+          <button
+            class="btn secondary"
+            style="padding:0.3125rem 0.5rem; font-size:0.625rem; flex-shrink:0;"
+            :disabled="savingImage"
+            @click="saveRoundImage"
+          >{{ savingImage ? t('tournament.detail.savingImage') : t('tournament.detail.saveImage') }}</button>
         </div>
         <div v-if="editingPairing" style="font-size:0.625rem; color:var(--sub); line-height:1.6; padding-bottom:0.375rem;">
           {{ swapFirst ? t('tournament.detail.swapPickSecond', { name: playerName(swapFirst) }) : t('tournament.detail.swapPickFirst') }}
@@ -426,7 +473,7 @@ function generateNextRound() {
                   </span>
                 </template>
                 <template v-else-if="m.player2Id === null">
-                  <PlayerBanner v-if="bannerFor(m.player1Id)" :record="bannerFor(m.player1Id)" />
+                  <PlayerBanner v-if="bannerFor(m.player1Id)" :nameplate="bannerFor(m.player1Id)" />
                   <button
                     v-if="currentRound.matches.length > 1"
                     class="btn secondary"
@@ -435,9 +482,9 @@ function generateNextRound() {
                   >{{ t('tournament.detail.changeBye') }}</button>
                 </template>
                 <template v-else>
-                  <PlayerBanner v-if="bannerFor(m.player1Id)" :record="bannerFor(m.player1Id)" />
+                  <PlayerBanner v-if="bannerFor(m.player1Id)" :nameplate="bannerFor(m.player1Id)" />
                   <span style="color:var(--sub); font-weight:400; padding:0 0.25rem;">vs</span>
-                  <PlayerBanner v-if="bannerFor(m.player2Id)" :record="bannerFor(m.player2Id)" />
+                  <PlayerBanner v-if="bannerFor(m.player2Id)" :nameplate="bannerFor(m.player2Id)" />
                   <span v-if="m.rematch" style="display:inline-block; font-size:0.625rem; font-weight:800; color:#fff; background:var(--danger); border-radius:0.5rem; padding:0.125rem 0.4375rem; margin-left:0.25rem;">{{ t('tournament.detail.rematchBadge') }}</span>
                 </template>
               </td>
@@ -454,6 +501,15 @@ function generateNextRound() {
       <!-- Swiss standings — ranked by points, then the official Play! Pokemon tiebreakers
            (OMW%, then OOMW%). Wrapped in horizontal scroll now that it's 6 columns wide. -->
       <div v-else-if="subview === 'standings'" style="overflow-x:auto;">
+        <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.375rem;">
+          <div style="font-size:0.75rem; font-weight:800; color:var(--sub); flex:1;">{{ t('tournament.detail.standingsTab') }}</div>
+          <button
+            class="btn secondary"
+            style="padding:0.3125rem 0.5rem; font-size:0.625rem; flex-shrink:0;"
+            :disabled="savingImage"
+            @click="saveStandingsImage"
+          >{{ savingImage ? t('tournament.detail.savingImage') : t('tournament.detail.saveImage') }}</button>
+        </div>
         <table style="width:100%; border-collapse:collapse; font-size:0.75rem; white-space:nowrap;">
           <thead>
             <tr style="text-align:left; border-bottom:2px solid var(--line);">
@@ -468,7 +524,10 @@ function generateNextRound() {
           <tbody>
             <tr v-for="(s, i) in standings" :key="s.playerId" style="border-bottom:1px solid var(--line);">
               <td style="padding:0.375rem 0.5rem; color:var(--sub);">{{ i + 1 }}</td>
-              <td style="padding:0.375rem 0.5rem; font-weight:800;">{{ s.name }}</td>
+              <td style="padding:0.375rem 0.5rem;">
+                <PlayerBanner v-if="bannerFor(s.playerId)" :nameplate="bannerFor(s.playerId)" />
+                <template v-else>{{ s.name }}</template>
+              </td>
               <td style="padding:0.375rem 0.5rem; font-weight:800;">{{ s.points }}</td>
               <td style="padding:0.375rem 0.5rem; color:var(--sub);">{{ s.wins }}-{{ s.draws }}-{{ s.losses }}</td>
               <td style="padding:0.375rem 0.5rem; color:var(--sub);">{{ (s.omwp * 100).toFixed(1) }}%</td>
@@ -568,6 +627,13 @@ function generateNextRound() {
             @input="e => setPlayerCode(p, e.target.value)"
             style="width:5.5rem; flex-shrink:0; font-size:0.625rem; font-weight:800; padding:0.25rem 0.3125rem; border-radius:0.375rem; border:0.125rem solid var(--line); background:#fff; color:var(--ink); text-align:center;"
           >
+          <button
+            class="btn secondary"
+            style="padding:0.25rem 0.4375rem; font-size:0.5625rem; flex-shrink:0;"
+            :disabled="savingImage"
+            :title="t('tournament.detail.savePlayerImage')"
+            @click="savePlayerImage(p)"
+          >{{ t('tournament.detail.savePlayerImageShort') }}</button>
           <button
             class="btn secondary"
             style="padding:0.25rem 0.4375rem; font-size:0.5625rem; flex-shrink:0;"

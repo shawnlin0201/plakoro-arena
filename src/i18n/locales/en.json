@@ -352,7 +352,11 @@
       "addedBye": "The round was even, so the new player takes a bye this round.",
       "repair": "Re-pair",
       "confirmRepair": "Re-pairing rebuilds this round from the current roster and standings. The {n} result(s) already entered this round will be cleared. Continue?",
-      "codePlaceholder": "Code"
+      "codePlaceholder": "Code",
+      "saveImage": "Save image",
+      "savingImage": "Rendering…",
+      "savePlayerImage": "Save this player's image",
+      "savePlayerImageShort": "Image"
     },
     "export": {
       "title": "Export tournament",
@@ -386,12 +390,6 @@
       }
     },
     "banner": {
-      "events": "{n} events",
-      "medal": {
-        "gold": "1st place",
-        "silver": "2nd place",
-        "bronze": "3rd place"
-      },
       "title": {
         "dynasty": "Defending",
         "champion": "Champion",
@@ -399,7 +397,9 @@
         "podium": "Podium regular",
         "regular": "Regular",
         "rookie": "Newcomer"
-      }
+      },
+      "winRate": "Win Rate:",
+      "top3": "Podiums:"
     }
   },
   "tierList": {
