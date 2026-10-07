@@ -8,21 +8,7 @@
 // rebuild.
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import bgChampion from '../../assets/banner-bg/2026-9-champion.jpg'
-import bgWinner from '../../assets/banner-bg/2026-9-winner.jpg'
-import bgParticipants from '../../assets/banner-bg/2026-9-participants.jpg'
-import bgDefault from '../../assets/banner-bg/2026-9-default.jpg'
-import avChampion from '../../assets/avatar/2026-9-champion.jpg'
-import avWinner from '../../assets/avatar/2026-9-winner.jpg'
-import avParticipants from '../../assets/avatar/2026-9-participants.jpg'
-import avDefault from '../../assets/avatar/2026-9-default.jpg'
-import bdChampion from '../../assets/avatar-border/2026-9-champion.png'
-
-const BG = { champion: bgChampion, winner: bgWinner, participants: bgParticipants, default: bgDefault }
-const AV = { champion: avChampion, winner: avWinner, participants: avParticipants, default: avDefault }
-// Only some tiers have a frame. A missing one is the normal case, not a gap to fill — the
-// plain ring stands in, and the frame is what marks the tiers that have earned one.
-const BORDER = { champion: bdChampion }
+import { backgroundUrl, avatarUrl, avatarBorderUrl } from '../../data/nameplateAssets'
 
 const props = defineProps({
   nameplate: { type: Object, required: true },
@@ -31,9 +17,9 @@ const props = defineProps({
 
 const { t } = useI18n()
 
-const flagBg = computed(() => BG[props.nameplate.background] || BG.default)
-const avatar = computed(() => AV[props.nameplate.avatar] || AV.default)
-const avatarBorder = computed(() => BORDER[props.nameplate.avatar] || null)
+const flagBg = computed(() => backgroundUrl(props.nameplate.background))
+const avatar = computed(() => avatarUrl(props.nameplate.avatar))
+const avatarBorder = computed(() => avatarBorderUrl(props.nameplate.avatar))
 
 // Literal text wins over a key: an event-specific title names a tournament, which no
 // translation key can carry.

@@ -8,23 +8,10 @@
 // The nameplate is drawn to match PlayerBanner.vue. They are two implementations of one design,
 // which is a real cost; the alternative was the library, and a pairing sheet is the one thing
 // in this tool that leaves the screen.
-import bgChampion from '../assets/banner-bg/2026-9-champion.jpg'
-import bgWinner from '../assets/banner-bg/2026-9-winner.jpg'
-import bgParticipants from '../assets/banner-bg/2026-9-participants.jpg'
-import bgDefault from '../assets/banner-bg/2026-9-default.jpg'
-import avChampion from '../assets/avatar/2026-9-champion.jpg'
-import avWinner from '../assets/avatar/2026-9-winner.jpg'
-import avParticipants from '../assets/avatar/2026-9-participants.jpg'
-import avDefault from '../assets/avatar/2026-9-default.jpg'
-import bdChampion from '../assets/avatar-border/2026-9-champion.png'
-
-const BG = { champion: bgChampion, winner: bgWinner, participants: bgParticipants, default: bgDefault }
-const AV = { champion: avChampion, winner: avWinner, participants: avParticipants, default: avDefault }
-// Only some tiers have a frame; a missing one falls back to the plain ring.
-const BORDER = { champion: bdChampion }
-// The frame's clear window is 80.5% of its width, so it is drawn this much larger than the
-// avatar for the opening to meet the picture's edge. Matches --frame-scale on the screen.
-const FRAME_SCALE = 1.24
+import {
+  BACKGROUND_URLS, AVATAR_URLS, AVATAR_BORDER_URLS,
+  FALLBACK_BACKGROUND, FALLBACK_AVATAR
+} from '../data/nameplateAssets'
 
 // Drawn at 2x and scaled down by the viewer, so the text is crisp in print and when someone
 // pinches into it on a phone.
@@ -120,7 +107,7 @@ function drawPlate(ctx, plate, x, y, images, t) {
   ctx.rect(x, y, PLATE_W, H)
   ctx.clip()
 
-  const bg = images.bg[plate.background] || images.bg.default
+  const bg = images.bg[plate.background] || images.bg[FALLBACK_BACKGROUND]
   if (bg) drawCover(ctx, bg, x, y, PLATE_W, H)
   else { ctx.fillStyle = '#4A4843'; ctx.fillRect(x, y, PLATE_W, H) }
 
@@ -158,7 +145,7 @@ function drawPlate(ctx, plate, x, y, images, t) {
   const avR = H * F.avatarRadius
   const frame = images.borders[plate.avatar]
 
-  const face = images.avatars[plate.avatar] || images.avatars.default
+  const face = images.avatars[plate.avatar] || images.avatars[FALLBACK_AVATAR]
   ctx.save()
   roundRect(ctx, avX, avY, av, av, frame ? avR * 0.75 : avR)
   ctx.clip()
@@ -253,12 +240,23 @@ function drawPlate(ctx, plate, x, y, images, t) {
 
 // Both sheets need the same artwork, so loading is shared — and the cache means the second
 // export of a session is immediate.
-async function loadFor() {
+// Only the artwork the sheet actually uses. Loading the whole registry would mean decoding
+// every season ever shipped to draw one afternoon's pairings.
+async function loadFor(plates) {
+  const used = plates.filter(Boolean)
+  const bgIds = new Set([...used.map(p => p.background), FALLBACK_BACKGROUND])
+  const avIds = new Set([...used.map(p => p.avatar), FALLBACK_AVATAR])
   const images = { bg: {}, avatars: {}, borders: {} }
   await Promise.all([
-    ...Object.entries(BG).map(async ([k, src]) => { images.bg[k] = await loadImage(src) }),
-    ...Object.entries(AV).map(async ([k, src]) => { images.avatars[k] = await loadImage(src) }),
-    ...Object.entries(BORDER).map(async ([k, src]) => { images.borders[k] = await loadImage(src) })
+    ...[...bgIds].filter(id => BACKGROUND_URLS[id]).map(async id => {
+      images.bg[id] = await loadImage(BACKGROUND_URLS[id])
+    }),
+    ...[...avIds].filter(id => AVATAR_URLS[id]).map(async id => {
+      images.avatars[id] = await loadImage(AVATAR_URLS[id])
+    }),
+    ...[...avIds].filter(id => AVATAR_BORDER_URLS[id]).map(async id => {
+      images.borders[id] = await loadImage(AVATAR_BORDER_URLS[id])
+    })
   ])
   return images
 }
@@ -303,7 +301,12 @@ function drawHeader(ctx, W, tournament, subtitleParts) {
  * shows rather than deriving anything of its own. `t` is the i18n lookup.
  */
 export async function renderRoundImage({ tournament, round, plateFor, t }) {
-  const images = await loadFor()
+  const plates = []
+  round.matches.forEach(m => {
+    plates.push(plateFor(m.player1Id))
+    if (m.player2Id !== null) plates.push(plateFor(m.player2Id))
+  })
+  const images = await loadFor(plates)
 
   const W = PAD * 2 + TABLE_COL + PLATE_W * 2 + VS_COL + GAP * 2
   const H = PAD * 2 + HEADER_H + round.matches.length * (PLATE_H + ROW_GAP) - ROW_GAP
@@ -358,7 +361,7 @@ const STAT_COLS = [
  * Render the standings to a PNG blob — the sheet players are handed at the end.
  */
 export async function renderStandingsImage({ tournament, standings, plateFor, t }) {
-  const images = await loadFor()
+  const images = await loadFor(standings.map(s => plateFor(s.playerId)))
 
   const statsW = STAT_COLS.reduce((n, c) => n + c.w, 0)
   const W = PAD * 2 + RANK_COL + PLATE_W + GAP + statsW
@@ -419,7 +422,7 @@ export async function renderStandingsImage({ tournament, standings, plateFor, t 
  * a column, and it is the image that leaves the venue.
  */
 export async function renderPlayerImage({ nameplate, t }) {
-  const images = await loadFor()
+  const images = await loadFor([nameplate])
 
   // The plate scaled up, with a margin so it reads as a finished picture rather than a crop.
   const scale = 3

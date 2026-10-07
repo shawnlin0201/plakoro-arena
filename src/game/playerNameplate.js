@@ -9,29 +9,39 @@
 // changes on every rebuild, so storing one would mean every saved nameplate pointing at a file
 // that no longer exists. The component resolves ids to images.
 import { titleOf, winRate, TITLE_RANKS } from './playerBadges'
+import {
+  BACKGROUND_IDS, AVATAR_IDS, FALLBACK_BACKGROUND, FALLBACK_AVATAR
+} from '../data/nameplateAssets'
 
 export const NAMEPLATE_VERSION = 1
 
-// Artwork ids. Flags and avatars come as matching sets keyed by placement, so one vocabulary
-// serves both — but they stay separate fields on the nameplate, because a player choosing a
-// flag should not be forced into the matching face.
-export const TIERS = ['champion', 'winner', 'participants', 'default']
-export const BACKGROUNDS = TIERS
-export const AVATARS = TIERS
+// Artwork ids, read off the folders — see data/nameplateAssets.js. Flags and avatars are
+// separate lists because they are separate choices: a player on the October champion flag may
+// want a mascot face rather than the matching crest.
+export const BACKGROUNDS = BACKGROUND_IDS
+export const AVATARS = AVATAR_IDS
 
 // The only two fields a player may set. Everything else on the nameplate is earned, and a
 // stored override for it would be a claim rather than a record — which is the whole reason
 // medals are worth showing.
 export const EDITABLE_FIELDS = ['avatar', 'background']
 
-// Which tier a record earns, when one is being derived rather than read from the store. The
-// mock store's are assigned by hand and do not come through here — this is what a fresh
-// record would get, and the default a player would be handed before picking their own.
-export function defaultTier(record) {
+// Which tier a record earns. Artwork comes in seasonal sets — `2026-10-champion` and so on —
+// so the tier alone is not an id; `season` says which set to take it from.
+//
+// Only used when deriving a fresh nameplate. The mock store's are assigned by hand and do not
+// come through here.
+export const CURRENT_SEASON = '2026-10'
+
+export function tierOf(record) {
   if (record.best === 1) return 'champion'
   if (record.best === 2 || record.best === 3) return 'winner'
   if (record.events > 0) return 'participants'
   return 'default'
+}
+
+export function defaultAsset(record, season = CURRENT_SEASON) {
+  return `${season}-${tierOf(record)}`
 }
 
 /**
@@ -46,8 +56,8 @@ export function buildNameplate(record, overrides = null) {
     playerKey: record.key,
     name: record.name,
     code: record.code || null,
-    avatar: defaultTier(record),
-    background: defaultTier(record),
+    avatar: defaultAsset(record),
+    background: defaultAsset(record),
     title: titleOf(record),
     medals: { gold: record.gold, silver: record.silver, bronze: record.bronze },
     events: record.events,
@@ -99,8 +109,8 @@ export function fallbackNameplate(player) {
     playerKey: keyFor(player),
     name: String(player.name || '').trim(),
     code: String(player.code || '').trim().toUpperCase() || null,
-    avatar: 'default',
-    background: 'default',
+    avatar: FALLBACK_AVATAR,
+    background: FALLBACK_BACKGROUND,
     title: null,
     medals: { gold: 0, silver: 0, bronze: 0 },
     events: 0,
@@ -130,8 +140,8 @@ export function parseNameplates(data) {
       code: v.code ? String(v.code) : null,
       // Unknown ids fall back rather than rendering as a broken image: a store can outlive
       // the artwork it names.
-      avatar: AVATARS.includes(v.avatar) ? v.avatar : 'default',
-      background: BACKGROUNDS.includes(v.background) ? v.background : 'default',
+      avatar: AVATARS.includes(v.avatar) ? v.avatar : FALLBACK_AVATAR,
+      background: BACKGROUNDS.includes(v.background) ? v.background : FALLBACK_BACKGROUND,
       // A title is either a key the app translates, or literal text. Event-specific ones
       // ("Meetup#1 優勝") name a tournament, which no translation key can carry — so the
       // store may state the words outright. Both forms need a rank, which is what colours it.
