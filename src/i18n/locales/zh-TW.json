@@ -119,7 +119,8 @@
     "tournament": "賽程編排",
     "tierList": "角色強度排行",
     "typeChart": "屬性克制表",
-    "tierMaker": "Tier 製作器"
+    "tierMaker": "Tier 製作器",
+    "traitChart": "角色特性分佈"
   },
   "priceLog": {
     "title": {
@@ -572,5 +573,19 @@
     },
     "preferVariety": "盡量分散套組",
     "varietyLimit": "（最少仍需同款 {n} 盒）"
+  },
+  "traitChart": {
+    "title": "角色特性分佈",
+    "noData": "這隻角色的特性數值還沒填。",
+    "axis": {
+      "attack": "攻擊",
+      "defense": "防禦",
+      "stability": "穩定",
+      "burst": "爆發",
+      "control": "控制",
+      "ease": "上手"
+    },
+    "saveImage": "匯出圖片",
+    "saving": "產生中…"
   }
 }

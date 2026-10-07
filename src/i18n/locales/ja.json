@@ -119,7 +119,8 @@
     "tournament": "トーナメント編成",
     "tierList": "キャラ強さランキング",
     "typeChart": "タイプ相性表",
-    "tierMaker": "Tierメーカー"
+    "tierMaker": "Tierメーカー",
+    "traitChart": "キャラ特性図"
   },
   "priceLog": {
     "title": {
@@ -573,5 +574,19 @@
     },
     "preferVariety": "なるべく別のセットに分散",
     "varietyLimit": "（同じセットが最低 {n} 箱必要）"
+  },
+  "traitChart": {
+    "title": "キャラ特性図",
+    "noData": "このキャラの数値はまだ未設定です。",
+    "axis": {
+      "attack": "攻撃",
+      "defense": "防御",
+      "stability": "安定",
+      "burst": "爆発",
+      "control": "制圧",
+      "ease": "扱い"
+    },
+    "saveImage": "画像を保存",
+    "saving": "生成中…"
   }
 }

@@ -119,7 +119,8 @@
     "tournament": "Tournament Scheduler",
     "tierList": "Character strength ranking",
     "typeChart": "Type matchups",
-    "tierMaker": "Tier Maker"
+    "tierMaker": "Tier Maker",
+    "traitChart": "Trait chart"
   },
   "priceLog": {
     "title": {
@@ -573,5 +574,19 @@
     },
     "preferVariety": "Spread across different sets",
     "varietyLimit": "(still needs {n} of one set)"
+  },
+  "traitChart": {
+    "title": "Trait chart",
+    "noData": "No ratings for this character yet.",
+    "axis": {
+      "attack": "Attack",
+      "defense": "Defense",
+      "stability": "Stability",
+      "burst": "Burst",
+      "control": "Control",
+      "ease": "Ease"
+    },
+    "saveImage": "Save image",
+    "saving": "Rendering…"
   }
 }
