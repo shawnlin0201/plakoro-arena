@@ -13,6 +13,21 @@
 
 要搬的理由不是「徽章需要資料庫」，而是**紀錄只活在主辦的一台瀏覽器裡**：清掉瀏覽資料就全沒了，而且選手看不到自己的成績。
 
+## 兩種比賽
+
+這份文件涵蓋兩種來源的對戰，它們的紀錄分開存、勝率分開算：
+
+| | 線下比賽 | 線上對戰 |
+|---|---|---|
+| 是什麼 | 實體聚會，賽程編排／桌次表／名牌 | 開房間，玩家自由進入 |
+| 現況 | localStorage | `trystero` 走 P2P |
+| 要變成 | 上資料庫 | 常駐房間 server，不再 P2P |
+| 對局表 | `matches` | `online_matches` |
+| 勝率欄位 | `tour_*` | `online_*` |
+| 獎牌／名次 | 有 | 無 |
+
+房間本身（誰在房裡、開打了沒）是伺服器記憶體裡的暫時狀態，不進資料庫。
+
 ---
 
 ## 核心原則
@@ -52,7 +67,7 @@
 
 ## 資料表
 
-SQL 為 PostgreSQL。SQLite 差異見文末。
+SQL 為 PostgreSQL（選型理由見〈決策紀錄〉）。
 
 ### `players`
 
@@ -70,23 +85,30 @@ CREATE TABLE players (
   title_id    TEXT,
 
   -- 衍生欄位：只由 recompute 覆寫，任何手動修改都會在下次上傳時被蓋掉
-  events      INTEGER NOT NULL DEFAULT 0,
-  ranked      INTEGER NOT NULL DEFAULT 0,
-  wins        INTEGER NOT NULL DEFAULT 0,
-  losses      INTEGER NOT NULL DEFAULT 0,
-  draws       INTEGER NOT NULL DEFAULT 0,
-  byes        INTEGER NOT NULL DEFAULT 0,
-  win_rate    REAL,
-  gold        INTEGER NOT NULL DEFAULT 0,
-  silver      INTEGER NOT NULL DEFAULT 0,
-  bronze      INTEGER NOT NULL DEFAULT 0,
-  podiums     INTEGER NOT NULL DEFAULT 0,
-  best        INTEGER,
-  streak      INTEGER NOT NULL DEFAULT 0,
-  stats_at    TIMESTAMPTZ
+  --
+  -- 線下與線上的勝率分開統計。線上隨手打輸幾場不該拉低實體賽事的戰績，所以兩套數字
+  -- 永遠不混在一起。獎牌、名次、參賽場數不加前綴 —— 線上沒有對應概念。
+  events          INTEGER NOT NULL DEFAULT 0,
+  ranked          INTEGER NOT NULL DEFAULT 0,
+  tour_wins       INTEGER NOT NULL DEFAULT 0,
+  tour_losses     INTEGER NOT NULL DEFAULT 0,
+  tour_draws      INTEGER NOT NULL DEFAULT 0,
+  tour_byes       INTEGER NOT NULL DEFAULT 0,
+  tour_win_rate   REAL,
+  online_wins     INTEGER NOT NULL DEFAULT 0,
+  online_losses   INTEGER NOT NULL DEFAULT 0,
+  online_draws    INTEGER NOT NULL DEFAULT 0,
+  online_win_rate REAL,
+  gold            INTEGER NOT NULL DEFAULT 0,
+  silver          INTEGER NOT NULL DEFAULT 0,
+  bronze          INTEGER NOT NULL DEFAULT 0,
+  podiums         INTEGER NOT NULL DEFAULT 0,
+  best            INTEGER,
+  streak          INTEGER NOT NULL DEFAULT 0,
+  stats_at        TIMESTAMPTZ
 );
 
-CREATE INDEX idx_players_win_rate ON players(win_rate DESC NULLS LAST);
+CREATE INDEX idx_players_tour_win_rate ON players(tour_win_rate DESC NULLS LAST);
 ```
 
 戰績放在這張表而不是獨立一張，因為一個選手**只有一組**戰績（1:1）。查選手資料一次查詢拿完，不用 join。
@@ -143,6 +165,28 @@ CREATE INDEX idx_matches_p2 ON matches(p2);
 ```
 
 `ON DELETE CASCADE`：刪一場賽事，它的對局和參賽名單自動消失，不留孤兒資料。
+
+### `online_matches`
+
+線上對戰的結果。與 `matches` 分開，因為兩者形狀本來就不同 —— 線上沒有輪空、沒有輪數、不屬於任何賽事。
+
+```sql
+CREATE TABLE online_matches (
+  id        TEXT PRIMARY KEY,
+  p1        TEXT NOT NULL REFERENCES players(code),
+  p2        TEXT NOT NULL REFERENCES players(code),
+  result    TEXT NOT NULL CHECK (result IN ('p1','p2','draw')),
+  room_id   TEXT,                        -- 只為了查問題，房間本身不進資料庫
+  played_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_online_p1 ON online_matches(p1);
+CREATE INDEX idx_online_p2 ON online_matches(p2);
+```
+
+兩邊都是 `NOT NULL` 外鍵，因為**線上對戰一律要求登入**。訪客進不了房間，所以不會有寫不進去的對局。
+
+房間本身（誰在房裡、開打了沒）是常駐行程記憶體裡的狀態，打完就沒了，不進資料庫。
 
 ### `player_unlocks`
 
@@ -202,6 +246,10 @@ CREATE TABLE auth_identities (
 
 ### `claim_codes`
 
+> **登入與註冊的流程尚未定案，之後要另外討論。** 以下是目前傾向的方向，不是結論。
+> 無論最後選什麼，`auth_identities` 的形狀都能容納（多一個 `provider` 值而已），所以
+> 這件事不會回頭改到其他表。
+
 第一階段的登入方式，不接任何第三方。
 
 ```sql
@@ -226,18 +274,31 @@ CREATE TABLE claim_codes (
 
 ```sql
 CREATE VIEW player_stats AS
-WITH match_stats AS (
+WITH tour AS (
   SELECT p.code,
          COUNT(*) FILTER (WHERE m.id IS NOT NULL AND m.p2 IS NOT NULL AND (
                     (m.p1 = p.code AND m.result = 'p1') OR
-                    (m.p2 = p.code AND m.result = 'p2')))        AS wins,
+                    (m.p2 = p.code AND m.result = 'p2')))          AS tour_wins,
          COUNT(*) FILTER (WHERE m.id IS NOT NULL AND m.p2 IS NOT NULL AND (
                     (m.p1 = p.code AND m.result = 'p2') OR
-                    (m.p2 = p.code AND m.result = 'p1')))        AS losses,
-         COUNT(*) FILTER (WHERE m.result = 'draw')               AS draws,
-         COUNT(*) FILTER (WHERE m.id IS NOT NULL AND m.p2 IS NULL) AS byes
+                    (m.p2 = p.code AND m.result = 'p1')))          AS tour_losses,
+         COUNT(*) FILTER (WHERE m.result = 'draw')                 AS tour_draws,
+         COUNT(*) FILTER (WHERE m.id IS NOT NULL AND m.p2 IS NULL)  AS tour_byes
   FROM players p
   LEFT JOIN matches m ON m.p1 = p.code OR m.p2 = p.code
+  GROUP BY p.code
+),
+online AS (
+  SELECT p.code,
+         COUNT(*) FILTER (WHERE o.id IS NOT NULL AND (
+                    (o.p1 = p.code AND o.result = 'p1') OR
+                    (o.p2 = p.code AND o.result = 'p2')))          AS online_wins,
+         COUNT(*) FILTER (WHERE o.id IS NOT NULL AND (
+                    (o.p1 = p.code AND o.result = 'p2') OR
+                    (o.p2 = p.code AND o.result = 'p1')))          AS online_losses,
+         COUNT(*) FILTER (WHERE o.result = 'draw')                 AS online_draws
+  FROM players p
+  LEFT JOIN online_matches o ON o.p1 = p.code OR o.p2 = p.code
   GROUP BY p.code
 ),
 event_stats AS (
@@ -255,16 +316,21 @@ event_stats AS (
 SELECT p.code,
        e.events, e.ranked, e.gold, e.silver, e.bronze, e.best,
        e.gold + e.silver + e.bronze AS podiums,
-       m.wins, m.losses, m.draws, m.byes,
-       CASE WHEN (m.wins + m.losses + m.draws) > 0
-            THEN m.wins::real / (m.wins + m.losses + m.draws)
-            ELSE NULL END AS win_rate
+       t.tour_wins, t.tour_losses, t.tour_draws, t.tour_byes,
+       CASE WHEN (t.tour_wins + t.tour_losses + t.tour_draws) > 0
+            THEN t.tour_wins::real / (t.tour_wins + t.tour_losses + t.tour_draws)
+            ELSE NULL END AS tour_win_rate,
+       o.online_wins, o.online_losses, o.online_draws,
+       CASE WHEN (o.online_wins + o.online_losses + o.online_draws) > 0
+            THEN o.online_wins::real / (o.online_wins + o.online_losses + o.online_draws)
+            ELSE NULL END AS online_win_rate
 FROM players p
 JOIN event_stats e ON e.code = p.code
-JOIN match_stats m ON m.code = p.code;
+JOIN tour       t ON t.code = p.code
+JOIN online     o ON o.code = p.code;
 ```
 
-兩個 CTE 分開算再 join，不是一個查詢直接 join 兩張表 —— 後者會產生笛卡兒積（每位選手的對局數 × 參賽場數），數字全部錯掉。
+每個 CTE 分開算再 join，不是一個查詢直接 join 多張表 —— 後者會產生笛卡兒積（每位選手的對局數 × 參賽場數 × 線上場數），數字全部錯掉。
 
 ### 輪空的處理
 
@@ -302,16 +368,22 @@ POST /api/tournaments
 
 ```sql
 UPDATE players SET
-  events   = s.events,   ranked = s.ranked,
-  wins     = s.wins,     losses = s.losses,
-  draws    = s.draws,    byes   = s.byes,
-  win_rate = s.win_rate,
-  gold     = s.gold,     silver = s.silver,  bronze = s.bronze,
-  podiums  = s.podiums,  best   = s.best,
-  stats_at = now()
+  events          = s.events,          ranked        = s.ranked,
+  tour_wins       = s.tour_wins,       tour_losses   = s.tour_losses,
+  tour_draws      = s.tour_draws,      tour_byes     = s.tour_byes,
+  tour_win_rate   = s.tour_win_rate,
+  online_wins     = s.online_wins,     online_losses = s.online_losses,
+  online_draws    = s.online_draws,
+  online_win_rate = s.online_win_rate,
+  gold            = s.gold,            silver        = s.silver,
+  bronze          = s.bronze,          podiums       = s.podiums,
+  best            = s.best,
+  stats_at        = now()
 FROM player_stats s
 WHERE s.code = players.code;
 ```
+
+線上對戰結束時也跑同一段 —— 它一次算完兩邊，不需要為線上另外寫一套。
 
 **整批覆寫，不帶 WHERE 篩選特定選手。** 全表更新的成本遠低於維護「哪些人受這次上傳影響」的邏輯。
 
@@ -343,6 +415,18 @@ events > 0          → participants
 
 搬上線是把這段從前端的即時計算改成寫進資料表，邏輯不用重想。
 
+### 線上對戰的寫入
+
+```
+房間裡一場打完
+      ↓
+INSERT INTO online_matches (...)
+      ↓
+重算 stats（同一段 UPDATE，一次算完線上線下兩套）
+```
+
+比上傳賽事頻繁得多，但同樣只有 1.4ms，而且不需要另外寫一套邏輯。
+
 ### 不觸發重算的操作
 
 玩家改自己的 `avatar` / `background` / `title_id` **不會**引起任何重算。那條路徑只寫 `players` 的三個欄位，跟成績無關。
@@ -369,8 +453,11 @@ POST  /api/records/rebuild                        → 手動重建 stats
   "name": "Ray",
   "equipped": { "avatar": "2026-9-champion", "background": "2026-9-champion",
                 "titleId": "m1-champion" },
-  "stats": { "events": 1, "wins": 3, "losses": 0, "draws": 0, "byes": 0,
-             "winRate": 1.0, "gold": 1, "silver": 0, "bronze": 0, "podiums": 1 },
+  "stats": {
+    "events": 1, "gold": 1, "silver": 0, "bronze": 0, "podiums": 1,
+    "tour":   { "wins": 3, "losses": 0, "draws": 0, "byes": 0, "winRate": 1.0 },
+    "online": { "wins": 12, "losses": 9, "draws": 1, "winRate": 0.545 }
+  },
   "unlocks": {
     "avatars":     ["2026-9-participants", "2026-9-champion"],
     "backgrounds": ["2026-9-participants", "2026-9-champion"],
@@ -487,7 +574,7 @@ UPDATE players SET ... FROM player_stats s WHERE s.code = players.code;   -- 見
 
 或呼叫 `POST /api/records/rebuild`。
 
-不要手改的：`players` 上所有衍生欄位（`wins`、`win_rate`、`gold`、`podiums`…）。改了不會報錯，但下次有人上傳賽事就被整批覆蓋，中間那段時間畫面顯示的是錯的。要調整這些數字，正確做法是去改對局資料然後重算。
+不要手改的：`players` 上所有衍生欄位（`tour_wins`、`tour_win_rate`、`online_*`、`gold`、`podiums`…）。改了不會報錯，但下一場線上對戰結束就被整批覆蓋，中間那段時間畫面顯示的是錯的。要調整這些數字，正確做法是去改對局資料然後重算。
 
 ---
 
@@ -504,26 +591,35 @@ UPDATE players SET ... FROM player_stats s WHERE s.code = players.code;   -- 見
 | **解鎖只存賺到的，公開素材不入表** | 否則新增一張免費頭像要對全部選手各 INSERT 一筆 |
 | **`auth_identities` 與 `players` 分開** | 現有八位選手有編號沒帳號，要能認領而不是拿新編號 |
 | **先用認領碼，不接 OAuth** | 唯一要保護的是「改自己的外觀」。無金流無個資，接 provider 不成比例 |
+| **線上與線下勝率分開統計** | 線上隨手打輸幾場不該拉低實體賽事的戰績 |
+| **線上對戰另開一張表** | 沒有輪空、沒有輪數、不屬於任何賽事 —— 形狀本來就不同 |
+| **線上對戰一律要求登入** | 外鍵兩邊都 `NOT NULL`，不會有寫不進去的對局 |
+| **Postgres，不用 SQLite** | 要用 GUI 工具從自己電腦連進去改。SQLite 的檔案在容器裡，而且 Vercel 的檔案系統用完即丟、根本寫不了 |
+
+---
+
+## 部署架構
+
+```
+容器 PaaS ─┬─ Node 常駐行程：API + 線上房間 server
+           └─ 託管 Postgres（同平台）
+
+前端       靜態託管（Vercel / Cloudflare Pages / GitHub Pages）
+```
+
+**後端不能放 Vercel。** 它是 serverless，沒有常駐行程、沒有持久檔案系統、沒有 shell，而線上房間需要常駐記憶體保存房間狀態。
+
+**用平台的託管 Postgres，不要自己在 VPS 上跑一個。** 搬上資料庫的理由是「資料只活在一台瀏覽器會沒掉」—— 搬到一台沒有備份的機器上只是換個地方沒掉。託管版的備份和版本升級由平台處理，從操作感受上仍然是「一個地方」。
+
+**前端建議留在靜態託管**，不是為了 CDN（使用者都在台灣），是為了停機時的行為：前端在同一台時，重新部署或機器掛掉就整個開不起來；放靜態託管的話，後端出事只是撈不到選手外觀，賽程編排靠離線快照照常運作 —— 而那通常正是比賽現場。
 
 ---
 
 ## 待定
 
-- **資料庫選型**：若需要用 GUI 工具直接連線編輯，SQLite 不適合（檔案在容器裡，要抓下來改完再傳回，且有鎖定問題）。託管 Postgres（Neon / Supabase）可以把連線字串貼進 TablePlus、DBeaver 直接改，Supabase 另有網頁版 Table Editor
 - **avatar 要不要也走擁有制**：banner 明確要記錄擁有權；avatar 當初說的是「之後給他們自己換」，聽起來是全開放。目前 schema 兩種都撐得住
+- **線上與線下勝率怎麼顯示**：資料已經分開存，顯示方式未定
+- **線上勝率的防刷**：跟朋友對打、快輸就斷線，都能灌水。等決定怎麼顯示時一起想
 - **現場走進來報名的人**：建議由主辦當場建立臨時選手列（有編號、無帳號），之後本人註冊時認領
 - **`FALLBACK_*` 與 `CURRENT_SEASON` 會脫鉤**：`nameplateAssets.js` 的 `FALLBACK_BACKGROUND` 取「檔名排序第一個 `-default`」，`defaultAsset()` 取「當季的 default」。現在都是 `2026-10-default` 純屬巧合，加了 `2027-1-default` 之後會變成新人拿舊季的旗、老選手拿新季的旗
-- **線上房間**：房間狀態需要常駐行程，不能放 serverless。與本文件的資料模型無關（房間是暫時的，不進資料庫）
-
----
-
-## SQLite 差異
-
-若最終選 SQLite：
-
-- `TIMESTAMPTZ` → `TEXT`，用 `datetime('now')`
-- `COUNT(*) FILTER (WHERE ...)` → `SUM(CASE WHEN ... THEN 1 ELSE 0 END)`
-- `INSERT ... ON CONFLICT DO NOTHING` → `INSERT OR IGNORE`
-- `UPDATE ... FROM` → 改用相關子查詢
-- 外鍵預設關閉，連線後要 `PRAGMA foreign_keys = ON`
-- `m.wins::real` → `CAST(m.wins AS REAL)`
+- **登入與註冊流程**：`claim_codes` 那段只是傾向，要另外討論。`auth_identities` 的形狀不受影響
