@@ -28,7 +28,8 @@
     "trainerA": "訓練家A",
     "trainerB": "訓練家B",
     "notSelected": "未選擇",
-    "incomingDamageEffect": "效果：下次受到的傷害{sign}{value}"
+    "incomingDamageEffect": "效果：下次受到的傷害{sign}{value}",
+    "guest": "訪客"
   },
   "select": {
     "pickPokemon": "選擇<br>寶可夢",
@@ -590,5 +591,16 @@
     },
     "saveImage": "匯出圖片",
     "saving": "產生中…"
+  },
+  "profile": {
+    "avatar": "頭像",
+    "earnedNote": "獎牌、稱號與勝率來自實際賽事紀錄，不在這裡設定。",
+    "flag": "旗幟",
+    "name": "名稱",
+    "namePlaceholder": "輸入你的名稱",
+    "noTitle": "不顯示",
+    "save": "儲存",
+    "title": "玩家資料",
+    "titleLabel": "稱號"
   }
 }

@@ -28,7 +28,8 @@
     "trainerA": "Trainer A",
     "trainerB": "Trainer B",
     "notSelected": "Not selected",
-    "incomingDamageEffect": "Effect: next damage taken {sign}{value}"
+    "incomingDamageEffect": "Effect: next damage taken {sign}{value}",
+    "guest": "Guest"
   },
   "select": {
     "pickPokemon": "Pick a<br>Pokémon",
@@ -591,5 +592,16 @@
     },
     "saveImage": "Save image",
     "saving": "Rendering…"
+  },
+  "profile": {
+    "avatar": "Avatar",
+    "earnedNote": "Medals, titles and win rate come from real tournament records and are not set here.",
+    "flag": "Flag",
+    "name": "Name",
+    "namePlaceholder": "Enter your name",
+    "noTitle": "None",
+    "save": "Save",
+    "title": "Player profile",
+    "titleLabel": "Title"
   }
 }

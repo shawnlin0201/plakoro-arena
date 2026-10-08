@@ -28,7 +28,8 @@
     "trainerA": "トレーナーA",
     "trainerB": "トレーナーB",
     "notSelected": "未選択",
-    "incomingDamageEffect": "効果: 次に受けるダメージ{sign}{value}"
+    "incomingDamageEffect": "効果: 次に受けるダメージ{sign}{value}",
+    "guest": "ゲスト"
   },
   "select": {
     "pickPokemon": "ポケモンを<br>選ぶ",
@@ -591,5 +592,16 @@
     },
     "saveImage": "画像を保存",
     "saving": "生成中…"
+  },
+  "profile": {
+    "avatar": "アバター",
+    "earnedNote": "メダル・称号・勝率は実際の大会記録から算出され、ここでは設定できません。",
+    "flag": "フラッグ",
+    "name": "名前",
+    "namePlaceholder": "名前を入力",
+    "noTitle": "なし",
+    "save": "保存",
+    "title": "プレイヤー情報",
+    "titleLabel": "称号"
   }
 }

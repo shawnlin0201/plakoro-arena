@@ -18,6 +18,8 @@ import WinScreen from './components/WinScreen.vue'
 import Modal from './components/Modal.vue'
 import TurnCutIn from './components/TurnCutIn.vue'
 import LanguageSwitcher from './components/LanguageSwitcher.vue'
+import PlayerChip from './components/PlayerChip.vue'
+import PlayerProfileApp from './components/PlayerProfileApp.vue'
 import ModeSelect from './components/ModeSelect.vue'
 import SoloApp from './components/solo/SoloApp.vue'
 import DiceBuilderApp from './components/dice/DiceBuilderApp.vue'
@@ -105,6 +107,7 @@ onMounted(() => {
 <template>
   <div id="stage" ref="stageRef">
     <div id="app">
+      <PlayerChip v-if="mode === null" @open="openMode('profile')" />
       <LanguageSwitcher v-if="mode === null" />
       <button
         v-if="canExitToHome"
@@ -163,6 +166,8 @@ onMounted(() => {
       <TierMakerApp v-else-if="mode === 'tierMaker'" @back="leaveMode()" />
 
       <TraitChartApp v-else-if="mode === 'traitChart'" @back="leaveMode()" />
+
+      <PlayerProfileApp v-else-if="mode === 'profile'" @back="leaveMode()" />
 
       <SoloApp v-else />
 
