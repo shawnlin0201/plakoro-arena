@@ -114,13 +114,16 @@
     "duel": "Duel Mode",
     "solo": "Solo Tower",
     "diceBuilder": "Dice Assembly Sim",
-    "storeInfo": "Stores & Events",
+    "storeInfo": "Stores",
     "priceLog": "Market",
     "tournament": "Tournament Scheduler",
-    "tierList": "Character strength ranking",
+    "tierList": "Strength ranking",
     "typeChart": "Type matchups",
     "tierMaker": "Tier Maker",
-    "traitChart": "Trait chart"
+    "traitChart": "Trait chart",
+    "group": {
+      "tools": "More tools"
+    }
   },
   "priceLog": {
     "title": {

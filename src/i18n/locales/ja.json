@@ -114,13 +114,16 @@
     "duel": "対戦モード",
     "solo": "ソロタワー",
     "diceBuilder": "ダイス組立シミュレーター",
-    "storeInfo": "店舗＆大会情報",
+    "storeInfo": "店舗情報",
     "priceLog": "取引マーケット",
     "tournament": "トーナメント編成",
-    "tierList": "キャラ強さランキング",
+    "tierList": "強さランキング",
     "typeChart": "タイプ相性表",
     "tierMaker": "Tierメーカー",
-    "traitChart": "キャラ特性図"
+    "traitChart": "キャラ特性図",
+    "group": {
+      "tools": "その他のツール"
+    }
   },
   "priceLog": {
     "title": {
