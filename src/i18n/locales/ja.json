@@ -124,7 +124,8 @@
     "traitChart": "キャラ特性図",
     "group": {
       "tools": "その他のツール"
-    }
+    },
+    "line": "公式 Line グループ"
   },
   "priceLog": {
     "title": {
@@ -603,5 +604,8 @@
     "save": "保存",
     "title": "プレイヤー情報",
     "titleLabel": "称号"
+  },
+  "notice": {
+    "meetup2": "Meetup#2 の参加受付中 — 詳細は Plakoro Taiwan の Line までお問い合わせください"
   }
 }

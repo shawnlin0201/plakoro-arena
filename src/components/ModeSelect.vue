@@ -1,7 +1,7 @@
 <script setup>
 import { useI18n } from 'vue-i18n'
 
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
 const emit = defineEmits(['pick'])
 const { t } = useI18n()
@@ -22,6 +22,9 @@ const MODES = [
   { key: 'priceLog', enabled: false },
   { key: 'tierList' },
   { key: 'typeChart' },
+  // A link out, not a mode. `url` is what tells the menu to render an anchor instead of a
+  // button — the card looks the same either way, but one changes screen and one leaves.
+  { key: 'line', url: 'https://line.me/ti/g2/nX4Wb5UHJR9vy573jqGe_Q_q2Rd6JsruabTKVw' },
   // `group` moves a mode one level down. The top level is what a player opens the app to do;
   // these three are things an organiser or a theorycrafter comes looking for, and keeping them
   // up front pushed the front page past the point where every card still fit.
@@ -61,6 +64,41 @@ function label(card) {
 // take `flex: 1` and divide the box between them, so the cards shrink instead.
 const COLUMNS = 3
 
+// --- notice ticker ---
+//
+// How many copies of the message the track carries.
+//
+// Two is not always enough. The track slides left by exactly one copy's width and then jumps
+// back, which is seamless only while the copies that remain still cover the full width of the
+// band. With the Chinese message the copy came out 17px narrower than the band, so for one
+// frame at the loop point a sliver of empty track showed — the flicker. A shorter message, or
+// a wider stage, makes that sliver bigger.
+//
+// So it is measured rather than guessed: enough copies to cover the band, plus one to slide
+// away. Re-measured on resize, since this app scales its whole type scale with the stage.
+const tickerEl = ref(null)
+const tickerCopies = ref(2)
+
+function measureTicker() {
+  const el = tickerEl.value
+  if (!el) return
+  const first = el.querySelector('.mt-text')
+  if (!first) return
+  const copyW = first.getBoundingClientRect().width
+  const bandW = el.getBoundingClientRect().width
+  if (!copyW || !bandW) return
+  tickerCopies.value = Math.max(2, Math.ceil(bandW / copyW) + 1)
+}
+
+onMounted(() => {
+  measureTicker()
+  window.addEventListener('resize', measureTicker)
+})
+onBeforeUnmount(() => window.removeEventListener('resize', measureTicker))
+
+// The track is `copies` wide; sliding by one copy is 100/copies percent of it.
+const tickerShift = computed(() => `-${(100 / tickerCopies.value).toFixed(4)}%`)
+
 const rows = computed(() => {
   const out = []
   for (let i = 0; i < cards.value.length; i += COLUMNS) {
@@ -79,19 +117,37 @@ const rows = computed(() => {
          makes every card a little shorter instead of pushing the last row off the bottom. -->
     <div class="mode-grid">
       <div v-for="(row, i) in rows" :key="i" class="mode-row">
-        <button
+        <component
+          :is="c.url ? 'a' : 'button'"
           v-for="c in row"
           :key="c.key"
           class="select-card mode-card"
-          @click="pick(c)"
+          :href="c.url"
+          :target="c.url ? '_blank' : undefined"
+          :rel="c.url ? 'noopener noreferrer' : undefined"
+          @click="c.url ? undefined : pick(c)"
         >
           <span class="select-card-title mode-card-title">{{ label(c) }}</span>
-        </button>
+        </component>
       </div>
     </div>
 
     <div v-if="openGroup" class="mode-back">
       <button class="btn secondary" @click="openGroup = null">{{ t('common.back') }}</button>
+    </div>
+
+    <!-- Announcements. The track holds as many copies as it takes to stay covered, and slides
+         by exactly one of them, so at the loop point a copy is standing where the one before it
+         started and the seam never shows. -->
+    <div ref="tickerEl" class="mode-ticker" aria-live="off">
+      <div class="mt-track" :style="{ '--shift': tickerShift }">
+        <span
+          v-for="i in tickerCopies"
+          :key="i"
+          class="mt-text"
+          :aria-hidden="i > 1 ? 'true' : undefined"
+        >{{ t('notice.meetup2') }}</span>
+      </div>
     </div>
 
     <!-- Attribution sits on the mode select rather than inside each mode: it's the one screen
@@ -190,10 +246,54 @@ const rows = computed(() => {
   border: none;
   font-family: inherit;
 }
+/* The link cards are anchors, which bring their own underline and colour. */
+.mode-card { text-decoration: none; color: inherit; }
 .mode-card:hover { box-shadow: 0 0.1875rem 0.5rem rgba(60, 60, 50, 0.22); }
 .mode-card:active { transform: scale(.97); box-shadow: 0 0.0625rem 0.1875rem rgba(60, 60, 50, 0.2); }
 
 .mode-back { flex-shrink: 0; padding-top: 0.875rem; }
+
+.mode-ticker {
+  flex-shrink: 0;
+  width: 100%;
+  margin-top: 0.625rem;
+  padding: 0.3125rem 0;
+  overflow: hidden;
+  background: #1F1F1D;
+  /* Full-bleed: the board has side padding, and a band that stops short of the edges reads as
+     a box rather than as a ticker running across the screen. */
+  margin-left: -0.625rem;
+  margin-right: -0.625rem;
+  width: calc(100% + 1.25rem);
+}
+
+.mt-track {
+  display: flex;
+  width: max-content;
+  animation: mt-scroll 22s linear infinite;
+}
+
+.mt-text {
+  /* The gap belongs to the text, not the track — a flex gap would be halved at the seam. */
+  padding-right: 3rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+}
+
+@keyframes mt-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(var(--shift)); }
+}
+
+/* Motion that never stops is the kind people ask to be rid of. Held still and centred, the
+   message still reads — it just stops moving. */
+@media (prefers-reduced-motion: reduce) {
+  .mt-track { animation: none; justify-content: center; width: 100%; }
+  .mt-text { padding-right: 0; }
+  .mt-text:not(:first-child) { display: none; }
+}
 
 /* The global .btn is sized for screens whose controls are the main event. Here it sits under
    a menu of 0.875rem labels, and at 1rem/800 in full ink it read as the heaviest thing on the

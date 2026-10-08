@@ -124,7 +124,8 @@
     "traitChart": "Trait chart",
     "group": {
       "tools": "More tools"
-    }
+    },
+    "line": "Official Line group"
   },
   "priceLog": {
     "title": {
@@ -603,5 +604,8 @@
     "save": "Save",
     "title": "Player profile",
     "titleLabel": "Title"
+  },
+  "notice": {
+    "meetup2": "Meetup#2 sign-ups are open — ask on the Plakoro Taiwan Line for details"
   }
 }

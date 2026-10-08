@@ -124,7 +124,8 @@
     "traitChart": "角色特性分佈",
     "group": {
       "tools": "其他工具"
-    }
+    },
+    "line": "官方 Line 群"
   },
   "priceLog": {
     "title": {
@@ -602,5 +603,8 @@
     "save": "儲存",
     "title": "玩家資料",
     "titleLabel": "稱號"
+  },
+  "notice": {
+    "meetup2": "Meetup#2 活動報名開跑中，詳情請上 Plakoro Taiwan Line 詢問"
   }
 }
