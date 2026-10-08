@@ -6,6 +6,10 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 const emit = defineEmits(['pick'])
 const { t } = useI18n()
 
+// Two things on this screen open the group — the menu card and the mark in the corner. Held in
+// one place so they can never end up pointing somewhere different.
+const LINE_URL = 'https://line.me/ti/g2/nX4Wb5UHJR9vy573jqGe_Q_q2Rd6JsruabTKVw'
+
 // Adding a mode should never mean re-tuning the layout, so the grid is driven off this list
 // rather than hand-written cards.
 //
@@ -24,7 +28,7 @@ const MODES = [
   { key: 'typeChart' },
   // A link out, not a mode. `url` is what tells the menu to render an anchor instead of a
   // button — the card looks the same either way, but one changes screen and one leaves.
-  { key: 'line', url: 'https://line.me/ti/g2/nX4Wb5UHJR9vy573jqGe_Q_q2Rd6JsruabTKVw' },
+  { key: 'line', url: LINE_URL },
   // `group` moves a mode one level down. The top level is what a player opens the app to do;
   // these three are things an organiser or a theorycrafter comes looking for, and keeping them
   // up front pushed the front page past the point where every card still fit.
@@ -134,6 +138,25 @@ const rows = computed(() => {
 
     <div v-if="openGroup" class="mode-back">
       <button class="btn secondary" @click="openGroup = null">{{ t('common.back') }}</button>
+    </div>
+
+    <!-- The group's own mark, in the corner. Same destination as the Line card above, offered
+         as the thing people actually recognise rather than as a second labelled button.
+
+         In the flow rather than positioned over it: the rows above are `flex: 1 1 0` and will
+         give up the height, whereas anything absolute would sit on top of the last row the
+         moment the stage got short. -->
+    <div class="mode-mark-row">
+      <a
+        class="mode-mark"
+        :href="LINE_URL"
+        target="_blank"
+        rel="noopener noreferrer"
+        :aria-label="t('mode.line')"
+      >
+        <img src="../assets/logo.png" alt="" aria-hidden="true">
+        <span class="mode-mark-bubble">{{ t('mode.lineJoin') }}</span>
+      </a>
     </div>
 
     <!-- Announcements. The track holds as many copies as it takes to stay covered, and slides
@@ -252,6 +275,62 @@ const rows = computed(() => {
 .mode-card:active { transform: scale(.97); box-shadow: 0 0.0625rem 0.1875rem rgba(60, 60, 50, 0.2); }
 
 .mode-back { flex-shrink: 0; padding-top: 0.875rem; }
+
+/* Full width so the mark lands on the board's right edge — the corner — rather than on the
+   right edge of the centred menu. */
+.mode-mark-row {
+  flex-shrink: 0;
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.25rem 0 0.375rem;
+}
+
+/* Mark and bubble are one target: the whole thing is the invitation, so either half opens it. */
+.mode-mark {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Leaves the tail somewhere to sit without it touching the artwork. */
+  gap: 0.3125rem;
+  text-decoration: none;
+}
+.mode-mark:active { transform: scale(.95); }
+.mode-mark:focus-visible { outline: 0.125rem solid var(--accent-strong); outline-offset: 0.1875rem; border-radius: var(--radius-sm); }
+
+/* Line's own green rather than the app's lime: the words name Line, and the brand colour is
+   what makes it read as that at this size instead of as another small label. */
+.mode-mark-bubble {
+  position: relative;
+  padding: 0.1875rem 0.4375rem;
+  border-radius: 0.3125rem;
+  background: #06C755;
+  color: #fff;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+/* The tail, pointing back up at the mark it is speaking for. */
+.mode-mark-bubble::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  transform: translateX(-50%);
+  border: 0.25rem solid transparent;
+  border-top-width: 0;
+  border-bottom-color: #06C755;
+}
+
+/* Height-led, width from the artwork: the mark is 1800x1536 and pinning the height is what
+   keeps it the same visual weight as the type around it. */
+.mode-mark img {
+  display: block;
+  height: 2.75rem;
+  width: auto;
+}
 
 .mode-ticker {
   flex-shrink: 0;

@@ -125,7 +125,8 @@
     "group": {
       "tools": "その他のツール"
     },
-    "line": "公式 Line グループ"
+    "line": "公式 Line",
+    "lineJoin": "Line に参加"
   },
   "priceLog": {
     "title": {
