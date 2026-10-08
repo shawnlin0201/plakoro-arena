@@ -121,7 +121,7 @@ const rows = computed(() => {
   padding: 1.75rem 0 0.75rem;
   /* rem, not vw: the app already scales its root font with the stage, so a viewport unit
      here would drift out of step with everything around it. */
-  font-size: 2rem;
+  font-size: 1.75rem;
   font-weight: 900;
   letter-spacing: 0.1em;
   /* The tracking adds a trailing gap after the last letter; pulling it back keeps the mark
