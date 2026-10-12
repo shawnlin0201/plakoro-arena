@@ -1,5 +1,5 @@
 <script setup>
-import { computed, defineAsyncComponent, onMounted, provide, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useCharacterData } from './composables/useCharacterData'
 import { useBattleState } from './composables/useBattleState'
@@ -17,12 +17,25 @@ import ExtraRollOverlay from './components/ExtraRollOverlay.vue'
 import WinScreen from './components/WinScreen.vue'
 import Modal from './components/Modal.vue'
 import TurnCutIn from './components/TurnCutIn.vue'
-import LanguageSwitcher from './components/LanguageSwitcher.vue'
+import GlobalTopBar from './components/GlobalTopBar.vue'
+import MusicPlayer from './components/MusicPlayer.vue'
+import { showMusicPlayer } from './data/musicPlayerUi'
+import { installButtonSfx } from './data/buttonSfx'
+import PlayerChip from './components/PlayerChip.vue'
+import PlayerProfileApp from './components/PlayerProfileApp.vue'
+import LoginApp from './components/auth/LoginApp.vue'
+import AdminSwitchApp from './components/admin/AdminSwitchApp.vue'
+import AdminRewardsApp from './components/admin/AdminRewardsApp.vue'
+import { isSignedIn } from './data/currentPlayer'
 import ModeSelect from './components/ModeSelect.vue'
 import SoloApp from './components/solo/SoloApp.vue'
 import DiceBuilderApp from './components/dice/DiceBuilderApp.vue'
 import StoreInfoApp from './components/StoreInfoApp.vue'
 import TournamentApp from './components/tournament/TournamentApp.vue'
+import TierListApp from './components/TierListApp.vue'
+import TypeChartApp from './components/TypeChartApp.vue'
+import TierMakerApp from './components/TierMakerApp.vue'
+import TraitChartApp from './components/TraitChartApp.vue'
 // d3 (scale/shape/array) rides along with this view — code-split so only players who open the
 // price log pay for it, the same treatment the 3D dice tray gets.
 const PriceLogApp = defineAsyncComponent(() => import('./components/pricelog/PriceLogApp.vue'))
@@ -41,6 +54,23 @@ const { isLoading, loadError } = characterData
 const mode = ref(null)
 const appVersion = __APP_VERSION__
 
+// A mode can be entered carrying a request from the mode that opened it — the tier list hands
+// the dice builder a character and the build its figure assumed. `from` is where "back" goes,
+// so a screen opened from another screen returns there rather than dropping the player home
+// with their place in a fifteen-row table lost.
+const modeRequest = ref(null)
+
+function openMode(key, request = null) {
+  modeRequest.value = request
+  mode.value = key
+}
+
+function leaveMode() {
+  const back = modeRequest.value ? modeRequest.value.from : null
+  modeRequest.value = null
+  mode.value = back || null
+}
+
 // The duel and solo modes fill the screen and have no back button of their own (unlike the
 // dice builder and store info, which each end their own flow), so they get a shared one here.
 // It asks first: both modes hold real progress, and the button sits near the screen edge where
@@ -55,7 +85,7 @@ function exitToHome() {
   // same for itself in SoloApp's onUnmounted, since its state is created inside that component.
   battle.resetGame()
   showExitConfirm.value = false
-  mode.value = null
+  leaveMode()
 }
 
 const stageRef = ref(null)
@@ -79,19 +109,26 @@ watch(() => t('appTitle'), (title) => {
 onMounted(() => {
   characterData.loadData()
 })
+
+const uninstallButtonSfx = installButtonSfx()
+onBeforeUnmount(uninstallButtonSfx)
 </script>
 
 <template>
   <div id="stage" ref="stageRef">
     <div id="app">
-      <LanguageSwitcher v-if="mode === null" />
+      <PlayerChip v-if="mode === null" @open="openMode(isSignedIn ? 'profile' : 'login')" />
+      <GlobalTopBar />
+      <MusicPlayer v-if="showMusicPlayer" />
       <button
         v-if="canExitToHome"
         class="home-exit-btn"
         :aria-label="t('app.backToHome')"
         @click="showExitConfirm = true"
       >←</button>
-      <div style="position:absolute; right:0.375rem; bottom:0.25rem; z-index:300; font-size:0.625rem; font-weight:700; color:rgba(58,58,58,.5); pointer-events:none;">v{{ appVersion }}</div>
+      <div
+        style="position:absolute; right:0.375rem; bottom:0.1875rem; z-index:300; font-size:0.5rem; font-weight:700; color:rgba(58,58,58,.5); cursor:default;"
+      >v{{ appVersion }}</div>
 
       <div v-if="isLoading" style="display:flex; height:100%; align-items:center; justify-content:center; font-weight:800; font-size:1rem; color:var(--sub);">{{ t('app.loading') }}</div>
 
@@ -101,7 +138,7 @@ onMounted(() => {
         <button class="btn" @click="characterData.loadData()">{{ t('app.retry') }}</button>
       </div>
 
-      <ModeSelect v-else-if="mode === null" @pick="mode = $event" />
+      <ModeSelect v-else-if="mode === null" @pick="openMode($event)" />
 
       <template v-else-if="mode === 'duel'">
         <OnlineRoomPanel :online="online" />
@@ -123,13 +160,33 @@ onMounted(() => {
         <TurnCutIn v-if="state.turnCutIn" />
       </template>
 
-      <DiceBuilderApp v-else-if="mode === 'diceBuilder'" @back="mode = null" />
+      <DiceBuilderApp v-else-if="mode === 'diceBuilder'" :open-odds="modeRequest" @back="leaveMode()" />
 
-      <StoreInfoApp v-else-if="mode === 'storeInfo'" @back="mode = null" />
+      <StoreInfoApp v-else-if="mode === 'storeInfo'" @back="leaveMode()" />
 
-      <PriceLogApp v-else-if="mode === 'priceLog'" @back="mode = null" />
+      <PriceLogApp v-else-if="mode === 'priceLog'" @back="leaveMode()" />
 
-      <TournamentApp v-else-if="mode === 'tournament'" @back="mode = null" />
+      <TournamentApp v-else-if="mode === 'tournament'" @back="leaveMode()" />
+
+      <TierListApp
+        v-else-if="mode === 'tierList'"
+        @back="leaveMode()"
+        @inspect="openMode('diceBuilder', $event)"
+      />
+
+      <TypeChartApp v-else-if="mode === 'typeChart'" @back="leaveMode()" />
+
+      <TierMakerApp v-else-if="mode === 'tierMaker'" @back="leaveMode()" />
+
+      <TraitChartApp v-else-if="mode === 'traitChart'" @back="leaveMode()" />
+
+      <PlayerProfileApp v-else-if="mode === 'profile'" @back="leaveMode()" />
+
+      <LoginApp v-else-if="mode === 'login'" @back="leaveMode()" @done="openMode('profile')" />
+
+      <AdminSwitchApp v-else-if="mode === 'adminSwitch'" @back="leaveMode()" />
+
+      <AdminRewardsApp v-else-if="mode === 'adminRewards'" @back="leaveMode()" />
 
       <SoloApp v-else />
 
@@ -149,6 +206,7 @@ onMounted(() => {
           </div>
         </div>
       </div>
+
     </div>
   </div>
 </template>

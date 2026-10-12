@@ -85,6 +85,39 @@
 - 手動調整配對：點兩位選手對調位置，或指定由他人輪空
 - 抽獎轉盤：從參賽者中抽獎，可勾選參加資格
 
+## 匯出與匯入
+賽事只存在該台瀏覽器的 localStorage，所以在場邊用手機跑的賽事，回家的電腦看不到。一場賽事匯出成**一個 JSON 檔**，帶著走或留存。
+
+- 匯出：選手、每輪配對、每場成績都在同一個檔裡，下載或複製文字皆可。檔名如 `20260904-秋季賽.json`
+- 匯入：可一次選多個檔。每個檔各自判斷，壞掉的那個會列出原因，不影響其他檔
+- 匯入會產生新的賽事 id，所以同一個檔匯兩次會得到兩場，不會覆蓋既有的。多的刪掉是一個動作，被覆蓋的成績救不回來
+
+檔案格式刻意寫成人看得懂的樣子 —— 對戰直接寫選手名字而非內部 id，方便離線整理或用別的工具處理：
+
+```json
+{
+  "format": "plakoro-tournament",
+  "version": 2,
+  "name": "秋季賽",
+  "date": "2026-09-04",
+  "venue": "台北",
+  "system": "swiss",
+  "players": [
+    { "name": "小明", "code": "P000001" },
+    { "name": "小美", "dropped": true }
+  ],
+  "rounds": [
+    { "round": 1, "matches": [
+      { "table": 1, "a": "小明", "b": "阿華", "winner": "小明" },
+      { "table": 2, "a": "小美", "b": "阿銘", "draw": true },
+      { "a": "阿杰", "bye": true }
+    ]}
+  ]
+}
+```
+
+沒打完的對戰就沒有 `winner` 也沒有 `draw`。`code` 是跨賽事追蹤同一個人用的選手代碼，選填，可在建立賽事時用 `小明;P000001` 一起輸入。同一場若有兩位同名選手，第二位在檔案中的參照會是 `小明#2`，匯回來仍是兩個人。
+
 # 開發
 ```bash
 npm install
@@ -94,6 +127,64 @@ npm run fetch-data   # 從 Supabase 重新抓取角色與招式資料到 src/dat
 ```
 
 多語系（日／英／繁中）：介面文字在 `src/i18n/locales/`，寶可夢與招式名稱的翻譯在 `src/data/translations/`（以日文為基底，缺少翻譯時自動顯示日文原文）。
+
+## 本機資料庫
+
+選手資料／賽事紀錄要搬上資料庫（規劃見 `docs/data-model.md`）之前的本機開發環境，與現在上線的靜態網站完全無關，純粹是本機驗證用。
+
+```bash
+cp .env.example .env   # 第一次使用時
+npm run db:up          # 在 plakoro-arena-api repo 裡執行
+npm run db:migrate      # 套用 db/migrations/ 底下的 schema
+npm run db:psql         # 開 psql 互動視窗
+npm run db:down         # 關閉（資料還在 volume 裡，下次 db:up 會接著用）
+```
+
+GUI：`npm run db:up          # 在 plakoro-arena-api repo 裡執行
+
+新增 schema 變更：在 `db/migrations/` 底下加一個新檔（例如 `0002_xxx.sql`），不要改已經套用過的舊檔——`db/migrate.mjs` 用 `schema_migrations` 表記錄套用過哪些檔案，照檔名順序只套用沒套用過的。
+
+## `backup/`
+
+不進 git 的筆記放這裡（含密碼之類不該公開的機制說明），`.gitignore` 已經排除，自己手動備份。
+
+## API server
+
+`server/`，登入／註冊用，獨立於前端的 Vite dev server。不接 LINE／email／任何 OAuth——玩家是「編號 + 自己設的 PIN」，忘記 PIN 就跟第一次一樣找主辦要一組新的認領碼重設。
+
+```bash
+npm run server:dev   # 開發用，存檔自動重啟，預設聽 :8787
+```
+
+| Endpoint | 用途 |
+|---|---|
+| `POST /api/auth/register` | 全新玩家：`{name, pin}` → 自動配編號，直接可用 |
+| `POST /api/auth/claim` | 既有編號玩家：`{code, claimCode, pin}` 接回歷史紀錄，設自己的 PIN |
+| `POST /api/auth/login` | `{code, pin}` → 換一個新的 session token |
+| `GET /api/players/me` | 帶 `Authorization: Bearer <token>` 查自己的資料 |
+| `POST /api/admin/claim-codes` | 主辦專用，帶 `X-Admin-Secret` header，`{code}` → 產一組一次性認領碼，拿去怎麼發給那位選手都行 |
+
+`.env` 裡要多設 `AUTH_SECRET`（簽 session token 用）跟 `ADMIN_SECRET`（保護上面那個主辦端點），`.env.example` 有放預設值但正式環境記得換成亂數字串，不要照抄。
+
+### 換一台機器開發
+
+Schema 本身已經在 git 裡（`db/migrations/`），換機器只要重新跑一次 `db:up` + `db:migrate` 就有相同的空白資料庫，不需要另外同步。
+
+如果連同目前測試用的資料列也想一起帶過去：
+
+```bash
+npm run db:dump      # 匯出目前這台的資料（含 schema）到 db/dump.sql
+# 把 db/dump.sql 傳到另一台機器（AirDrop／隨便一個雲端硬碟都行，這個檔案故意不進 git，
+# 因為裡面可能是你隨手測試用的假資料，沒有進版控的必要）
+npm run db:up          # 在 plakoro-arena-api repo 裡執行
+npm run db:restore    # 直接 restore，連 schema 一起回來，不用先跑 db:migrate
+```
+
+### 之後要上到正式機器
+
+現在還沒有後端程式、也還沒選 PaaS，先說會怎麼接上去：`db/migrate.mjs` 認的是環境變數 `DATABASE_URL`，本機用 `.env` 裡那組指向 docker 的 Postgres，正式環境只要換成 PaaS 給的那組連線字串（`DATABASE_URL=postgres://...` 設成該平台的環境變數），同一支腳本原封不動 `npm run db:migrate` 就能把 schema 套到正式的資料庫上——不用另外寫一套。之後接 API server 時，連線方式也是同一個 `DATABASE_URL`。
+
+正式環境的 DB 不會用 `docker compose`（那只是本機的容器），而是 PaaS 平台自己託管的 Postgres；真的要用 GUI 檢查正式資料時，平台通常自帶一個，或者把 pgweb 指向那組 `DATABASE_URL` 臨時開一下（記得正式環境大多要 `sslmode=require`，跟本機的 `sslmode=disable` 不同）。
 
 資料庫的部分欄位含有多餘空白（例如招式 `STW05-002` 的 id 尾端有換行字元），且無權限在 Supabase 端修正，因此 `useCharacterData.js` 於讀取時會自動修剪所有用於比對與查找的欄位（id、角色名），重新執行 `fetch-data` 也不會受影響。
 

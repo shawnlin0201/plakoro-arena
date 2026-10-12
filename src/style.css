@@ -25,7 +25,11 @@
   --amp:#B6E28E;
   --down:#F0A0A0;
   --weak:#FFD86B;
-  --radius:1.125rem;
+  /* Two steps, because the app nests one inside the other: a card at --radius holds a box or
+     a button at --radius-sm. The inner value must stay the smaller of the two, or the corners
+     read as mismatched. */
+  --radius:0.75rem;
+  --radius-sm:0.5rem;
   --shadow:0 4px 18px rgba(60,60,50,0.08);
 
   --t-くさ:#B8E6C1; --t-ほのお:#FFB199; --t-みず:#A9D6E5; --t-かみなり:#FFE28A;
@@ -40,14 +44,16 @@
   --tc-glow-b:220,239,252;
 }
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-html,body{margin:0;padding:0;width:100%;height:100%;background:#15140f;color:var(--ink);
+html,body{margin:0;padding:0;width:100%;height:100%;background:#1A1A18;color:var(--ink);
   font-family:"Hiragino Sans","Noto Sans JP",-apple-system,BlinkMacSystemFont,sans-serif;
   overflow:hidden;}
 
 .img-icon { width:100%; height:100%; object-fit: contain; }
 
+/* No drop shadow: the stage already separates itself from the surround by being much
+   lighter than it, and a glow around a full-bleed rectangle only muddies that edge. */
 #stage{position:fixed; top:50%; left:50%; transform-origin:center center;
-  background:var(--bg); overflow:hidden; box-shadow:0 0 24px rgba(0,0,0,.35);}
+  background:var(--bg); overflow:hidden;}
 
 #app{position:relative; width:100%; height:100%; margin:0 auto;
   background:var(--bg); overflow:hidden; display:flex; flex-direction:column;}
@@ -70,9 +76,9 @@ html,body{margin:0;padding:0;width:100%;height:100%;background:#15140f;color:var
 
 .mon-slot{width:100%; flex:1; min-height:0; display:flex; align-items:center; justify-content:center; font-size:1.75rem;
   overflow:hidden; position:relative; padding:0.375rem; box-sizing:border-box;}
-.mon-slot .img-icon{border-radius:0.875rem; width:100%; height:100%; object-fit:contain;}
+.mon-slot .img-icon{border-radius:var(--radius-sm); width:100%; height:100%; object-fit:contain;}
 .mon-slot.null-slot{flex:none; width:100%; max-width:5rem; max-height:5rem;
-  border:none dashed #D8D6CE; border-radius:0.875rem; background:#F3F2EC; color:#C7C5BC; font-size:0.6562rem; font-weight:600; padding:0;}
+  border:none dashed #D8D6CE; border-radius:var(--radius-sm); background:#F3F2EC; color:#C7C5BC; font-size:0.6562rem; font-weight:600; padding:0;}
 
 .pc-typewk-row{display:flex; gap:0.25rem; align-items:center; justify-content:center; flex-shrink:0;}
 .pc-typewk-row .tw-label{font-size:0.625rem; color:var(--sub); font-weight:700; white-space:nowrap;}
@@ -114,8 +120,8 @@ html,body{margin:0;padding:0;width:100%;height:100%;background:#15140f;color:var
 
 .board.turn-board{padding:0;}
 .turn-row{align-items:flex-start;}
-.player-card.turn-active { height:20%; border-radius:1.125rem 1.125rem 0 0; box-shadow: none; border:none; }
-.player-card.turn-inactive { height:20%; border-radius:1.125rem; box-shadow: none; border:none; }
+.player-card.turn-active { height:20%; border-radius:var(--radius) var(--radius) 0 0; box-shadow: none; border:none; }
+.player-card.turn-inactive { height:20%; border-radius:var(--radius); box-shadow: none; border:none; }
 .player-card.turn-active .pc-row2,
 .player-card.turn-inactive .pc-row2{display:none;}
 .player-card.turn-active .pc-row1,
@@ -127,19 +133,26 @@ html,body{margin:0;padding:0;width:100%;height:100%;background:#15140f;color:var
 .overlay-title{font-size:1.3125rem; font-weight:800; color:var(--ink);}
 .overlay-sub{font-size:0.875rem; color:var(--sub); max-width:20rem; line-height:1.6;}
 
-.btn{border:0.125rem solid #fff; border-radius:0.875rem; padding:0.75rem 1.25rem; font-size:1rem; font-weight:800;
+.btn{border:0.125rem solid #fff; border-radius:var(--radius-sm); padding:0.75rem 1.25rem; font-size:1rem; font-weight:800;
   background:#AEFF3E; color:#2A2A2A; box-shadow:0 3px 10px rgba(174,255,62,.4);
   cursor:pointer; transition:transform .1s;}
 .btn:active{transform:scale(.96);}
-.btn.secondary{background:#EDEBE3; color:var(--ink); box-shadow:0 3px 10px rgba(0,0,0,.15);}
-.btn.fail{background:#000; color:#fff; box-shadow:0 3px 10px rgba(0,0,0,.4);}
+/* Darker and borderless. At #EDEBE3 it sat almost on top of the board's own #FAFAF6, so the
+   white outline was the only thing giving it an edge — take the outline away and it has to
+   hold its own shape, which means more contrast with the ground, not less. */
+.btn.secondary{border:none; background:#1F1F1D; color:#fff; box-shadow:0 2px 8px rgba(0,0,0,.22);}
+/* Red, not black. `.fail` sits directly beside `.secondary` in every destructive confirmation
+   — delete a tournament, rewind a round, re-pair — and both being black would make "cancel"
+   and "delete" the same button at a glance. Colour is the only thing left telling them apart
+   now that secondary has taken the dark treatment. */
+.btn.fail{border:none; background:#C8203C; color:#fff; box-shadow:0 3px 10px rgba(200,32,60,.3);}
 .btn.wide{width:100%;}
 
 .win-screen{position:absolute; inset:0; z-index:50; overflow:hidden;
   background-size:cover; background-position:center; background-repeat:no-repeat;
   display:flex; align-items:center; justify-content:center; gap:4%; padding:0 6%;}
 .win-mon-big{flex:0 0 auto; width:36%; max-width:20rem; margin-left:8%; display:flex; align-items:center; justify-content:center;}
-.win-mon-big img{width:100%; height:auto; object-fit:contain; filter:drop-shadow(0 16px 22px rgba(0,0,0,.35)); border-radius:1.125rem;}
+.win-mon-big img{width:100%; height:auto; object-fit:contain; filter:drop-shadow(0 16px 22px rgba(0,0,0,.35)); border-radius:var(--radius);}
 .win-text-col{flex:1 1 auto; min-width:0; display:flex; flex-direction:column; align-items:flex-start; gap:1.625rem;}
 .win-title{font-size:2.25rem; font-weight:400; line-height:1.15; color:#fff; white-space:nowrap;
   font-family:'CorporateLogoBold','Hiragino Sans','Noto Sans JP',sans-serif;
@@ -228,7 +241,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;background:#15140f;color:var
 .select-card{flex:1; display:flex; flex-direction:column; align-items:center; gap:0.625rem;
   background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:0.875rem 0.75rem;}
 .select-card-title{font-size:1.1875rem; font-weight:800; color:var(--ink);}
-.select-box{width:100%; flex:1; min-height:0; border-radius:0.875rem; display:flex; align-items:center; justify-content:center;
+.select-box{width:100%; flex:1; min-height:0; border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center;
   text-align:center; font-size:1.0625rem; font-weight:800; color:#3A3A3A; background:#F6F5F0;}
 .select-box.pick-btn{cursor:pointer; transition:transform .1s;}
 .select-box.pick-btn:active{transform:scale(.97);}
@@ -261,7 +274,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;background:#15140f;color:var
 .modal-title{font-size:1.0625rem; font-weight:800; margin-bottom:0.625rem; text-align:center;}
 .grid-2{display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:0.5rem;}
 
-.pick-card{border:0.125rem solid transparent; border-radius:0.875rem; overflow:hidden;
+.pick-card{border:0.125rem solid transparent; border-radius:var(--radius-sm); overflow:hidden;
   text-align:center; cursor:pointer; display:flex; flex-direction:column; min-width:0;
   box-shadow:0 6px 16px rgba(0,0,0,0.22), 0 2px 4px rgba(0,0,0,0.12);}
 .pick-card.selected{border-color:var(--accent-strong);}
@@ -390,7 +403,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;background:#15140f;color:var
 
 .dr-top-row{flex-shrink:0; display:flex; align-items:stretch; gap:0.625rem;}
 
-.dr-move-card{ flex:0 0 32%; min-width:0; border-radius:0.875rem; overflow:hidden; padding:0.5rem 0.625rem 0.5625rem;
+.dr-move-card{ flex:0 0 32%; min-width:0; border-radius:var(--radius-sm); overflow:hidden; padding:0.5rem 0.625rem 0.5625rem;
   background-size:cover; background-position:center; box-shadow:0 4px 12px rgba(0,0,0,.15);
   display:flex; flex-direction:column; justify-content:center;}
 .dr-cost-row{display:flex; gap:0.1875rem; margin-bottom:0.1875rem; flex-wrap:wrap;}
@@ -407,7 +420,7 @@ html,body{margin:0;padding:0;width:100%;height:100%;background:#15140f;color:var
 .dr-energy-icons.one-row{display:flex; gap:0.3125rem;}
 
 .dr-result-cols{flex:1; display:flex; gap:0.5rem; min-height:0;}
-.dr-success-col{flex:3; display:flex; flex-direction:column; border-radius:0.875rem; overflow:hidden;
+.dr-success-col{flex:3; display:flex; flex-direction:column; border-radius:var(--radius-sm); overflow:hidden;
   min-height:0;}
 .dr-col-header{padding:0.5rem 0.625rem; font-size:0.8438rem; font-weight:900; color:#fff; text-align:center; flex-shrink:0;
   font-family:'CorporateLogoBold','Hiragino Sans','Noto Sans JP',sans-serif;}
@@ -450,14 +463,14 @@ html,body{margin:0;padding:0;width:100%;height:100%;background:#15140f;color:var
 .tr-dmg{font-size:2rem; font-weight:900; color:var(--ink);}
 
 .dr-right-col{flex:1.3; display:flex; flex-direction:column; gap:0.5rem; min-height:0;}
-.dr-fail-box{flex:3; display:flex; flex-direction:column; border-radius:0.875rem; overflow:hidden;
+.dr-fail-box{flex:3; display:flex; flex-direction:column; border-radius:var(--radius-sm); overflow:hidden;
   background:#D8D6CE; min-height:0;}
 .dr-header-fail{color:#5C5A50;}
 .dr-fail-btn{flex:1; margin:0 0.625rem 0.625rem; border:0.125rem solid #fff; border-radius:0.625rem; background:#3E6E86;
   color:#fff; font-size:1.0938rem; font-weight:900; cursor:pointer; box-shadow:0 3px 10px rgba(0,0,0,.2);
   font-family:'CorporateLogoBold','Hiragino Sans','Noto Sans JP',sans-serif;}
 
-.dr-back-box{flex:2; display:flex; flex-direction:column; border-radius:0.875rem; overflow:hidden;
+.dr-back-box{flex:2; display:flex; flex-direction:column; border-radius:var(--radius-sm); overflow:hidden;
   background:#E9E7E0; min-height:0;}
 .dr-back-btn{flex:1; margin:0.625rem; border:0.125rem solid #fff; border-radius:0.625rem; background:#D9D7CE; color:#5C5A50;
   font-size:0.9688rem; font-weight:800; line-height:1.35; cursor:pointer;

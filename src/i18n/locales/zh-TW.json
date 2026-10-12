@@ -8,7 +8,8 @@
     "fail": "失敗",
     "weaknessColon": "弱點：",
     "and": "和",
-    "cancel": "取消"
+    "cancel": "取消",
+    "methodology": "計算方式與前提"
   },
   "app": {
     "loading": "載入中...",
@@ -16,7 +17,15 @@
     "retry": "重新載入",
     "backToHome": "回到首頁",
     "exitConfirmTitle": "要回到首頁嗎？",
-    "exitConfirmDesc": "目前的進度將會遺失。"
+    "exitConfirmDesc": "目前的進度將會遺失。",
+    "language": "語言",
+    "mute": "靜音",
+    "unmute": "取消靜音",
+    "musicPlayer": "音樂播放器",
+    "prevTrack": "上一首",
+    "nextTrack": "下一首",
+    "play": "播放",
+    "pause": "暫停"
   },
   "dataErrors": {
     "network": "發生連線錯誤：{message}",
@@ -27,7 +36,8 @@
     "trainerA": "訓練家A",
     "trainerB": "訓練家B",
     "notSelected": "未選擇",
-    "incomingDamageEffect": "效果：下次受到的傷害{sign}{value}"
+    "incomingDamageEffect": "效果：下次受到的傷害{sign}{value}",
+    "guest": "訪客"
   },
   "select": {
     "pickPokemon": "選擇<br>寶可夢",
@@ -113,9 +123,59 @@
     "duel": "對戰模式",
     "solo": "單人爬塔",
     "diceBuilder": "模擬組骰",
-    "storeInfo": "店家與比賽資訊",
+    "storeInfo": "店家資訊",
     "priceLog": "交易市場",
-    "tournament": "賽程編排"
+    "tournament": "賽程編排",
+    "tierList": "強度排行",
+    "typeChart": "屬性克制表",
+    "tierMaker": "Tier 製作器",
+    "traitChart": "角色特性分佈",
+    "adminSwitch": "切換身份",
+    "adminRewards": "賽事獎品管理",
+    "group": {
+      "tools": "其他工具"
+    },
+    "line": "官方 Line",
+    "lineJoin": "加入 Line"
+  },
+  "admin": {
+    "switchTitle": "切換身份",
+    "searchPlaceholder": "搜尋玩家代號或名稱",
+    "noResults": "沒有符合的玩家",
+    "statEvents": "參賽場次",
+    "statPodiums": "獎牌數",
+    "statTourWinRate": "線下勝率",
+    "statOnlineWinRate": "線上勝率",
+    "uploadButton": "上傳到資料庫",
+    "uploadTitle": "上傳賽事到資料庫",
+    "uploadHint": "會建立/更新賽事、選手與對局紀錄，並發放出席／名次對應的頭像與旗幟。稱號需要另外手動發放。",
+    "uploadFinished": "已完成，會記錄名次",
+    "uploadNotFinished": "尚未完成，不會記錄名次",
+    "uploadRewardPackage": "賽事獎品（不選就只上傳成績，不發任何東西）",
+    "uploadRewardNone": "不發放獎品",
+    "uploadDone": "上傳成功",
+    "uploading": "上傳中…",
+    "uploadError": "上傳失敗，請稍後再試",
+    "updateTitle": "更新資料庫中的賽事",
+    "updateHint": "偵測到這場賽事已經在資料庫裡——會更新它的資料、選手與對局紀錄，並視名次異動補發對應頭像/旗幟。稱號仍需手動發放。",
+    "updateButton": "更新賽事",
+    "updating": "更新中…",
+    "updateDone": "更新成功",
+    "updateError": "更新失敗，請稍後再試",
+    "rewardsTitle": "賽事獎品管理",
+    "rewardsEmpty": "還沒有任何賽事獎品",
+    "rewardsNew": "新增獎品組合",
+    "rewardsName": "名稱",
+    "rewardsNameRequired": "請輸入名稱",
+    "rewardsIdOptional": "可留空，不填會自動產生一組",
+    "rewardsPreview": "預覽",
+    "rewardsNone": "未設定",
+    "deleteAlsoCloud": "同時從雲端資料庫刪除（不會收回已發出的獎勵）",
+    "downloadButton": "從雲端下載",
+    "downloadTitle": "從資料庫下載賽事",
+    "downloadEmpty": "資料庫裡還沒有任何賽事",
+    "downloadError": "下載失敗，請稍後再試",
+    "toggleHint": "點一下切換：亮起＝已擁有，點了收回；暗的＝未擁有，點了發給。預設素材人人都有，不能切換。"
   },
   "priceLog": {
     "title": {
@@ -199,7 +259,7 @@
     "throwButton": "擲出骰子",
     "quickApplyButton": "快速套用純屬骰",
     "quickApplyTitle": "快速套用純屬骰",
-    "quickApplyHint": "選一種能量，骰子1~3的圓槽、方槽都會替換成該能量；若該能量屬於凸面固定池則凸槽也替換（凹槽不變），若屬於凹面固定池則凹槽也替換（凸槽不變）",
+    "quickApplyHint": "先選主能量，再選副能量",
     "charaDie": "角色骰",
     "set": "骰組{label}",
     "addCompare": "新增一組骰子來比較",
@@ -215,12 +275,36 @@
     "moveOddsButton": "招式機率",
     "moveOdds": {
       "title": "招式成功機率",
-      "hint": "選一隻寶可夢，即可看到目前骰子配置下各招式湊出所需能量的機率；角色骰效果為「招式成功且骰中」的累進機率",
+      "hint": "選一隻寶可夢，即可看到目前骰子配置下各招式的成功率與期望效益",
       "changeCharacter": "更換",
       "diceInPlay": "參與擲骰",
       "moveHeader": "招式（{n} 顆骰）",
       "successRate": "成功率",
-      "charaDieOdds": "角色骰"
+      "charaDieOdds": "角色骰",
+      "expectedValue": "期望效益",
+      "settings": "計算前提",
+      "sortByEv": "依期望效益排序",
+      "countDefensive": "減傷折算為回血",
+      "selfHpLabel": "剩餘 HP",
+      "selfHpAny": "不指定",
+      "prevEnemyFailed": "上一個對手回合，對手能量骰失敗",
+      "prevSelfFailed": "上一個自己回合，自己能量骰失敗",
+      "prevPrereqSucceeded": "上一個自己回合，指定招式成功",
+      "evHint": "期望效益＝（對手扣血 − 自己扣血）的平均，再乘上成功率；回血算加分。不計弱點加成。下方的組成相加就是期望效益（傷害總共為小計，不另外相加）",
+      "noteNeedsHp": "填入剩餘 HP 後才會計入",
+      "noteNeedsPrev": "依上方前提條件計算",
+      "noteMirrorDice": "假設對手骰組與本組相同",
+      "noteUnsupported": "有未支援的效果，未計入",
+      "evPartBase": "白板",
+      "evPartChara": "角色骰",
+      "evPartDamageTotal": "傷害總共",
+      "evPartSelf": "自身 HP",
+      "evPartDefensive": "減傷",
+      "countTempo": "把干擾對手折算成傷害",
+      "tempoCalculating": "（計算中…）",
+      "evPartTempo": "干擾",
+      "enemyLastDamageLabel": "對手上一招白板",
+      "showBreakdownDetail": "顯示詳細資訊"
     },
     "showCumulativeProb": "顯示累計機率",
     "showExactProb": "顯示恰好機率",
@@ -234,7 +318,11 @@
       "dualSlotLabel": "能量{n}",
       "close": "關閉"
     },
-    "partsPlanButton": "購入零件"
+    "partsPlanButton": "購入零件",
+    "quickApplyDieButton": "純屬骰",
+    "quickApplyStepMain": "① 主能量",
+    "quickApplyStepOpposite": "② 副能量（{face}）",
+    "quickApplyKeepOpposite": "跳過"
   },
   "tournament": {
     "listTitle": "賽程編排",
@@ -257,7 +345,7 @@
       "formatLabel": "賽制",
       "playersLabel": "選手名單",
       "playersPlaceholder": "一行一位選手名字",
-      "playersHint": "至少需要 2 位選手",
+      "playersHint": "一行一位。有選手代碼的話用分號接在後面，例如「小明;P000003」。也可以直接從試算表複製兩欄貼上。",
       "roundsLabel": "瑞士制輪數",
       "roundsHint": "建議輪數已自動填入，可自行調整",
       "validationTooFewPlayers": "請至少輸入 2 位選手",
@@ -319,8 +407,92 @@
       "addedPaired": "已補上本輪輪空的位置，兩人對戰。",
       "addedBye": "本輪人數為偶數，新選手本輪輪空。",
       "repair": "重新配對",
-      "confirmRepair": "重新配對會依目前名冊與積分重排本輪，本輪已登錄的 {n} 場成績將被清除。確定嗎？"
+      "confirmRepair": "重新配對會依目前名冊與積分重排本輪，本輪已登錄的 {n} 場成績將被清除。確定嗎？",
+      "codePlaceholder": "代碼",
+      "saveImage": "匯出圖片",
+      "savingImage": "產生中…",
+      "savePlayerImage": "匯出這位選手的圖片",
+      "savePlayerImageShort": "圖片"
+    },
+    "export": {
+      "title": "匯出賽事",
+      "button": "匯出賽事",
+      "hint": "整場賽事存成一個檔案 —— 選手、每輪配對、每場成績都在裡面。之後匯入回來可以繼續跑。",
+      "summary": "{players} 人 · {rounds} 輪",
+      "saveFile": "下載檔案",
+      "copyFile": "複製內容",
+      "copied": "已複製",
+      "unplayed": "還有 {n} 場沒登錄成績，會以「尚未進行」的狀態匯出。"
+    },
+    "import": {
+      "button": "匯入賽事",
+      "title": "匯入賽事",
+      "hint": "讀取匯出的賽事檔案，可一次選多個。每個檔案各自判斷，壞掉的不會影響其他檔。",
+      "pickFiles": "選擇檔案…（可多選）",
+      "pastePlaceholder": "或把內容貼在這裡",
+      "addPasted": "加入",
+      "pastedLabel": "貼上的內容",
+      "summary": "{players} 人 · {rounds} 輪 · 已登錄 {played} 場",
+      "skipping": "{n} 個檔案會被略過",
+      "confirm": "匯入",
+      "confirmMany": "匯入 {n} 場",
+      "error": {
+        "notJson": "不是有效的 JSON，可能貼的時候少了一段。",
+        "wrongFormat": "不是本工具匯出的賽事檔案。",
+        "tooNew": "來自比較新的版本，這裡讀不了。",
+        "malformed": "賽事資料不完整，檔案可能被截斷。",
+        "unknownPlayer": "對戰裡出現不在選手名單中的人",
+        "unreadable": "檔案讀不開。"
+      }
+    },
+    "banner": {
+      "title": {
+        "champion": "優勝者",
+        "undefeated": "不敗",
+        "podium": "頒獎台常客",
+        "regular": "常客",
+        "rookie": "新人"
+      },
+      "winRate": "Win Rate:",
+      "top3": "Podiums:"
     }
+  },
+  "tierList": {
+    "title": "角色強度排行",
+    "hint": "每隻寶可夢都套用適合自己的純屬骰 3 顆，取最強 {n} 招輪替出招的平均",
+    "calculating": "計算中…",
+    "fewMoves": "這隻寶可夢只有 {n} 招",
+    "assumptions": "每隻寶可夢都假設帶著「自己招式最常要求的屬性」所組成的 3 顆純屬骰。不計弱點、也不指定對手。點一列可以展開背後那幾招",
+    "countIndirect": "把非傷害效益折算成 HP（減傷、干擾）",
+    "metricTopN": "前 {n} 招平均",
+    "metricPerTurn": "平均一回合",
+    "hintPerTurn": "把一場遊戲切成幾段血量區間，每段取「那時候打得出的最強 {n} 招輪替」，再依各段佔比加權",
+    "bandHealthy": "血量高",
+    "bandBelow": "HP {hp} 以下",
+    "premiseNote": "條件式招式：自己湊得到的條件（上回合先打某招）會連同湊條件那一回合一起算，所以臭泥那組 combo 反而輸給直接攻擊；自己選不到的條件（剩餘血量、上回合骰失敗）則依實際發生頻率加權。頻率是從卡池推導的 —— 血量 40 以下佔 25%、80 以下佔 50%、上回合骰失敗 16%",
+    "disclaimer": "招式期望效益僅供參考，實際對戰複雜度高",
+    "rotationNote": "同一招不能連續使用（上回合用過的招會被鎖住），所以算的是最強兩招輪替的平均，而不是單一最強招重複。選 3 招是給「被對手封掉一招」的情況參考",
+    "inspect": "在機率表中查看"
+  },
+  "typeChart": {
+    "title": "屬性克制表",
+    "character": "寶可夢",
+    "main": "主屬性",
+    "secondary": "副屬性",
+    "weakness": "弱點",
+    "colorlessOnly": "只吃無色"
+  },
+  "tierMaker": {
+    "title": "Tier 製作器",
+    "titlePlaceholder": "輸入標題",
+    "rosterLabel": "角色清單",
+    "addTier": "新增階別",
+    "newTierLabel": "新階別",
+    "deleteTier": "刪除階別",
+    "resetButton": "清空排列",
+    "resetConfirm": "再按一次確定清空",
+    "exportButton": "匯出圖片",
+    "exporting": "匯出中…"
   },
   "solo": {
     "you": "你",
@@ -455,5 +627,71 @@
     },
     "preferVariety": "盡量分散套組",
     "varietyLimit": "（最少仍需同款 {n} 盒）"
+  },
+  "traitChart": {
+    "title": "角色特性分佈",
+    "noData": "這隻角色的特性數值還沒填。",
+    "axis": {
+      "attack": "攻擊",
+      "defense": "防禦",
+      "stability": "穩定",
+      "burst": "爆發",
+      "control": "控制",
+      "ease": "上手"
+    },
+    "saveImage": "匯出圖片",
+    "saving": "產生中…"
+  },
+  "account": {
+    "title": "帳號",
+    "signOut": "登出",
+    "tabLogin": "登入",
+    "tabRegister": "註冊",
+    "tabClaim": "認領舊帳號",
+    "accountLabel": "帳號",
+    "accountPlaceholder": "帳號（登入用，英數字皆可）",
+    "pinLabel": "PIN",
+    "pinPlaceholder": "PIN（至少 8 碼，自己設定）",
+    "nameLabel": "暱稱",
+    "namePlaceholder": "輸入你的暱稱（顯示用）",
+    "claimCodeLabel": "認領碼",
+    "claimCodePlaceholder": "主辦給你的一次性認領碼",
+    "claimHint": "之前打過比賽、已經有編號的話，跟主辦要一組認領碼就能接回你的紀錄。",
+    "loginSubmit": "登入",
+    "registerSubmit": "建立帳號",
+    "claimSubmit": "認領並設定帳號",
+    "forgotPin": "忘記 PIN 或帳號？跟主辦要一組新的認領碼就能重設。",
+    "errorGeneric": "發生錯誤，請稍後再試",
+    "errorWrongCredentials": "帳號或 PIN 不正確",
+    "errorAccountRequired": "請輸入帳號",
+    "errorAccountTaken": "這個帳號已經被使用了，換一個試試",
+    "errorNameRequired": "請輸入暱稱",
+    "errorPinTooShort": "PIN 至少要 8 碼",
+    "errorClaimCodeRequired": "請輸入認領碼",
+    "errorClaimNotFound": "找不到這組認領碼，確認有沒有打錯",
+    "errorClaimUsed": "這組認領碼已經用過了，跟主辦要一組新的",
+    "errorClaimExpired": "這組認領碼已過期，跟主辦要一組新的"
+  },
+  "profile": {
+    "avatar": "頭像",
+    "flag": "旗幟",
+    "name": "名稱",
+    "namePlaceholder": "輸入你的名稱",
+    "locked": "尚未解鎖",
+    "noTitle": "不顯示",
+    "showAll": "顯示所有",
+    "showOwned": "顯示已擁有",
+    "musicVolume": "音樂音量",
+    "sfxVolume": "音效音量",
+    "save": "儲存",
+    "saveError": "儲存失敗，請稍後再試",
+    "tabBadge": "玩家徽章",
+    "tabSettings": "設定",
+    "title": "玩家資料",
+    "titleLabel": "稱號",
+    "adminMode": "管理員模式"
+  },
+  "notice": {
+    "meetup2": "Meetup#2 活動報名開跑中，詳情請上 Plakoro Taiwan Line 詢問"
   }
 }

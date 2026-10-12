@@ -8,7 +8,8 @@
     "fail": "Fail",
     "weaknessColon": "Weakness:",
     "and": "and",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "methodology": "Methodology & assumptions"
   },
   "app": {
     "loading": "NOW LOADING...",
@@ -16,7 +17,15 @@
     "retry": "Retry",
     "backToHome": "Back to Home",
     "exitConfirmTitle": "Return to home?",
-    "exitConfirmDesc": "Your current progress will be lost."
+    "exitConfirmDesc": "Your current progress will be lost.",
+    "language": "Language",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "musicPlayer": "Music player",
+    "prevTrack": "Previous track",
+    "nextTrack": "Next track",
+    "play": "Play",
+    "pause": "Pause"
   },
   "dataErrors": {
     "network": "A network error occurred: {message}",
@@ -27,7 +36,8 @@
     "trainerA": "Trainer A",
     "trainerB": "Trainer B",
     "notSelected": "Not selected",
-    "incomingDamageEffect": "Effect: next damage taken {sign}{value}"
+    "incomingDamageEffect": "Effect: next damage taken {sign}{value}",
+    "guest": "Guest"
   },
   "select": {
     "pickPokemon": "Pick a<br>Pokémon",
@@ -113,9 +123,59 @@
     "duel": "Duel Mode",
     "solo": "Solo Tower",
     "diceBuilder": "Dice Assembly Sim",
-    "storeInfo": "Stores & Events",
+    "storeInfo": "Stores",
     "priceLog": "Market",
-    "tournament": "Tournament Scheduler"
+    "tournament": "Tournament Scheduler",
+    "tierList": "Strength ranking",
+    "typeChart": "Type matchups",
+    "tierMaker": "Tier Maker",
+    "traitChart": "Trait chart",
+    "adminSwitch": "Switch Identity",
+    "adminRewards": "Manage Tournament Rewards",
+    "group": {
+      "tools": "More tools"
+    },
+    "line": "Official Line",
+    "lineJoin": "Join Line"
+  },
+  "admin": {
+    "switchTitle": "Switch Identity",
+    "searchPlaceholder": "Search by code or name",
+    "noResults": "No matching players",
+    "statEvents": "Events",
+    "statPodiums": "Podiums",
+    "statTourWinRate": "Offline win rate",
+    "statOnlineWinRate": "Online win rate",
+    "uploadButton": "Upload to database",
+    "uploadTitle": "Upload tournament to database",
+    "uploadHint": "Creates/updates the tournament, players and match records, and grants avatar/flag tiers for attendance and placement. Titles still need to be granted by hand.",
+    "uploadFinished": "Finished — placements will be recorded",
+    "uploadNotFinished": "Not finished — placements won't be recorded",
+    "uploadRewardPackage": "Reward package (leave unset to upload results without granting anything)",
+    "uploadRewardNone": "No rewards",
+    "uploadDone": "Uploaded",
+    "uploading": "Uploading…",
+    "uploadError": "Upload failed, please try again",
+    "updateTitle": "Update tournament in database",
+    "updateHint": "Detected this tournament already exists in the database — updates its data, players and match records, and grants avatar/flag tiers for any changed placements. Titles still need to be granted by hand.",
+    "updateButton": "Update tournament",
+    "updating": "Updating…",
+    "updateDone": "Updated",
+    "updateError": "Update failed, please try again",
+    "rewardsTitle": "Manage Tournament Rewards",
+    "rewardsEmpty": "No reward packages yet",
+    "rewardsNew": "New reward package",
+    "rewardsName": "Name",
+    "rewardsNameRequired": "Name is required",
+    "rewardsIdOptional": "Optional — leave blank to generate one",
+    "rewardsPreview": "Preview",
+    "rewardsNone": "Not set",
+    "deleteAlsoCloud": "Also delete from the database (won't revoke rewards already granted)",
+    "downloadButton": "Download from cloud",
+    "downloadTitle": "Download tournament from database",
+    "downloadEmpty": "No tournaments in the database yet",
+    "downloadError": "Download failed, please try again",
+    "toggleHint": "Tap to toggle: lit means owned (tap to revoke), dimmed means not owned (tap to grant). Default assets are always available and cannot be toggled."
   },
   "priceLog": {
     "title": {
@@ -199,7 +259,7 @@
     "throwButton": "Throw Dice",
     "quickApplyButton": "Quick Apply Pure Die",
     "quickApplyTitle": "Quick Apply Pure Die",
-    "quickApplyHint": "Pick one energy type to fill Dice 1-3's round and square sockets. If it's a convex-pool type, the convex face gets it too (concave stays); if it's a concave-pool type, the concave face gets it too (convex stays)",
+    "quickApplyHint": "Pick the main energy, then the secondary one.",
     "charaDie": "Character Die",
     "set": "Set {label}",
     "addCompare": "Add a set to compare",
@@ -215,12 +275,36 @@
     "moveOddsButton": "Move Odds",
     "moveOdds": {
       "title": "Move Odds",
-      "hint": "Pick a Pokémon to see how often the current dice build can pay each move's cost. Character-die odds include the move landing first.",
+      "hint": "Pick a Pokémon to see each move's success rate and expected value under the current dice build.",
       "changeCharacter": "Change",
       "diceInPlay": "Dice in play",
       "moveHeader": "Move ({n} dice)",
       "successRate": "Success",
-      "charaDieOdds": "Char. die"
+      "charaDieOdds": "Char. die",
+      "expectedValue": "Expected value",
+      "settings": "Assumptions",
+      "sortByEv": "Sort by expected value",
+      "countDefensive": "Count damage reduction as healing",
+      "selfHpLabel": "Remaining HP",
+      "selfHpAny": "Unset",
+      "prevEnemyFailed": "Opponent's energy dice failed last turn",
+      "prevSelfFailed": "Your energy dice failed last turn",
+      "prevPrereqSucceeded": "The prerequisite move landed last turn",
+      "evHint": "Expected value = average of (damage dealt − damage taken by yourself), multiplied by the success rate. Healing counts as a gain. Weakness is left out. The parts underneath add up to the figure (Dmg is a subtotal, not another part).",
+      "noteNeedsHp": "Counted once you enter remaining HP",
+      "noteNeedsPrev": "Based on the assumptions above",
+      "noteMirrorDice": "Assumes the opponent rolls this same build",
+      "noteUnsupported": "Has an unsupported effect, left out",
+      "evPartBase": "Base",
+      "evPartChara": "Char. die",
+      "evPartDamageTotal": "Dmg",
+      "evPartSelf": "Own HP",
+      "evPartDefensive": "Reduction",
+      "countTempo": "Count what it denies the opponent",
+      "tempoCalculating": "(working…)",
+      "evPartTempo": "Tempo",
+      "enemyLastDamageLabel": "Opponent's last move",
+      "showBreakdownDetail": "Show breakdown"
     },
     "showCumulativeProb": "Show cumulative odds",
     "showExactProb": "Show exact odds",
@@ -234,7 +318,11 @@
       "dualSlotLabel": "Energy {n}",
       "close": "Close"
     },
-    "partsPlanButton": "Buy parts"
+    "partsPlanButton": "Buy parts",
+    "quickApplyDieButton": "Pure",
+    "quickApplyStepMain": "1. Main energy",
+    "quickApplyStepOpposite": "2. Secondary energy ({face})",
+    "quickApplyKeepOpposite": "Skip"
   },
   "tournament": {
     "listTitle": "Tournament Scheduler",
@@ -257,7 +345,7 @@
       "formatLabel": "Format",
       "playersLabel": "Players",
       "playersPlaceholder": "One player name per line",
-      "playersHint": "At least 2 players required",
+      "playersHint": "One per line. Append a roster code after a semicolon if you have one, e.g. “Ming;P000003”. Two columns pasted from a spreadsheet also work.",
       "roundsLabel": "Swiss rounds",
       "roundsHint": "A suggested round count is filled in — adjust it if you like",
       "validationTooFewPlayers": "Enter at least 2 players",
@@ -319,8 +407,92 @@
       "addedPaired": "Took the open bye seat — those two now play each other.",
       "addedBye": "The round was even, so the new player takes a bye this round.",
       "repair": "Re-pair",
-      "confirmRepair": "Re-pairing rebuilds this round from the current roster and standings. The {n} result(s) already entered this round will be cleared. Continue?"
+      "confirmRepair": "Re-pairing rebuilds this round from the current roster and standings. The {n} result(s) already entered this round will be cleared. Continue?",
+      "codePlaceholder": "Code",
+      "saveImage": "Save image",
+      "savingImage": "Rendering…",
+      "savePlayerImage": "Save this player's image",
+      "savePlayerImageShort": "Image"
+    },
+    "export": {
+      "title": "Export tournament",
+      "button": "Export",
+      "hint": "The whole event as one file — players, every round’s pairings, every result. Import it back to carry on.",
+      "summary": "{players} players · {rounds} rounds",
+      "saveFile": "Download file",
+      "copyFile": "Copy contents",
+      "copied": "Copied",
+      "unplayed": "{n} matches have no result yet; they export as unplayed."
+    },
+    "import": {
+      "button": "Import",
+      "title": "Import tournaments",
+      "hint": "Load exported tournament files — several at once. Each is judged on its own; a bad file doesn’t stop the rest.",
+      "pickFiles": "Choose files…",
+      "pastePlaceholder": "Or paste contents here",
+      "addPasted": "Add",
+      "pastedLabel": "Pasted text",
+      "summary": "{players} players · {rounds} rounds · {played} recorded",
+      "skipping": "{n} files will be skipped",
+      "confirm": "Import",
+      "confirmMany": "Import {n}",
+      "error": {
+        "notJson": "Not valid JSON — the copy may have been cut short.",
+        "wrongFormat": "Not a tournament file from this tool.",
+        "tooNew": "From a newer version than this one can read.",
+        "malformed": "The tournament data is incomplete; the file may be truncated.",
+        "unknownPlayer": "A match names someone who is not in the player list",
+        "unreadable": "The file could not be read."
+      }
+    },
+    "banner": {
+      "title": {
+        "champion": "Champion",
+        "undefeated": "Undefeated",
+        "podium": "Podium regular",
+        "regular": "Regular",
+        "rookie": "Newcomer"
+      },
+      "winRate": "Win Rate:",
+      "top3": "Podiums:"
     }
+  },
+  "tierList": {
+    "title": "Character strength ranking",
+    "hint": "Each Pokémon on three pure dice built for them, scored by alternating their {n} best moves",
+    "calculating": "working…",
+    "fewMoves": "this Pokémon has only {n} moves",
+    "assumptions": "Every Pokémon is assumed to throw three pure dice of whichever type its own moves ask for most. Weakness and the opposing Pokémon are left out. Tap a row to see the moves behind the figure.",
+    "countIndirect": "Count worth that is not damage (reduction, denial)",
+    "metricTopN": "Top {n} average",
+    "metricPerTurn": "Per turn",
+    "hintPerTurn": "The game split into HP bands, each scored by alternating the {n} best moves castable there, weighted by how much of a game is spent in it",
+    "bandHealthy": "healthy",
+    "bandBelow": "{hp} HP or less",
+    "premiseNote": "Conditional moves: a condition you can set up yourself is priced with the turn it costs to set up, and a condition nobody elects is weighted by how often it holds. Those frequencies come from the card pool — 25% of turns below 40 HP, 50% below 80, and a 16% chance the dice failed last turn.",
+    "disclaimer": "These figures are a guide only — a real match is a good deal more complicated.",
+    "rotationNote": "A move cannot be cast twice running — last turn’s move is locked out — so this is the average of the best two alternating rather than the single best repeated. Three slots covers the opponent locking one of them out.",
+    "inspect": "Open in the odds table"
+  },
+  "typeChart": {
+    "title": "Type matchups",
+    "character": "Pokémon",
+    "main": "Main",
+    "secondary": "Sub",
+    "weakness": "Weak to",
+    "colorlessOnly": "colourless only"
+  },
+  "tierMaker": {
+    "title": "Tier Maker",
+    "titlePlaceholder": "Enter a title",
+    "rosterLabel": "Character List",
+    "addTier": "Add tier",
+    "newTierLabel": "New",
+    "deleteTier": "Delete tier",
+    "resetButton": "Clear all",
+    "resetConfirm": "Tap again to confirm",
+    "exportButton": "Export image",
+    "exporting": "Exporting…"
   },
   "solo": {
     "you": "You",
@@ -456,5 +628,71 @@
     },
     "preferVariety": "Spread across different sets",
     "varietyLimit": "(still needs {n} of one set)"
+  },
+  "traitChart": {
+    "title": "Trait chart",
+    "noData": "No ratings for this character yet.",
+    "axis": {
+      "attack": "Attack",
+      "defense": "Defense",
+      "stability": "Stability",
+      "burst": "Burst",
+      "control": "Control",
+      "ease": "Ease"
+    },
+    "saveImage": "Save image",
+    "saving": "Rendering…"
+  },
+  "account": {
+    "title": "Account",
+    "signOut": "Sign out",
+    "tabLogin": "Log in",
+    "tabRegister": "Register",
+    "tabClaim": "Claim existing code",
+    "accountLabel": "Account",
+    "accountPlaceholder": "Account (for logging in, letters/numbers)",
+    "pinLabel": "PIN",
+    "pinPlaceholder": "PIN (8+ characters, your choice)",
+    "nameLabel": "Nickname",
+    "namePlaceholder": "Enter your nickname (shown to others)",
+    "claimCodeLabel": "Claim code",
+    "claimCodePlaceholder": "One-time claim code from the organiser",
+    "claimHint": "Played before and already have a code? Ask the organiser for a claim code to link your history.",
+    "loginSubmit": "Log in",
+    "registerSubmit": "Create account",
+    "claimSubmit": "Claim and set up account",
+    "forgotPin": "Forgot your PIN or account? Ask the organiser for a new claim code to reset it.",
+    "errorGeneric": "Something went wrong, try again",
+    "errorWrongCredentials": "Wrong account or PIN",
+    "errorAccountRequired": "Enter an account",
+    "errorAccountTaken": "That account is already taken — try another",
+    "errorNameRequired": "Enter a nickname",
+    "errorPinTooShort": "PIN must be at least 8 characters",
+    "errorClaimCodeRequired": "Enter the claim code",
+    "errorClaimNotFound": "That claim code wasn't found — check it for typos",
+    "errorClaimUsed": "That claim code has already been used — ask the organiser for a new one",
+    "errorClaimExpired": "That claim code has expired — ask the organiser for a new one"
+  },
+  "profile": {
+    "avatar": "Avatar",
+    "flag": "Flag",
+    "name": "Name",
+    "namePlaceholder": "Enter your name",
+    "locked": "Not unlocked yet",
+    "noTitle": "None",
+    "showAll": "Show all",
+    "showOwned": "Show owned",
+    "musicVolume": "Music Volume",
+    "sfxVolume": "Sound Effects Volume",
+    "save": "Save",
+    "saveError": "Save failed, please try again",
+    "tabBadge": "Player badge",
+    "tabSettings": "Settings",
+    "title": "Player profile",
+    "titleLabel": "Title",
+    "adminMode": "Admin mode"
+  },
+  "notice": {
+    "meetup2": "Meetup#2 sign-ups are open — ask on the Plakoro Taiwan Line for details"
   }
 }

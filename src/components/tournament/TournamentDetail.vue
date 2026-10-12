@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   computeStandings,
@@ -15,7 +15,15 @@ import {
   swapPlayers,
   giveByeTo
 } from '../../game/tournamentPairing'
+import { parsePlayerLine } from '../../data/tournaments'
+import { ensureNameplates, lookupNameplate } from '../../data/nameplateStore'
+import { renderRoundImage, renderStandingsImage, renderPlayerImage, sheetFileName, playerImageFileName } from '../../game/roundImage'
+import * as adminApi from '../../data/adminApi'
+import { adminToken, isAdminMode } from '../../data/adminSession'
 import TournamentLottery from './TournamentLottery.vue'
+import TournamentExportModal from './TournamentExportModal.vue'
+import TournamentUploadModal from './TournamentUploadModal.vue'
+import PlayerBanner from './PlayerBanner.vue'
 
 const props = defineProps({ tournament: { type: Object, required: true } })
 const emit = defineEmits(['update', 'back'])
@@ -139,7 +147,112 @@ function recordResult(match, result) {
 
 const pastRoundsEditable = computed(() => local.value.format === 'swiss')
 
+// --- player nameplates ---
+//
+// The tournament knows a player's name and code; the nameplate store knows everything else.
+// Looked up rather than computed here, so the day this moves to a real backend the screens
+// below do not change.
+function bannerFor(playerId) {
+  const p = local.value.players.find(x => x.id === playerId)
+  return p ? lookupNameplate(p) : null
+}
+
+// A round's pairings, or the standings, as a PNG for printing or pinning up. Drawn rather
+// than screenshotted, so it comes out at a size that can be read across a table and carries
+// none of the app's buttons.
+const savingImage = ref(false)
+
+async function saveSheet(render, fileName) {
+  if (savingImage.value) return
+  savingImage.value = true
+  try {
+    const blob = await render()
+    if (!blob) return
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = fileName
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    // Revoked on the next tick: doing it synchronously can cancel the download in some
+    // browsers before they have read the blob.
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+  } finally {
+    savingImage.value = false
+  }
+}
+
+function saveRoundImage() {
+  if (!currentRound.value) return
+  return saveSheet(
+    () => renderRoundImage({ tournament: local.value, round: currentRound.value, plateFor: bannerFor, t }),
+    sheetFileName(local.value, `R${currentRound.value.roundNumber}`))
+}
+
+function saveStandingsImage() {
+  return saveSheet(
+    () => renderStandingsImage({ tournament: local.value, standings: standings.value, plateFor: bannerFor, t }),
+    sheetFileName(local.value, 'standings'))
+}
+
+// One player's nameplate, for them rather than for the room.
+function savePlayerImage(player) {
+  const nameplate = bannerFor(player.id)
+  if (!nameplate) return
+  return saveSheet(() => renderPlayerImage({ nameplate, t }), playerImageFileName(nameplate))
+}
+
 // --- rewind: reopen an earlier round and re-pair everything after it ---
+
+// Save the tournament as a file. Available whenever a round has been played rather than only
+// when complete — the point of exporting mid-event is to move it to another device, which is
+// exactly when it isn't finished.
+const exportOpen = ref(false)
+
+// Admin-only alternative destination for the same data — straight into the database rather than
+// a file. See TournamentUploadModal.vue.
+const uploadOpen = ref(false)
+
+// Whether this exact tournament (by id) already has a row in the database — checked once so the
+// button/modal can say "update" instead of "upload" and actually mean it, rather than leaving
+// the admin to trust that an upsert happened under a generic label. Re-checked right after a
+// successful upload too: the very first upload turns a brand-new tournament into an existing
+// one, and the label should flip immediately rather than waiting for a reload.
+const existsInDb = ref(false)
+async function checkExistsInDb() {
+  if (!isAdminMode.value) { existsInDb.value = false; return }
+  try {
+    const { tournaments } = await adminApi.listTournaments(adminToken.value)
+    existsInDb.value = tournaments.some(x => x.id === local.value.id)
+  } catch (e) {
+    existsInDb.value = false
+  }
+}
+onMounted(checkExistsInDb)
+
+// Tournaments created before nameplates were stored on them — and anyone entered while the
+// server was unreachable — have no snapshot. Fill the gaps once on open, then save.
+//
+// Only fills what's missing, so a plate taken at the event is never overwritten by what that
+// player looks like today. Not awaited: the sheet renders with default plates and upgrades in
+// place rather than waiting on a request.
+onMounted(() => {
+  ensureNameplates(local.value.players).then(changed => { if (changed) emitUpdate() })
+})
+
+// The server may have minted fresh codes for players who didn't have one yet (walk-ins) — apply
+// those back onto the local copy so a second upload of the same event reuses them instead of
+// creating a new player each time, then persist like any other edit.
+function onUploaded(assigned) {
+  const byId = new Map(assigned.map(a => [a.id, a.code]))
+  local.value.players.forEach(p => {
+    const code = byId.get(p.id)
+    if (code && p.code !== code) p.code = code
+  })
+  emit('update', local.value)
+  existsInDb.value = true
+}
 
 const rewindTarget = ref(null)
 const rewindLosses = computed(() => {
@@ -240,9 +353,11 @@ const addToCurrentRound = ref(true)
 const lastAddResult = ref(null) // 'paired' | 'bye' | null — what happened to the last entrant
 
 function addPlayer() {
-  const name = newPlayerName.value.trim()
+  // Same `name;code` shorthand the setup screen accepts, so a late entrant can be added in one
+  // keystroke rather than typed then edited.
+  const { name, code } = parsePlayerLine(newPlayerName.value)
   if (!name) return
-  const player = { id: crypto.randomUUID(), name }
+  const player = { id: crypto.randomUUID(), name, ...(code ? { code } : {}) }
   local.value.players.push(player)
   lastAddResult.value = null
   if (addToCurrentRound.value && currentRound.value && !complete.value) {
@@ -250,6 +365,20 @@ function addPlayer() {
     if (outcome) lastAddResult.value = outcome
   }
   newPlayerName.value = ''
+  emitUpdate()
+
+  // Not awaited: a late entrant is added at the desk with someone waiting, and their plate
+  // filling in a moment later is better than the button hanging on a request. If it lands, the
+  // row re-renders and the tournament is saved again; if it doesn't, they keep the default.
+  ensureNameplates([player]).then(changed => { if (changed) emitUpdate() })
+}
+
+// Stored trimmed and uppercased: a player code is a case-insensitive identifier, and a stray
+// space or lowercase letter typed at a busy sign-in desk would otherwise fail to match.
+function setPlayerCode(player, value) {
+  const code = String(value || '').trim().toUpperCase()
+  if (code) player.code = code
+  else delete player.code
   emitUpdate()
 }
 
@@ -349,6 +478,12 @@ function generateNextRound() {
             style="padding:0.3125rem 0.5rem; font-size:0.625rem; flex-shrink:0;"
             @click="requestRepair"
           >{{ t('tournament.detail.repair') }}</button>
+          <button
+            class="btn secondary"
+            style="padding:0.3125rem 0.5rem; font-size:0.625rem; flex-shrink:0;"
+            :disabled="savingImage"
+            @click="saveRoundImage"
+          >{{ savingImage ? t('tournament.detail.savingImage') : t('tournament.detail.saveImage') }}</button>
         </div>
         <div v-if="editingPairing" style="font-size:0.625rem; color:var(--sub); line-height:1.6; padding-bottom:0.375rem;">
           {{ swapFirst ? t('tournament.detail.swapPickSecond', { name: playerName(swapFirst) }) : t('tournament.detail.swapPickFirst') }}
@@ -370,7 +505,9 @@ function generateNextRound() {
               <td style="padding:0.5rem 0.375rem; color:var(--sub); white-space:nowrap;">
                 {{ m.table !== null ? t('tournament.detail.tableLabel', { n: m.table }) : t('tournament.detail.bye') }}
               </td>
-              <!-- While editing, each name is its own tap target; otherwise it's plain text. -->
+              <!-- While editing, each name is its own tap target — a plain pill, because
+                   swapping is two taps and the nameplate's emblem would be one more thing
+                   between them. Otherwise the name is shown as the player's nameplate. -->
               <td style="padding:0.5rem 0.5rem; font-weight:700; color:var(--ink);">
                 <template v-if="editingPairing">
                   <span
@@ -388,7 +525,7 @@ function generateNextRound() {
                   </span>
                 </template>
                 <template v-else-if="m.player2Id === null">
-                  {{ playerName(m.player1Id) }}
+                  <PlayerBanner v-if="bannerFor(m.player1Id)" :nameplate="bannerFor(m.player1Id)" />
                   <button
                     v-if="currentRound.matches.length > 1"
                     class="btn secondary"
@@ -397,7 +534,9 @@ function generateNextRound() {
                   >{{ t('tournament.detail.changeBye') }}</button>
                 </template>
                 <template v-else>
-                  {{ playerName(m.player1Id) }} vs {{ playerName(m.player2Id) }}
+                  <PlayerBanner v-if="bannerFor(m.player1Id)" :nameplate="bannerFor(m.player1Id)" />
+                  <span style="color:var(--sub); font-weight:400; padding:0 0.25rem;">vs</span>
+                  <PlayerBanner v-if="bannerFor(m.player2Id)" :nameplate="bannerFor(m.player2Id)" />
                   <span v-if="m.rematch" style="display:inline-block; font-size:0.625rem; font-weight:800; color:#fff; background:var(--danger); border-radius:0.5rem; padding:0.125rem 0.4375rem; margin-left:0.25rem;">{{ t('tournament.detail.rematchBadge') }}</span>
                 </template>
               </td>
@@ -414,6 +553,15 @@ function generateNextRound() {
       <!-- Swiss standings — ranked by points, then the official Play! Pokemon tiebreakers
            (OMW%, then OOMW%). Wrapped in horizontal scroll now that it's 6 columns wide. -->
       <div v-else-if="subview === 'standings'" style="overflow-x:auto;">
+        <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.375rem;">
+          <div style="font-size:0.75rem; font-weight:800; color:var(--sub); flex:1;">{{ t('tournament.detail.standingsTab') }}</div>
+          <button
+            class="btn secondary"
+            style="padding:0.3125rem 0.5rem; font-size:0.625rem; flex-shrink:0;"
+            :disabled="savingImage"
+            @click="saveStandingsImage"
+          >{{ savingImage ? t('tournament.detail.savingImage') : t('tournament.detail.saveImage') }}</button>
+        </div>
         <table style="width:100%; border-collapse:collapse; font-size:0.75rem; white-space:nowrap;">
           <thead>
             <tr style="text-align:left; border-bottom:2px solid var(--line);">
@@ -428,7 +576,10 @@ function generateNextRound() {
           <tbody>
             <tr v-for="(s, i) in standings" :key="s.playerId" style="border-bottom:1px solid var(--line);">
               <td style="padding:0.375rem 0.5rem; color:var(--sub);">{{ i + 1 }}</td>
-              <td style="padding:0.375rem 0.5rem; font-weight:800;">{{ s.name }}</td>
+              <td style="padding:0.375rem 0.5rem;">
+                <PlayerBanner v-if="bannerFor(s.playerId)" :nameplate="bannerFor(s.playerId)" />
+                <template v-else>{{ s.name }}</template>
+              </td>
               <td style="padding:0.375rem 0.5rem; font-weight:800;">{{ s.points }}</td>
               <td style="padding:0.375rem 0.5rem; color:var(--sub);">{{ s.wins }}-{{ s.draws }}-{{ s.losses }}</td>
               <td style="padding:0.375rem 0.5rem; color:var(--sub);">{{ (s.omwp * 100).toFixed(1) }}%</td>
@@ -519,6 +670,22 @@ function generateNextRound() {
             }"
             @click="startEditPlayer(p)"
           >{{ p.name }}</span>
+          <!-- The player's id in whatever shared roster the organiser submits to. Edited here
+               rather than only at setup, because a player often gives it after sign-in — and
+               getting it right is what links this result to the rest of their record. -->
+          <input
+            :value="p.code || ''"
+            :placeholder="t('tournament.detail.codePlaceholder')"
+            @input="e => setPlayerCode(p, e.target.value)"
+            style="width:5.5rem; flex-shrink:0; font-size:0.625rem; font-weight:800; padding:0.25rem 0.3125rem; border-radius:0.375rem; border:0.125rem solid var(--line); background:#fff; color:var(--ink); text-align:center;"
+          >
+          <button
+            class="btn secondary"
+            style="padding:0.25rem 0.4375rem; font-size:0.5625rem; flex-shrink:0;"
+            :disabled="savingImage"
+            :title="t('tournament.detail.savePlayerImage')"
+            @click="savePlayerImage(p)"
+          >{{ t('tournament.detail.savePlayerImageShort') }}</button>
           <button
             class="btn secondary"
             style="padding:0.25rem 0.4375rem; font-size:0.5625rem; flex-shrink:0;"
@@ -594,6 +761,18 @@ function generateNextRound() {
           :disabled="!lotteryRef?.canSpin || lotteryRef?.spinning"
           @click="lotteryRef.startSpin()"
         >{{ t('tournament.detail.drawButton') }}</button>
+        <button
+          v-if="local.rounds.length"
+          class="btn secondary"
+          style="padding:0.5rem 0.875rem; font-size:0.8125rem;"
+          @click="exportOpen = true"
+        >{{ t('tournament.export.button') }}</button>
+        <button
+          v-if="local.rounds.length && isAdminMode"
+          class="btn secondary"
+          style="padding:0.5rem 0.875rem; font-size:0.8125rem;"
+          @click="uploadOpen = true"
+        >{{ existsInDb ? t('admin.updateButton') : t('admin.uploadButton') }}</button>
         <button class="btn secondary" style="padding:0.5rem 0.875rem; font-size:0.8125rem;" @click="emit('back')">{{ t('common.back') }}</button>
       </div>
     </div>
@@ -624,6 +803,20 @@ function generateNextRound() {
         </div>
       </div>
     </div>
+
+    <TournamentExportModal
+      v-if="exportOpen"
+      :tournament="local"
+      @close="exportOpen = false"
+    />
+
+    <TournamentUploadModal
+      v-if="uploadOpen"
+      :tournament="local"
+      :exists-in-db="existsInDb"
+      @close="uploadOpen = false"
+      @uploaded="onUploaded"
+    />
 
     <!-- Rewinding throws away recorded results, so it says how many before doing it. -->
     <div v-if="rewindTarget !== null" class="modal-overlay" style="align-items:center;" @click.self="rewindTarget = null">
