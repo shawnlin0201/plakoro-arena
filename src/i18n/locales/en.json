@@ -37,7 +37,8 @@
     "trainerB": "Trainer B",
     "notSelected": "Not selected",
     "incomingDamageEffect": "Effect: next damage taken {sign}{value}",
-    "guest": "Guest"
+    "guest": "Guest",
+    "level": "Lv.{n}"
   },
   "select": {
     "pickPokemon": "Pick a<br>Pokémon",
@@ -184,7 +185,7 @@
     "inheritDo": "Confirm",
     "inheritBusy": "Merging…",
     "inheritWarn": "The source player's entries, matches and items all move to this player, and the source row is deleted.",
-    "inheritDone": "Moved: {entries} entries, {matches} matches, {unlocks} items"
+    "inheritDone": "Moved: {entries} entries, {matches} matches, {unlocks} items, {points} PTP entries"
   },
   "priceLog": {
     "title": {
@@ -421,7 +422,11 @@
       "saveImage": "Save image",
       "savingImage": "Rendering…",
       "savePlayerImage": "Save this player's image",
-      "savePlayerImageShort": "Image"
+      "savePlayerImageShort": "Image",
+      "codeConfirm": "Check",
+      "codeChecking": "Checking",
+      "codeNotFound": "No player with code {code}",
+      "codeLookupFailed": "Lookup failed — try again"
     },
     "export": {
       "title": "Export tournament",
@@ -699,9 +704,40 @@
     "tabSettings": "Settings",
     "title": "Player profile",
     "titleLabel": "Title",
-    "adminMode": "Admin mode"
+    "adminMode": "Admin mode",
+    "tabDetails": "Details",
+    "playerCode": "Player code",
+    "rename": "Rename",
+    "renameDo": "Confirm",
+    "renameConfirm": "You will appear as “{name}”"
   },
   "notice": {
     "meetup2": "Meetup#2 sign-ups are open — ask on the Plakoro Taiwan Line for details"
+  },
+  "gift": {
+    "waiting": "{n} gift(s)",
+    "nth": "{n} / {total}",
+    "next": "Next",
+    "done": "Done",
+    "opening": "Opening…",
+    "fromOrganiser": "Awarded by the organiser"
+  },
+  "points": {
+    "name": "PTP",
+    "empty": "No point activity yet",
+    "amountHint": "Amount",
+    "reasonRequired": "What was redeemed (required)",
+    "reasonOptional": "Reason (optional)",
+    "add": "Grant",
+    "deduct": "Deduct",
+    "saving": "Saving…",
+    "noneForPlace": "None",
+    "detail": "History",
+    "pending": "{n} unopened",
+    "unopened": "unopened",
+    "fromPlace": "{name} — placed",
+    "fromParticipant": "{name} — attended",
+    "fromGrant": "Granted by the organiser",
+    "fromEvent": "an event"
   }
 }

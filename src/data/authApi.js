@@ -45,3 +45,25 @@ export function updateMe(token, patch) {
     body: JSON.stringify(patch)
   })
 }
+
+// This player's PTP: the balance and every line behind it. One call rather than two — the
+// profile screen shows the number and the statement together.
+export function listPoints(token) {
+  return request('/api/players/me/points', { headers: { Authorization: `Bearer ${token}` } })
+}
+
+// Rewards this player has been given but not yet opened. Asked on every main-screen load, so
+// the gift badge reflects a grant made while they were away rather than only after a reload.
+export function listGifts(token) {
+  return request('/api/players/me/gifts', { headers: { Authorization: `Bearer ${token}` } })
+}
+
+// Opens all of them in one call and answers with what was opened — the reveal walks that list
+// one card at a time. All at once rather than per item so closing the screen midway cannot
+// leave half a pile waiting.
+export function claimGifts(token) {
+  return request('/api/players/me/gifts/claim', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` }
+  })
+}

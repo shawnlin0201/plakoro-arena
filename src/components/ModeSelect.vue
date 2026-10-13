@@ -3,8 +3,11 @@ import { useI18n } from 'vue-i18n'
 
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { isAdminMode } from '../data/adminSession'
+import { giftCount, hasGifts, refreshGifts } from '../data/gifts'
+import { refreshPoints } from '../data/points'
+import Icon from './Icon.vue'
 
-const emit = defineEmits(['pick'])
+const emit = defineEmits(['pick', 'gifts'])
 const { t } = useI18n()
 
 // Two things on this screen open the group — the menu card and the mark in the corner. Held in
@@ -107,6 +110,11 @@ function measureTicker() {
 onMounted(() => {
   measureTicker()
   window.addEventListener('resize', measureTicker)
+  // Asked every time the menu is shown, not once at startup: a prize handed out while the app
+  // sat open should be waiting when they come back to this screen. The balance beside the
+  // avatar moves for the same reasons, so it is re-read on the same trigger.
+  refreshGifts()
+  refreshPoints()
 })
 onBeforeUnmount(() => window.removeEventListener('resize', measureTicker))
 
@@ -124,6 +132,11 @@ const rows = computed(() => {
 
 <template>
   <div class="board select-board mode-select">
+    <!-- Decoration, so it is out of the accessibility tree and out of the way of every click
+         on the screen. One element, not a field of them: the mascot is a repeating background
+         on a single layer, and the only thing that moves is that layer's transform. -->
+    <div class="mode-bg" aria-hidden="true"></div>
+
     <h1 class="mode-wordmark">PLAKORO ARENA</h1>
 
     <!-- A bounded box with real rows inside it, rather than cards left to wrap. The box itself
@@ -154,6 +167,13 @@ const rows = computed(() => {
     <!-- The group's own mark, in the corner. Same destination as the Line card above, offered
          as the thing people actually recognise rather than as a second labelled button. -->
     <div class="mode-mark-row">
+      <!-- Bottom left, opposite the Line mark, and only when something is waiting. An unopened
+           prize should be the hardest thing on this screen to miss — tucked into a dot on the
+           avatar it would go unnoticed for weeks. -->
+      <button v-if="hasGifts" class="mode-gift" @click="emit('gifts')">
+        <Icon class="mode-gift-icon" name="gift" />
+        <span class="mode-gift-label">{{ t('gift.waiting', { n: giftCount }) }}</span>
+      </button>
       <a
         class="mode-mark"
         :href="LINE_URL"
@@ -201,6 +221,74 @@ const rows = computed(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
+  /* The drifting layer is clipped to the screen, and everything else sits above it. */
+  position: relative;
+  isolation: isolate;
+}
+
+/* The mascot field.
+ *
+ * Why it is built this way rather than the obvious way: animating `background-position` would
+ * repaint the whole area on every frame, on the main thread. A transform on one layer is
+ * handed to the compositor instead — the tile is rasterised once and then just moved, so the
+ * cost is flat no matter how large the field or how many mascots are visible.
+ *
+ * The loop is seamless because the slide is exactly one tile in each axis, measured *inside*
+ * the rotation: rotate first, then translate, so the travel and the tile grid share a
+ * coordinate system. One cell across and one cell down lands on an identical arrangement.
+ */
+.mode-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.mode-bg::before {
+  /* The cell, not the mascot. Two things are baked into the image rather than done here —
+     the mascot's own -50° tilt and the transparent gap around it — and both have to be,
+     because CSS cannot space a repeating background (background-size sets the drawn size and
+     the repeat period at once) and a CSS rotation would turn the whole lattice, dragging the
+     drift off its diagonal with it. See scripts/make-emblem-tile.py.
+     Changing this scales mascots and gaps together, keeping their ratio. */
+  --tile: 8rem;
+  content: '';
+  position: absolute;
+  /* A whole cell of overhang on every side, so the half-cell the layer travels can never
+     bring an edge into view — the same idea as the ticker's extra copies, except the layer is
+     simply larger rather than duplicated.
+     Measured in cells, not percent: a percentage resolves against the parent, and 20% of a
+     short stage came out *smaller* than the travel — the top edge crossed into view near the
+     end of every cycle and the reset read as a jump. Tied to --tile, it cannot drift out of
+     step again. */
+  inset: calc(var(--tile) * -1);
+  background-image: url('../assets/gray-plakoro-mascot-emblem-tile.png');
+  background-repeat: repeat;
+  background-size: var(--tile) var(--tile);
+  /* Faint: this is the texture of the board, not a thing to look at. The artwork is already
+     grey, so opacity alone is enough and there is no filter on the paint path. */
+  opacity: 0.25;
+  transform: translate3d(0, 0, 0);
+  /* One cell per 6s. The duration is the speed, and the distance is fixed at exactly one cell
+     in each axis (anything else breaks the seam) — so this has to move with --tile to hold a
+     speed steady. Half of 8rem diagonally over 4.5s is ~35px/s. */
+  animation: mode-bg-drift 4.5s linear infinite;
+  will-change: transform;
+}
+
+/* Straight down-left, in screen space, by *half* a cell — the offset course repeats every half
+   step diagonally, so half a cell lands on the same arrangement again and the loop is seamless
+   at twice the rate a full cell would be. A true 45° toward the bottom-left corner, which reads
+   as drifting in from the top-right. The mascots are tilted inside the image, so their angle
+   and this direction are independent of each other. */
+@keyframes mode-bg-drift {
+  to { transform: translate3d(calc(var(--tile) * -0.5), calc(var(--tile) * 0.5), 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The texture stays, the drift goes. */
+  .mode-bg::before { animation: none; }
 }
 
 /* Set large enough to read as the screen's title rather than a heading over a list. */
@@ -296,7 +384,42 @@ const rows = computed(() => {
   width: 100%;
   display: flex;
   align-items: center;
+  /* The gift grows leftward via its own auto margin rather than `space-between`, which would
+     shove the Line mark across whenever no gift is waiting. */
   justify-content: flex-end;
+}
+
+/* Loud on purpose, and animated until it is opened — the reason grants moved out of the
+   profile screen is that nobody noticed them there. */
+.mode-gift {
+  margin-right: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.625rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  /* Black on a pale board. Everything else down here is light — the Line mark, the cards, the
+     ground — so the one thing asking to be tapped is the one thing that inverts. */
+  background: #1A1A18;
+  color: #FFFFFF;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 0.125rem 0.5rem rgba(26, 26, 24, .3);
+  animation: mode-gift-pulse 1.8s ease-in-out infinite;
+}
+.mode-gift:active { transform: scale(.96); }
+.mode-gift-icon { font-size: 1rem; flex-shrink: 0; }
+.mode-gift-label { white-space: nowrap; }
+
+@keyframes mode-gift-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.05); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mode-gift { animation: none; }
 }
 
 /* Mark and bubble are one target: the whole thing is the invitation, so either half opens it. */

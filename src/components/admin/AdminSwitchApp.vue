@@ -13,6 +13,7 @@ import * as adminApi from '../../data/adminApi'
 import { adminToken } from '../../data/adminSession'
 import { AVATAR_IDS, BACKGROUND_IDS, avatarUrl, backgroundUrl } from '../../data/nameplateAssets'
 import { TITLE_GROUPS, resolveTitle } from '../../data/assetCatalogue'
+import { pointReason } from '../../data/pointReason'
 import PlayerBanner from '../tournament/PlayerBanner.vue'
 
 const emit = defineEmits(['back'])
@@ -59,6 +60,9 @@ async function select(code) {
   inheritError.value = ''
   inheritDone.value = null
   detail.value = null
+  pointsDelta.value = ''
+  pointsReason.value = ''
+  pointsError.value = ''
   detailError.value = ''
   busyDetail.value = true
   try {
@@ -152,6 +156,46 @@ async function doInherit() {
   }
 }
 
+// Adding and deducting PTP, from the same screen that already has the player on it — both
+// halves happen at a table with the player standing there, so making the organiser go and find
+// another screen is the one thing this must not do.
+const pointsDelta = ref('')
+const pointsReason = ref('')
+const pointsBusy = ref(false)
+const pointsError = ref('')
+
+const pointsAmount = computed(() => {
+  const n = Math.trunc(Number(pointsDelta.value))
+  return Number.isFinite(n) && n !== 0 ? n : 0
+})
+
+// Mirrors the server's rule rather than trusting it to say no: a deduction is the only line
+// nobody can reconstruct later, so the button stays dead until there is a reason for it.
+//
+// Nothing here checks the balance before deducting — the server owns that, and it holds the
+// only copy that cannot be a few seconds stale.
+const pointsReady = computed(() =>
+  pointsAmount.value !== 0 &&
+  (pointsAmount.value > 0 || pointsReason.value.trim().length > 0)
+)
+
+async function adjustPoints() {
+  if (!pointsReady.value || pointsBusy.value) return
+  pointsBusy.value = true
+  pointsError.value = ''
+  try {
+    detail.value = await adminApi.adjustPoints(
+      adminToken.value, selectedCode.value, pointsAmount.value, pointsReason.value.trim()
+    )
+    pointsDelta.value = ''
+    pointsReason.value = ''
+  } catch (e) {
+    pointsError.value = e.message
+  } finally {
+    pointsBusy.value = false
+  }
+}
+
 async function mintClaim() {
   if (!selectedCode.value || claimBusy.value) return
   claimBusy.value = true
@@ -229,6 +273,51 @@ async function toggle(kind, asset) {
             <span v-if="detail.player.online_win_rate !== null">
               {{ t('admin.statOnlineWinRate') }} {{ Math.round(detail.player.online_win_rate * 100) }}%
             </span>
+          </div>
+
+          <div class="as-ptp">
+            <div class="as-ptp-head">
+              <span class="as-ptp-balance">{{ detail.points.balance }}</span>
+              <span class="as-ptp-unit">PTP</span>
+              <!-- Granted but not opened yet. Without this the organiser sees an unchanged
+                   balance a second after granting 50 points and concludes it failed. -->
+              <span v-if="detail.points.pending" class="as-ptp-pending">
+                {{ t('points.pending', { n: detail.points.pending }) }}
+              </span>
+            </div>
+
+            <div class="as-ptp-row">
+              <input
+                v-model="pointsDelta"
+                class="as-input as-ptp-amount"
+                type="number"
+                inputmode="numeric"
+                :placeholder="t('points.amountHint')"
+              >
+              <input
+                v-model="pointsReason"
+                class="as-input as-ptp-reason"
+                maxlength="60"
+                :placeholder="pointsAmount < 0 ? t('points.reasonRequired') : t('points.reasonOptional')"
+                @keyup.enter="adjustPoints"
+              >
+              <button class="btn as-claim-btn" :disabled="!pointsReady || pointsBusy" @click="adjustPoints">
+                {{ pointsBusy ? t('points.saving') : (pointsAmount < 0 ? t('points.deduct') : t('points.add')) }}
+              </button>
+            </div>
+            <span v-if="pointsError" class="as-error">{{ pointsError }}</span>
+
+            <!-- The statement, newest first. An organiser settling an argument at the table needs
+                 to see what was taken off and why, not just the number that is left. -->
+            <div v-if="detail.points.entries.length" class="as-ptp-list">
+              <div v-for="e in detail.points.entries" :key="e.id" :class="['as-ptp-entry', { unopened: !e.claimed }]">
+                <span :class="['as-ptp-delta', e.delta > 0 ? 'plus' : 'minus']">
+                  {{ e.delta > 0 ? '+' : '' }}{{ e.delta }}
+                </span>
+                <span class="as-ptp-why">{{ pointReason(e, t) }}</span>
+                <span v-if="!e.claimed" class="as-ptp-tag">{{ t('points.unopened') }}</span>
+              </div>
+            </div>
           </div>
 
           <!-- Only for players who have no account yet. Someone already signed in has nothing
@@ -388,6 +477,58 @@ async function toggle(kind, asset) {
 .as-inherit-warn { margin: 0; font-size: 0.5625rem; color: #C0392B; font-weight: 700; line-height: 1.6; }
 .as-inherit-row { display: flex; gap: 0.375rem; align-items: center; }
 .as-inherit-input { width: 8rem; font-size: 0.75rem; padding: 0.3125rem 0.4375rem; text-transform: uppercase; }
+
+/* PTP sits directly under the stats line: it is another fact about this player, and the two
+   get read together when somebody asks what they are owed. */
+.as-ptp {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4375rem;
+  padding: 0.625rem;
+  border-radius: 0.625rem;
+  background: var(--card);
+}
+.as-ptp-head { display: flex; align-items: baseline; gap: 0.375rem; }
+.as-ptp-balance {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: var(--ink);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.as-ptp-unit { font-size: 0.6875rem; font-weight: 800; color: var(--sub); letter-spacing: 0.08em; }
+.as-ptp-pending {
+  margin-left: auto;
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  background: var(--line);
+  font-size: 0.625rem;
+  font-weight: 800;
+  color: var(--sub);
+}
+
+.as-ptp-row { display: flex; gap: 0.375rem; align-items: stretch; }
+/* Fixed, because the amount is three or four characters and the reason is a sentence. */
+.as-ptp-amount { width: 5rem; flex: none; text-align: right; font-variant-numeric: tabular-nums; }
+.as-ptp-reason { flex: 1 1 auto; min-width: 0; }
+
+.as-ptp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  /* The ledger only grows. Capped so one busy player cannot push the asset grid off the screen,
+     and scrolled inside itself so nothing is actually hidden. */
+  max-height: 7rem;
+  overflow-y: auto;
+}
+.as-ptp-entry { display: flex; gap: 0.5rem; font-size: 0.6875rem; font-weight: 700; }
+.as-ptp-delta { width: 2.75rem; flex: none; text-align: right; font-weight: 900; font-variant-numeric: tabular-nums; }
+.as-ptp-delta.plus { color: #2E9E6B; }
+.as-ptp-delta.minus { color: #C0392B; }
+.as-ptp-why { color: var(--sub); overflow-wrap: anywhere; }
+/* Dimmed rather than hidden: it is a real line that just hasn't reached the player yet. */
+.as-ptp-entry.unopened { opacity: .6; }
+.as-ptp-tag { margin-left: auto; flex: none; font-size: 0.5625rem; font-weight: 800; color: var(--sub); }
 
 .as-claim { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
 .as-claim-btn { padding: 0.3125rem 0.625rem; font-size: 0.6875rem; }
