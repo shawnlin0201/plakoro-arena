@@ -127,7 +127,23 @@ const playersByStandings = computed(() => {
   return standings.value.map(s => byId.get(s.playerId)).filter(Boolean)
 })
 const champion = computed(() => championOf(local.value))
-const canGenerateNext = computed(() => !complete.value && !!currentRound.value && isRoundComplete(currentRound.value))
+// Still offered after the last scheduled round. A tie at the top gets settled by an extra
+// match on the day, and the button disappearing at exactly that moment is what sends the
+// organiser to the database afterwards — Meetup#2 新彈賽 was decided by a fourth round that
+// never made it into the record, and the wrong name went onto the prize list.
+//
+// What it still refuses is generating a round while the current one is unfinished: that would
+// pair people who are mid-match.
+const canGenerateNext = computed(() => {
+  if (!currentRound.value || !isRoundComplete(currentRound.value)) return false
+  // Swiss can always pair another round from the standings. Elimination cannot: it finishes
+  // when one player is left, and pairing again produces the champion against nobody.
+  if (complete.value && local.value.format !== 'swiss') return false
+  return true
+})
+
+// Past the planned round count, so the button says what pressing it means now.
+const isExtraRound = computed(() => complete.value && local.value.format === 'swiss')
 
 function emitUpdate() {
   emit('update', local.value)
@@ -461,6 +477,16 @@ function toggleDropped(player) {
 
 const activeCount = computed(() => local.value.players.filter(p => !p.dropped).length)
 
+// The planned round count, changeable after the event. Lowering it to the number actually
+// played is how an event that ended early gets marked finished — placements are only computed
+// once rounds.length reaches this, and nothing is granted until placements exist.
+function setTotalRounds(value) {
+  const n = Math.trunc(Number(value))
+  if (!Number.isFinite(n) || n < 1 || n > 20) return
+  local.value.swissTotalRounds = n
+  emitUpdate()
+}
+
 let generating = false
 function generateNextRound() {
   if (generating || !canGenerateNext.value) return
@@ -719,6 +745,28 @@ function generateNextRound() {
       <!-- Player roster — rename anyone who registered under the wrong name/nickname. Renaming
            is safe at any point: matches/results are keyed by player id, never by name. -->
       <div v-else-if="subview === 'players'" style="display:flex; flex-direction:column; gap:0.375rem;">
+        <!-- Editable after the fact, not just at setup. An event that was planned for four
+             rounds and finished in three stays "unfinished" forever otherwise: no placements
+             are computed, so no placement prizes are ever granted — which is exactly what
+             happened to Meetup#2 雙打賽. -->
+        <label
+          v-if="local.format === 'swiss'"
+          style="display:flex; align-items:center; gap:0.5rem; padding:0.375rem 0.5rem; background:var(--card); border-radius:0.5rem; box-shadow:var(--shadow);"
+        >
+          <span style="font-size:0.6875rem; font-weight:800; color:var(--sub);">{{ t('tournament.setup.roundsLabel') }}</span>
+          <input
+            :value="local.swissTotalRounds"
+            type="number"
+            min="1"
+            max="20"
+            style="width:3.5rem; text-align:center; font-size:0.8125rem; font-weight:800; color:var(--ink); padding:0.25rem; border:0.125rem solid var(--line); border-radius:0.375rem; background:#fff; font-variant-numeric:tabular-nums;"
+            @input="setTotalRounds($event.target.value)"
+          >
+          <span style="font-size:0.625rem; font-weight:700; color:var(--sub);">
+            {{ t('tournament.detail.roundsPlayed', { n: local.rounds.length }) }}
+          </span>
+        </label>
+
         <div
           v-for="p in local.players"
           :key="p.id"
@@ -841,7 +889,17 @@ function generateNextRound() {
         {{ t('tournament.detail.champion', { name: champion.name }) }}
       </div>
       <div style="display:flex; gap:0.625rem;">
-        <button v-if="!complete" class="btn" style="padding:0.5rem 0.875rem; font-size:0.8125rem;" :disabled="!canGenerateNext" @click="generateNextRound">{{ t('tournament.detail.generateNextRound') }}</button>
+        <!-- After the last scheduled round this becomes 加賽一輪 and goes quiet (.secondary):
+             still reachable for a tie-break, but no longer the thing the screen is suggesting.
+             Gone entirely once an elimination bracket has a champion — there is nobody left to
+             pair him against. -->
+        <button
+          v-if="!complete || isExtraRound"
+          :class="['btn', { secondary: isExtraRound }]"
+          style="padding:0.5rem 0.875rem; font-size:0.8125rem;"
+          :disabled="!canGenerateNext"
+          @click="generateNextRound"
+        >{{ isExtraRound ? t('tournament.detail.generateExtraRound') : t('tournament.detail.generateNextRound') }}</button>
         <button
           v-if="subview === 'lottery'"
           class="btn"

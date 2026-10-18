@@ -9,7 +9,8 @@
     "weaknessColon": "Weakness:",
     "and": "and",
     "cancel": "Cancel",
-    "methodology": "Methodology & assumptions"
+    "methodology": "Methodology & assumptions",
+    "close": "Close"
   },
   "app": {
     "loading": "NOW LOADING...",
@@ -187,7 +188,8 @@
     "inheritDo": "Confirm",
     "inheritBusy": "Merging…",
     "inheritWarn": "The source player's entries, matches and items all move to this player, and the source row is deleted.",
-    "inheritDone": "Moved: {entries} entries, {matches} matches, {unlocks} items, {points} PTP entries"
+    "inheritDone": "Moved: {entries} entries, {matches} matches, {unlocks} items, {points} PTP entries",
+    "searchTruncated": "Showing the first {n} — type a code or name to narrow it down"
   },
   "priceLog": {
     "title": {
@@ -428,7 +430,9 @@
       "codeConfirm": "Check",
       "codeChecking": "Checking",
       "codeNotFound": "No player with code {code}",
-      "codeLookupFailed": "Lookup failed — try again"
+      "codeLookupFailed": "Lookup failed — try again",
+      "generateExtraRound": "Extra round",
+      "roundsPlayed": "{n} played"
     },
     "export": {
       "title": "Export tournament",
@@ -508,7 +512,8 @@
     "resetButton": "Clear all",
     "resetConfirm": "Tap again to confirm",
     "exportButton": "Export image",
-    "exporting": "Exporting…"
+    "exporting": "Exporting…",
+    "typeHint": "Pick up to {n} types — tap again to remove"
   },
   "solo": {
     "you": "You",

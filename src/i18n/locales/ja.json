@@ -9,7 +9,8 @@
     "weaknessColon": "弱点:",
     "and": "と",
     "cancel": "キャンセル",
-    "methodology": "計算方法と前提"
+    "methodology": "計算方法と前提",
+    "close": "閉じる"
   },
   "app": {
     "loading": "NOW LOADING...",
@@ -187,7 +188,8 @@
     "inheritDo": "実行",
     "inheritBusy": "処理中…",
     "inheritWarn": "引き継ぎ元の参加記録・対戦・アイテムがすべてこの選手に移り、元の行は削除されます。",
-    "inheritDone": "移動：参加 {entries}・対戦 {matches}・アイテム {unlocks}・PTP {points} 件"
+    "inheritDone": "移動：参加 {entries}・対戦 {matches}・アイテム {unlocks}・PTP {points} 件",
+    "searchTruncated": "先頭 {n} 件のみ表示。番号か名前で絞り込んでください"
   },
   "priceLog": {
     "title": {
@@ -428,7 +430,9 @@
       "codeConfirm": "確認",
       "codeChecking": "照会中",
       "codeNotFound": "番号 {code} は見つかりません",
-      "codeLookupFailed": "照会に失敗しました"
+      "codeLookupFailed": "照会に失敗しました",
+      "generateExtraRound": "延長ラウンド",
+      "roundsPlayed": "{n} ラウンド実施"
     },
     "export": {
       "title": "大会を書き出す",
@@ -508,7 +512,8 @@
     "resetButton": "配置をリセット",
     "resetConfirm": "もう一度タップで確定",
     "exportButton": "画像として書き出す",
-    "exporting": "書き出し中…"
+    "exporting": "書き出し中…",
+    "typeHint": "最大 {n} タイプ。もう一度タップで解除"
   },
   "solo": {
     "you": "あなた",
