@@ -438,7 +438,8 @@
       "refreshPlates": "名札を更新",
       "refreshingPlates": "更新中…",
       "refreshedPlates": "{n} 件更新",
-      "refreshPlatesWarn": "終了した大会です。もう一度押すと当日の表示が書き換わります"
+      "refreshPlatesWarn": "終了した大会です。もう一度押すと当日の表示が書き換わります",
+      "eventDate": "開催日"
     },
     "export": {
       "title": "大会を書き出す",
@@ -756,5 +757,26 @@
   },
   "online": {
     "underConstruction": "製作中です。この画面は主催者にのみ表示されます。"
+  },
+  "leaderboard": {
+    "title": "ランキング",
+    "loading": "読み込み中…",
+    "empty": "まだ対戦記録がありません",
+    "scoring": "勝 3・分 1・不戦勝 3 — オフライン大会のみ",
+    "record": "{w}勝 {l}敗 {d}分",
+    "myRank": "{n} 位",
+    "points": "{n} pt",
+    "notRanked": "オフラインの対戦記録がまだありません",
+    "window": {
+      "month": "今月",
+      "year": "今年",
+      "all": "総合"
+    },
+    "scope": {
+      "offline": "オフライン大会",
+      "online": "オンライン対戦"
+    },
+    "comingSoon": "オンライン対戦は近日公開",
+    "notRankedOnline": "オンライン対戦の記録がまだありません"
   }
 }
