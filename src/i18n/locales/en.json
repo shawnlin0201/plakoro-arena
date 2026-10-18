@@ -1,5 +1,4 @@
 {
-  "appTitle": "Plakoro Battle",
   "common": {
     "selected": "Selected",
     "confirm": "Confirm",
@@ -184,12 +183,15 @@
     "claimMinting": "Issuing…",
     "claimHint": "Send it to them; they enter it under \"Claim an existing record\" on the login page. Expires in 14 days.",
     "inherit": "Inherit records",
-    "inheritFrom": "Source code",
     "inheritDo": "Confirm",
     "inheritBusy": "Merging…",
-    "inheritWarn": "The source player's entries, matches and items all move to this player, and the source row is deleted.",
+    "inheritWarn": "Enter the code of the account that should receive this record. The code on screen is kept, just emptied.",
     "inheritDone": "Moved: {entries} entries, {matches} matches, {unlocks} items, {points} PTP entries",
-    "searchTruncated": "Showing the first {n} — type a code or name to narrow it down"
+    "searchTruncated": "Showing the first {n} — type a code or name to narrow it down",
+    "inheritNotFound": "No player with code {code}",
+    "inheritFromLabel": "{name} ({code}) hands everything over to →",
+    "inheritTo": "Receiving code",
+    "inheritConfirm": "⚠ {from} ({fromCode}) — entries, matches, items and PTP all move to {to} ({toCode}). {fromCode} stays, but empty."
   },
   "priceLog": {
     "title": {
@@ -432,7 +434,11 @@
       "codeNotFound": "No player with code {code}",
       "codeLookupFailed": "Lookup failed — try again",
       "generateExtraRound": "Extra round",
-      "roundsPlayed": "{n} played"
+      "roundsPlayed": "{n} played",
+      "refreshPlates": "Refresh nameplates",
+      "refreshingPlates": "Refreshing…",
+      "refreshedPlates": "{n} updated",
+      "refreshPlatesWarn": "This event is over — pressing again rewrites how it looked that day"
     },
     "export": {
       "title": "Export tournament",
@@ -719,7 +725,7 @@
     "renameConfirm": "You will appear as “{name}”"
   },
   "notice": {
-    "meetup2": "Meetup#2 sign-ups are open — ask on the Plakoro Taiwan Line for details"
+    "current": "The PLAKORO strategy guide is coming soon — ask on the Plakoro Taiwan Line for details"
   },
   "gift": {
     "waiting": "{n} gift(s)",

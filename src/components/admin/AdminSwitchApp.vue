@@ -64,6 +64,7 @@ async function select(code) {
   inheritFrom.value = ''
   inheritError.value = ''
   inheritDone.value = null
+  inheritLookup.value = null
   detail.value = null
   pointsDelta.value = ''
   pointsReason.value = ''
@@ -133,26 +134,66 @@ const claimError = ref('')
 
 // Merging two codes that turned out to be the same person. Destructive and not reversible
 // from here, so it asks for the source twice over: typing the code is the confirmation.
+// Who the typed code actually belongs to.
+//
+// The direction reads the way the job is actually done: find the orphaned record, then say
+// where it goes. The player on screen is the one being given up; the code typed in is the
+// account that keeps everything. (The API takes it the other way round — target in the path,
+// source in the body — so doInherit swaps them.)
+//
+// A code is six digits with no redundancy, so one wrong keystroke sends the record to somebody
+// else who really exists. Looking it up and showing the name turns "I typed what I meant to"
+// into "I can see who this is", which is the only check that catches that.
+const inheritLookup = ref(null)   // { name, hasAccount } | 'missing' | null
+let inheritTimer = null
+
+function onInheritInput() {
+  inheritLookup.value = null
+  inheritError.value = ''
+  clearTimeout(inheritTimer)
+  const code = inheritFrom.value.trim().toUpperCase()
+  if (!code) return
+  inheritTimer = setTimeout(async () => {
+    try {
+      const d = await adminApi.getPlayer(adminToken.value, code)
+      if (inheritFrom.value.trim().toUpperCase() !== code) return
+      inheritLookup.value = { name: d.player.name, hasAccount: d.hasAccount }
+    } catch (e) {
+      if (inheritFrom.value.trim().toUpperCase() === code) inheritLookup.value = 'missing'
+    }
+  }, 350)
+}
+
 const inheritOpen = ref(false)
 const inheritFrom = ref('')
 const inheritBusy = ref(false)
 const inheritError = ref('')
 const inheritDone = ref(null)
 
+// Nothing to press until the typed code resolves to a real player to hand the record to.
+// Either side having its own login is fine now: nothing is deleted, so no login breaks.
+const inheritReady = computed(() =>
+  !!inheritLookup.value && inheritLookup.value !== 'missing')
+
 async function doInherit() {
-  const from = inheritFrom.value.trim().toUpperCase()
-  if (!from || inheritBusy.value) return
+  const keeper = inheritFrom.value.trim().toUpperCase()
+  const givenUp = selectedCode.value
+  if (!keeper || !inheritReady.value || inheritBusy.value) return
   inheritBusy.value = true
   inheritError.value = ''
   inheritDone.value = null
   try {
-    const r = await adminApi.inheritRecords(adminToken.value, selectedCode.value, from)
+    // Swapped on the way out: the endpoint keeps the player in the path and deletes the one in
+    // the body, which is the reverse of how the screen reads.
+    const r = await adminApi.inheritRecords(adminToken.value, keeper, givenUp)
     inheritDone.value = r.moved
     inheritFrom.value = ''
+    inheritLookup.value = null
     inheritOpen.value = false
-    // Re-read rather than patch: the merge recomputed stats and moved unlocks, and guessing at
-    // the result here is how a screen starts disagreeing with the database.
-    detail.value = await adminApi.getPlayer(adminToken.value, selectedCode.value)
+    // The record moved, so the screen follows it. The old code still exists — now empty — and
+    // staying on it would just show a blank profile.
+    selectedCode.value = keeper
+    detail.value = await adminApi.getPlayer(adminToken.value, keeper)
     await runSearch()
   } catch (e) {
     inheritError.value = e.message
@@ -347,19 +388,36 @@ async function toggle(kind, asset) {
           </div>
 
           <div v-if="inheritOpen" class="as-inherit">
-            <p class="as-inherit-warn">{{ t('admin.inheritWarn') }}</p>
+            <!-- Reads left to right the way the job is done: this record → that account. -->
             <div class="as-inherit-row">
+              <span class="as-inherit-from">
+                {{ t('admin.inheritFromLabel', { name: detail.player.name, code: selectedCode }) }}
+              </span>
               <input
                 v-model="inheritFrom"
                 class="as-input as-inherit-input"
-                :placeholder="t('admin.inheritFrom')"
+                :placeholder="t('admin.inheritTo')"
                 maxlength="12"
+                @input="onInheritInput"
                 @keyup.enter="doInherit"
               >
-              <button class="btn as-claim-btn" :disabled="!inheritFrom.trim() || inheritBusy" @click="doInherit">
-                {{ inheritBusy ? t('admin.inheritBusy') : t('admin.inheritDo') }}
-              </button>
+              <button
+                class="btn fail as-claim-btn"
+                :disabled="!inheritReady || inheritBusy"
+                @click="doInherit"
+              >{{ inheritBusy ? t('admin.inheritBusy') : t('admin.inheritDo') }}</button>
             </div>
+            <p v-if="inheritLookup === 'missing'" class="as-error">
+              {{ t('admin.inheritNotFound', { code: inheritFrom.trim().toUpperCase() }) }}
+            </p>
+            <!-- Both names, out loud, before anything happens. A code that resolves to the
+                 wrong person is the failure this is here to catch. -->
+            <p v-else-if="inheritLookup" class="as-inherit-warn">
+              {{ t('admin.inheritConfirm', {
+                   from: detail.player.name, fromCode: selectedCode,
+                   to: inheritLookup.name, toCode: inheritFrom.trim().toUpperCase() }) }}
+            </p>
+            <p v-else class="as-inherit-warn">{{ t('admin.inheritWarn') }}</p>
             <span v-if="inheritError" class="as-error">{{ inheritError }}</span>
           </div>
 
@@ -481,8 +539,18 @@ async function toggle(kind, asset) {
   background: var(--card);
 }
 .as-inherit-warn { margin: 0; font-size: 0.5625rem; color: #C0392B; font-weight: 700; line-height: 1.6; }
-.as-inherit-row { display: flex; gap: 0.375rem; align-items: center; }
-.as-inherit-input { width: 8rem; font-size: 0.75rem; padding: 0.3125rem 0.4375rem; text-transform: uppercase; }
+.as-inherit-row { display: flex; gap: 0.375rem; align-items: center; flex-wrap: wrap; }
+/* The whole row is set at one size. The label had no rule at all and so came out at the board's
+   default — nearly half as large again as the field beside it, which read as emphasis nobody
+   asked for. */
+.as-inherit-from { font-size: 0.6875rem; font-weight: 800; color: var(--ink); white-space: nowrap; }
+.as-inherit-input {
+  width: 6.5rem;
+  font-size: 0.6875rem;
+  padding: 0.25rem 0.375rem;
+  text-transform: uppercase;
+}
+.as-inherit-row .as-claim-btn { padding: 0.25rem 0.5rem; font-size: 0.625rem; }
 
 /* PTP sits directly under the stats line: it is another fact about this player, and the two
    get read together when somebody asks what they are owed. */

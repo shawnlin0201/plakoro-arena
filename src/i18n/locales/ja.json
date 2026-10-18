@@ -1,5 +1,4 @@
 {
-  "appTitle": "プラコロバトル",
   "common": {
     "selected": "選択済み",
     "confirm": "確定",
@@ -184,12 +183,15 @@
     "claimMinting": "発行中…",
     "claimHint": "本人に渡し、ログイン画面の「既存記録の引き継ぎ」で入力。14日で失効。",
     "inherit": "記録を引き継ぐ",
-    "inheritFrom": "引き継ぎ元コード",
     "inheritDo": "実行",
     "inheritBusy": "処理中…",
-    "inheritWarn": "引き継ぎ元の参加記録・対戦・アイテムがすべてこの選手に移り、元の行は削除されます。",
+    "inheritWarn": "この記録を受け取るアカウントの番号を入力してください。表示中の番号は削除されず、空の記録になります。",
     "inheritDone": "移動：参加 {entries}・対戦 {matches}・アイテム {unlocks}・PTP {points} 件",
-    "searchTruncated": "先頭 {n} 件のみ表示。番号か名前で絞り込んでください"
+    "searchTruncated": "先頭 {n} 件のみ表示。番号か名前で絞り込んでください",
+    "inheritNotFound": "番号 {code} は見つかりません",
+    "inheritFromLabel": "{name}（{code}）の記録を引き継ぐ →",
+    "inheritTo": "受け取る番号",
+    "inheritConfirm": "⚠ {from}（{fromCode}）の参加記録・対戦・アイテム・PTP はすべて {to}（{toCode}）へ移ります。{fromCode} は残りますが空になります。"
   },
   "priceLog": {
     "title": {
@@ -432,7 +434,11 @@
       "codeNotFound": "番号 {code} は見つかりません",
       "codeLookupFailed": "照会に失敗しました",
       "generateExtraRound": "延長ラウンド",
-      "roundsPlayed": "{n} ラウンド実施"
+      "roundsPlayed": "{n} ラウンド実施",
+      "refreshPlates": "名札を更新",
+      "refreshingPlates": "更新中…",
+      "refreshedPlates": "{n} 件更新",
+      "refreshPlatesWarn": "終了した大会です。もう一度押すと当日の表示が書き換わります"
     },
     "export": {
       "title": "大会を書き出す",
@@ -719,7 +725,7 @@
     "renameConfirm": "「{name}」として表示されます"
   },
   "notice": {
-    "meetup2": "Meetup#2 の参加受付中 — 詳細は Plakoro Taiwan の Line までお問い合わせください"
+    "current": "PLAKORO 攻略ハンドブックが近日公開 — 詳細は Plakoro Taiwan の Line までお問い合わせください"
   },
   "gift": {
     "waiting": "プレゼント {n} 件",
