@@ -4,7 +4,8 @@ import { useI18n } from 'vue-i18n'
 import { asset } from '../data/assetPath'
 import { typeBgColor } from '../data/constants'
 import { typeAffinity } from '../game/typeAffinity'
-import { defaultTiers, loadTierMaker, newInstanceId, saveTierMaker, TIER_PALETTE } from '../data/tierMaker'
+import html2canvas from 'html2canvas'
+import { defaultTiers, loadTierMaker, newInstanceId, parseTierMakerPayload, saveTierMaker, TIER_PALETTE } from '../data/tierMaker'
 
 const emit = defineEmits(['back'])
 const { characters, moves } = inject('characterData')
@@ -136,6 +137,26 @@ function typesOf(entry) {
   return Array.isArray(entry.types) ? entry.types : (entry.type ? [entry.type] : [])
 }
 
+// null for instances saved before this existed, same as an unset `types`.
+function turnOrderOf(entry) {
+  return entry.turnOrder || null
+}
+
+// A tap-to-cycle toggle rather than a picker sheet: unlike type, there are only ever two
+// real options, so a sheet would spend a whole modal on a single yes/no choice. Unset -> first
+// -> second -> unset, so "nobody tapped this yet" stays reachable instead of being a dead end
+// once you've cycled past it.
+function cycleTurnOrder(tierId, instanceId) {
+  const list = listFor(tierId)
+  const idx = list.findIndex(e => e.id === instanceId)
+  if (idx === -1) return
+  const current = turnOrderOf(list[idx])
+  const next = current === null ? 'first' : current === 'first' ? 'second' : null
+  const arr = [...list]
+  arr[idx] = { ...arr[idx], turnOrder: next }
+  entries.value = { ...entries.value, [tierId]: arr }
+}
+
 // Tapping the badge opens a picker rather than cycling to the next type.
 //
 // Cycling worked while a Pokémon had exactly one: tap until the right one shows. With two it
@@ -236,158 +257,116 @@ function resetPlacements() {
   confirmingReset.value = false
 }
 
-function loadImage(src) {
-  return new Promise(resolve => {
-    const img = new Image()
-    img.onload = () => resolve(img)
-    img.onerror = () => resolve(null)
-    img.src = src
-  })
-}
-
-function roundRect(ctx, x, y, w, h, r) {
-  ctx.beginPath()
-  ctx.moveTo(x + r, y)
-  ctx.arcTo(x + w, y, x + w, y + h, r)
-  ctx.arcTo(x + w, y + h, x, y + h, r)
-  ctx.arcTo(x, y + h, x, y, r)
-  ctx.arcTo(x, y, x + w, y, r)
-  ctx.closePath()
-}
-
-// Drawn on a canvas from the same tier/entry data the board renders, rather than snapshotting
-// the live DOM — this needs no extra library, and the per-die nudge/delete controls that only
-// make sense while editing are simply never part of the picture.
+// A photograph of the board itself, not a second drawing of it.
+//
+// This used to redraw every tier, portrait and badge onto a canvas by hand. That worked, but it
+// was a second renderer: the turn-order badge was added to the board and simply never appeared
+// in the exports, because nothing connects the two. Shooting the DOM means there is one place
+// where a tier list looks like a tier list.
+//
+// The editing controls are stripped inside `onclone`, which mutates html2canvas's private copy
+// of the document — the live board never changes, so there is no flash of a stripped-down
+// board while the picture is taken.
+const boardRef = ref(null)
 const exporting = ref(false)
+
+// Only ever on screen while arranging: the reorder arrows, the delete buttons, the nudge
+// arrows, the selection outline, and the empty slot that exists purely to stay tappable.
+const EDIT_ONLY = '.tm-reorder-btn, .tm-delete-btn, .tm-delete-badge, .tm-nudge-btn, .tm-badge-empty, .tm-turn-badge-empty'
+
 async function exportImage() {
-  if (exporting.value) return
+  if (exporting.value || !boardRef.value) return
   exporting.value = true
   try {
-    const AVATAR = 68, GAP = 8, PAD = 6, LABEL_W = 72, CANVAS_W = 820, TITLE_H = 48
-    const BADGE_R = 12
-    const bodyW = CANVAS_W - LABEL_W - PAD * 3
-    const perRow = Math.max(1, Math.floor((bodyW + GAP) / (AVATAR + GAP)))
-
-    const neededCharIds = new Set()
-    const neededTypes = new Set()
-    tiers.value.forEach(tier => listFor(tier.id).forEach(e => {
-      neededCharIds.add(e.characterId)
-      typesOf(e).forEach(ty => neededTypes.add(ty))
-    }))
-    const charImageMap = {}
-    const typeImageMap = {}
-    await Promise.all([
-      ...[...neededCharIds].map(async id => {
-        const c = characterById(id)
-        if (!c) return
-        charImageMap[id] = await loadImage(c.imageUrl || asset(`image/CHARA/${c.name}.png`))
-      }),
-      ...[...neededTypes].map(async type => {
-        typeImageMap[type] = await loadImage(asset(`image/ICON/${type}.png`))
-      })
-    ])
-
-    const rows = tiers.value.map(tier => {
-      const count = listFor(tier.id).length
-      const lines = Math.max(1, Math.ceil(count / perRow))
-      return { tier, height: lines * (AVATAR + GAP) + PAD * 2 - GAP }
-    })
-    const canvasH = TITLE_H + rows.reduce((sum, row) => sum + row.height + GAP, PAD)
-
-    // Drawn at 3x and scaled back down through the canvas's own CSS-pixel coordinate system —
-    // every call below still thinks in the same logical units (CANVAS_W etc.), but the actual
-    // pixel grid underneath is dense enough to survive a Retina screen or someone zooming in,
-    // instead of visibly blurring the moment it's viewed any bigger than its own small size.
-    const EXPORT_SCALE = 3
-    const canvas = document.createElement('canvas')
-    canvas.width = CANVAS_W * EXPORT_SCALE
-    canvas.height = canvasH * EXPORT_SCALE
-    const ctx = canvas.getContext('2d')
-    ctx.scale(EXPORT_SCALE, EXPORT_SCALE)
-    ctx.imageSmoothingQuality = 'high'
-    ctx.fillStyle = '#f7f6f1'
-    ctx.fillRect(0, 0, CANVAS_W, canvasH)
-
-    if (title.value.trim()) {
-      ctx.fillStyle = '#3a3a3a'
-      ctx.font = 'bold 24px sans-serif'
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-      ctx.fillText(title.value.trim(), CANVAS_W / 2, TITLE_H / 2 + 4)
-    }
-
-    let y = TITLE_H + PAD
-    rows.forEach(({ tier, height }) => {
-      ctx.fillStyle = tier.color
-      roundRect(ctx, PAD, y, LABEL_W, height, 8)
-      ctx.fill()
-      ctx.fillStyle = 'rgba(0,0,0,.72)'
-      ctx.font = 'bold 20px sans-serif'
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-      ctx.fillText(tier.label, PAD + LABEL_W / 2, y + height / 2)
-
-      const bodyX = PAD * 2 + LABEL_W
-      ctx.fillStyle = '#ffffff'
-      roundRect(ctx, bodyX, y, bodyW, height, 8)
-      ctx.fill()
-      ctx.strokeStyle = '#e5e3da'
-      ctx.stroke()
-
-      let ax = bodyX + PAD
-      let ay = y + PAD
-      listFor(tier.id).forEach((e, i) => {
-        if (i > 0 && i % perRow === 0) { ax = bodyX + PAD; ay += AVATAR + GAP }
-        const img = charImageMap[e.characterId]
-        ctx.save()
-        ctx.beginPath()
-        ctx.arc(ax + AVATAR / 2, ay + AVATAR / 2, AVATAR / 2, 0, Math.PI * 2)
-        ctx.closePath()
-        ctx.clip()
-        if (img) ctx.drawImage(img, ax, ay, AVATAR, AVATAR)
-        else { ctx.fillStyle = '#ddd'; ctx.fillRect(ax, ay, AVATAR, AVATAR) }
-        ctx.restore()
-
-        // Bottom upward, matching the on-screen stack — sideways would reach over the avatar
-        // beside it.
-        typesOf(e).forEach((ty, i) => {
-          const bx = ax + AVATAR - BADGE_R * 0.6
-          const by = ay + AVATAR - BADGE_R * 0.6 - i * (BADGE_R * 2 + 1)
-          ctx.beginPath()
-          ctx.fillStyle = typeBgColor(ty)
-          ctx.arc(bx, by, BADGE_R, 0, Math.PI * 2)
-          ctx.fill()
-          ctx.lineWidth = 1.5
-          ctx.strokeStyle = '#fff'
-          ctx.stroke()
-          const typeImg = typeImageMap[ty]
-          if (typeImg) {
-            ctx.save()
-            ctx.beginPath()
-            ctx.arc(bx, by, BADGE_R - 2, 0, Math.PI * 2)
-            ctx.closePath()
-            ctx.clip()
-            ctx.drawImage(typeImg, bx - (BADGE_R - 2), by - (BADGE_R - 2), (BADGE_R - 2) * 2, (BADGE_R - 2) * 2)
-            ctx.restore()
-          }
+    const canvas = await html2canvas(boardRef.value, {
+      backgroundColor: '#f7f6f1',
+      // Dense enough to survive a Retina screen or someone zooming into it, rather than
+      // blurring the moment it is viewed any bigger than it was taken.
+      scale: 3,
+      useCORS: true,
+      onclone(doc) {
+        doc.querySelectorAll(EDIT_ONLY).forEach(el => el.remove())
+        doc.querySelectorAll('.tm-avatar-selected').forEach(el => el.classList.remove('tm-avatar-selected'))
+        // An <input> screenshots as an input — underline, placeholder and all. The title is a
+        // heading in the picture, so it is swapped for one; an empty title leaves no gap.
+        doc.querySelectorAll('.tm-shot-title').forEach(el => {
+          const text = (el.value || '').trim()
+          if (!text) { el.remove(); return }
+          const h = doc.createElement('div')
+          h.textContent = text
+          h.setAttribute('style',
+            'font-size:1.0625rem; font-weight:900; color:var(--ink); text-align:center; padding:0.25rem 0 0.625rem;')
+          el.replaceWith(h)
         })
-        ax += AVATAR + GAP
-      })
-      y += height + GAP
+      }
     })
-
-    canvas.toBlob(blob => {
-      if (!blob) return
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      const safeName = title.value.trim().replace(/[\\/:*?"<>|]/g, '-')
-      a.download = `${safeName || 'tier-list'}.png`
-      a.click()
-      URL.revokeObjectURL(url)
-    }, 'image/png')
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'))
+    if (!blob) return
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    const safeName = title.value.trim().replace(/[\\/:*?"<>|]/g, '-')
+    a.download = `${safeName || 'tier-list'}.png`
+    a.click()
+    URL.revokeObjectURL(url)
   } finally {
     exporting.value = false
+  }
+}
+
+// The board's own save shape ({ title, tiers, entries }) — exporting anything else would mean
+// import has to understand two formats instead of one.
+function exportJson() {
+  const payload = { title: title.value, tiers: tiers.value, entries: entries.value }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  const safeName = title.value.trim().replace(/[\\/:*?"<>|]/g, '-')
+  a.download = `${safeName || 'tier-list'}.json`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+const importJsonInput = ref(null)
+const importError = ref('')
+// Same arm/confirm pattern as resetPlacements above, for the same reason: this replaces
+// whatever's on the board right now, and that's real arranging work to lose by one stray tap.
+const confirmingImport = ref(false)
+
+function triggerImportJson() {
+  if (!confirmingImport.value) {
+    confirmingImport.value = true
+    return
+  }
+  confirmingImport.value = false
+  importError.value = ''
+  importJsonInput.value?.click()
+}
+
+async function onImportJsonFile(event) {
+  const file = event.target.files?.[0]
+  event.target.value = ''
+  if (!file) return
+  try {
+    const parsed = parseTierMakerPayload(JSON.parse(await file.text()))
+    if (!parsed) {
+      importError.value = t('tierMaker.importInvalid')
+      return
+    }
+    // A file from a build with a roster this one doesn't have would otherwise crash the board
+    // the moment it tries to render an instance's portrait for a character that no longer
+    // exists — dropping those entries is the only reading of "import this" that still renders.
+    const knownEntries = {}
+    for (const [tierId, list] of Object.entries(parsed.entries)) {
+      knownEntries[tierId] = list.filter(e => characterById(e.characterId))
+    }
+    tiers.value = parsed.tiers
+    entries.value = knownEntries
+    if (parsed.title) title.value = parsed.title
+    importError.value = ''
+  } catch (e) {
+    importError.value = t('tierMaker.importInvalid')
   }
 }
 </script>
@@ -395,7 +374,12 @@ async function exportImage() {
 <template>
   <div class="board select-board" style="overflow-y:auto; align-items:center;">
     <div class="modal-title" style="margin:0.5rem 0 0.25rem;">{{ t('tierMaker.title') }}</div>
-    <input v-model="title" class="tm-title-input" :placeholder="t('tierMaker.titlePlaceholder')" style="margin-bottom:0.625rem;">
+
+    <!-- Everything inside this is what the exported picture is. Keeping the boundary in the
+         markup rather than in the export code means a row added here is in the picture without
+         anyone remembering to draw it. -->
+    <div ref="boardRef" class="tm-shot">
+    <input v-model="title" class="tm-title-input tm-shot-title" :placeholder="t('tierMaker.titlePlaceholder')" style="margin-bottom:0.625rem;">
 
     <div style="width:100%; max-width:36rem; padding:0 0.625rem; display:flex; flex-direction:column; gap:0.375rem;">
       <div v-for="(tier, index) in tiers" :key="tier.id" style="display:flex; align-items:stretch; gap:0.375rem;">
@@ -431,6 +415,13 @@ async function exportImage() {
             >
               <img :src="characterById(e.characterId).imageUrl || asset(`image/CHARA/${characterById(e.characterId).name}.png`)" class="img-icon" :alt="characterById(e.characterId).name">
               <span v-if="isSelectedInstance(e.id)" class="tm-delete-badge" @click.stop="deleteInstance(tier.id, e.id)">✕</span>
+              <!-- Unset -> first -> second -> unset. Stays a plain click, no sheet: see
+                   cycleTurnOrder's comment for why a picker would be overkill here. -->
+              <span
+                class="tm-turn-badge"
+                :class="{ 'tm-turn-badge-empty': !turnOrderOf(e) }"
+                @click.stop="cycleTurnOrder(tier.id, e.id)"
+              >{{ turnOrderOf(e) === 'first' ? t('tierMaker.turnFirst') : turnOrderOf(e) === 'second' ? t('tierMaker.turnSecond') : '' }}</span>
               <!-- One dot per type, up to two. The whole strip is the tap target, including
                    when it is empty — an instance with no type still has to be reachable. -->
               <span class="tm-badges" @click.stop="openPicker(tier.id, e.id)">
@@ -451,6 +442,7 @@ async function exportImage() {
 
         <button class="tm-delete-btn" :aria-label="t('tierMaker.deleteTier')" @click="deleteTier(tier.id)">✕</button>
       </div>
+    </div>
     </div>
 
     <div style="padding:0.5rem 0;">
@@ -474,15 +466,21 @@ async function exportImage() {
       </div>
     </div>
 
-    <div style="display:flex; gap:0.625rem; justify-content:center; padding:0.875rem 0 0.25rem;">
+    <div style="display:flex; gap:0.625rem; justify-content:center; flex-wrap:wrap; padding:0.875rem 0 0.25rem;">
       <button class="btn secondary" :disabled="exporting" @click="exportImage">
         {{ exporting ? t('tierMaker.exporting') : t('tierMaker.exportButton') }}
       </button>
+      <button class="btn secondary" @click="exportJson">{{ t('tierMaker.exportJsonButton') }}</button>
+      <button class="btn secondary" @click="triggerImportJson" @blur="confirmingImport = false">
+        {{ confirmingImport ? t('tierMaker.importConfirm') : t('tierMaker.importJsonButton') }}
+      </button>
+      <input ref="importJsonInput" type="file" accept="application/json,.json" style="display:none;" @change="onImportJsonFile">
       <button class="btn secondary" @click="resetPlacements" @blur="confirmingReset = false">
         {{ confirmingReset ? t('tierMaker.resetConfirm') : t('tierMaker.resetButton') }}
       </button>
       <button class="btn secondary" @click="emit('back')">{{ t('common.back') }}</button>
     </div>
+    <div v-if="importError" style="color:#c0392b; font-size:0.75rem; font-weight:800; text-align:center; padding-bottom:0.5rem;">{{ importError }}</div>
   </div>
 
     <!-- Type picker. A sheet rather than a popover anchored to the dot: the dot is a quarter of
@@ -536,6 +534,10 @@ async function exportImage() {
   padding: 0.25rem 0.5rem;
 }
 .tm-title-input::placeholder { color: var(--sub); font-weight: 700; }
+
+/* What the exported picture is. Full width on screen so nothing about the layout changes; the
+   background is stated because the shot composites onto it rather than onto the page. */
+.tm-shot { width: 100%; display: flex; flex-direction: column; align-items: center; background: var(--bg); }
 
 .tm-tier-label {
   flex-shrink: 0;
@@ -662,6 +664,32 @@ async function exportImage() {
 /* No type picked yet — stay fully invisible rather than drawing an empty outline, so an unset
    badge doesn't read as its own bit of UI; the click target is still there, just unseen. */
 .tm-badge-empty {
+  background: none;
+  border: none;
+}
+
+/* Bottom-left mirrors the delete badge's top-right: the only remaining corner the type dots
+   (bottom-right) and delete badge (top-right) leave free. */
+.tm-turn-badge {
+  position: absolute;
+  left: -0.1875rem;
+  bottom: -0.1875rem;
+  min-width: 1rem;
+  height: 1rem;
+  padding: 0 0.1875rem;
+  border-radius: 999px;
+  border: 0.09375rem solid #fff;
+  background: rgba(0, 0, 0, .6);
+  color: #fff;
+  font-size: 0.5rem;
+  font-weight: 900;
+  line-height: 0.8125rem;
+  text-align: center;
+  z-index: 1;
+  cursor: pointer;
+}
+/* Unset — stay reachable but invisible, same reasoning as .tm-badge-empty above. */
+.tm-turn-badge-empty {
   background: none;
   border: none;
 }
