@@ -2,13 +2,30 @@ import { ref, computed } from 'vue'
 import { preloadEssentialImages, preloadCharacterImages } from '../data/imagePreload'
 import { i18n } from '../i18n'
 import { asset } from '../data/assetPath'
-import charaRaw from '../data/generated/chara.json'
-import wazaRaw from '../data/generated/waza.json'
+import charaGenerated from '../data/generated/chara.json'
+import wazaGenerated from '../data/generated/waza.json'
+import localCards from '../data/localCards.json'
 import { reportEffectCoverage } from '../game/effectCoverage'
 import translationsEn from '../data/translations/en.json'
 import translationsZhTW from '../data/translations/zh-TW.json'
 
 const TRANSLATIONS = { en: translationsEn, 'zh-TW': translationsZhTW }
+
+// Two sources, and the split is not cosmetic: `generated/` is overwritten wholesale by
+// `npm run fetch-data`, so anything written there by hand is gone the next time someone syncs.
+// `localCards.json` is the hand-maintained half — cards that aren't upstream yet, and
+// corrections to ones that are. It is never generated, so it is the only safe place to edit.
+//
+// Local wins on a shared id, which is what makes it usable as a correction layer: once a card
+// does arrive upstream, delete its local row and the upstream one takes over.
+function overlay(generated, local) {
+  const byId = new Map(generated.map(r => [String(r.id).trim(), r]))
+  for (const r of local) byId.set(String(r.id).trim(), r)
+  return [...byId.values()]
+}
+
+const charaRaw = overlay(charaGenerated, localCards.chara || [])
+const wazaRaw = overlay(wazaGenerated, localCards.waza || [])
 
 // Fresh data can introduce effect types the engine has no handler for, and an unhandled effect
 // fails silently in play. Surfaced here, at import time, so it shows up the moment a dev opens
