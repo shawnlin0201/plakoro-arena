@@ -35,6 +35,13 @@ function newCombatant() {
     committedLastMoveFailed: false,
     incomingDamageMod: 0,
     incomingDamageNullify: null,
+    // Set by NULLIFY_TAKEN_LE: incoming damage at or below this becomes zero. Same lifecycle
+    // as incomingDamageNullify above — set on your turn, consumed on theirs, then cleared.
+    incomingDamageNullifyAtMost: null,
+    // Whether this side took move damage on the turn that just finished. `committed` is the
+    // settled value a later turn reads, mirroring committedLastMoveFailed.
+    tookDamage: false,
+    committedTookDamage: false,
     diceMod: 0,
     diceModBadges: [],
     bannedMoveIds: [],
@@ -163,6 +170,9 @@ export function useSoloRun(charactersRef, movesRef) {
     c.committedLastMoveFailed = false
     c.incomingDamageMod = 0
     c.incomingDamageNullify = null
+    c.incomingDamageNullifyAtMost = null
+    c.tookDamage = false
+    c.committedTookDamage = false
     c.diceMod = 0
     c.diceModBadges = []
     c.bannedMoveIds = []
@@ -358,6 +368,7 @@ export function useSoloRun(charactersRef, movesRef) {
     if (result.kind === "fail") {
       opp.incomingDamageMod = 0
       opp.incomingDamageNullify = null
+      opp.incomingDamageNullifyAtMost = null
       proceedToAnimateWithCtx({ moverKey, mover, oppKey, opp, mv, dmgToOpp: 0, dmgToSelf: 0, isMiss: true })
       return
     }
@@ -511,6 +522,9 @@ export function useSoloRun(charactersRef, movesRef) {
 
     playEffectOn(oppKey, dmgToOpp, () => {
       opp.hp = Math.max(opp.hp - dmgToOpp, 0)
+      // Recorded here rather than from dmgToOpp alone, because a shield can reduce it to
+      // zero — "took no damage" has to mean what actually reached them.
+      if (dmgToOpp > 0) opp.tookDamage = true
 
       const finishSelf = () => {
         if (opp.hp <= 0 || mover.hp <= 0) {
@@ -535,6 +549,13 @@ export function useSoloRun(charactersRef, movesRef) {
         state.repeatActive = false
         opp.incomingDamageMod = 0
         opp.incomingDamageNullify = null
+        opp.incomingDamageNullifyAtMost = null
+        // Settle it for both sides: the attacker took nothing this turn unless their own
+        // move hurt them, and the defender's flag was set when the damage landed.
+        mover.committedTookDamage = mover.tookDamage
+        opp.committedTookDamage = opp.tookDamage
+        mover.tookDamage = false
+        opp.tookDamage = false
         mover.committedLastMoveId = mover.lastMoveId
         mover.committedLastMoveFailed = mover.lastMoveFailed
         mover.committedBannedMoveIds = mover.bannedMoveIds

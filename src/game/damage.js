@@ -59,6 +59,14 @@ export function computeDisplayDamage(mv, mover, target, movesMap) {
     base = target.incomingDamageNullify
     mode = base < mv.baseDamage ? "down" : base > mv.baseDamage ? "up" : "normal"
   }
+  // ボスゴドラ's shields: "if this would deal N or less, it deals nothing". Unlike the
+  // unconditional nullify above it has to see the damage first, so it is applied last — after
+  // every modifier that could push the figure over or under the line. A big hit lands in full.
+  if (target.incomingDamageNullifyAtMost !== null && target.incomingDamageNullifyAtMost !== undefined
+      && base <= target.incomingDamageNullifyAtMost) {
+    base = 0
+    mode = "down"
+  }
   return {
     display: Math.max(base, 0),
     raw: base,

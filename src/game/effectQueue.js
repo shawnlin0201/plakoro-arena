@@ -181,8 +181,32 @@ export function runEffectQueue(queue, idx, ctx, hooks, done) {
       ctx.mover.incomingDamageNullify = eff.value
       next()
       break
+    // The conditional cousin: nothing is blocked unless the hit is small enough. Cleared the
+    // same turn the unconditional one is (see the two battle hosts).
+    case "NULLIFY_TAKEN_LE":
+      ctx.mover.incomingDamageNullifyAtMost = eff.value
+      next()
+      break
+    // "If this Pokemon took no move damage on the previous opponent turn." Reads the flag the
+    // hosts commit at end of turn, the same way DAMAGE_EXTRA_DICE_SUCCESS_SELF_* reads
+    // committedLastMoveFailed.
+    case "DAMAGE_EXTRA_IF_UNHURT":
+      if (!ctx.mover.committedTookDamage) ctx.dmgToOpp += eff.value
+      next()
+      break
     case "DAMAGE_SELF":
       ctx.dmgToSelf += eff.value
+      next()
+      break
+    // Healing is negative self-damage. Both battle hosts already apply `dmgToSelf` with
+    // `Math.min(hp - dmgToSelf, maxHp)` on the negative side, so the cap at full HP and the
+    // damage animation come for free — there is no second path to keep in step.
+    case "HEAL_SELF":
+      ctx.dmgToSelf -= eff.value
+      next()
+      break
+    case "HEAL_SELF_FULL":
+      ctx.dmgToSelf -= Math.max(0, (ctx.mover.maxHp || 0) - ctx.mover.hp)
       next()
       break
     case "MOD_DICE_ENEMY":
