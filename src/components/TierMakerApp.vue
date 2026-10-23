@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { asset } from '../data/assetPath'
 import { typeBgColor } from '../data/constants'
 import { typeAffinity } from '../game/typeAffinity'
-import html2canvas from 'html2canvas'
+import { exportElementAsPng } from '../data/exportImage'
 import { defaultTiers, loadTierMaker, newInstanceId, parseTierMakerPayload, saveTierMaker, TIER_PALETTE } from '../data/tierMaker'
 
 const emit = defineEmits(['back'])
@@ -278,14 +278,10 @@ async function exportImage() {
   if (exporting.value || !boardRef.value) return
   exporting.value = true
   try {
-    const canvas = await html2canvas(boardRef.value, {
-      backgroundColor: '#f7f6f1',
-      // Dense enough to survive a Retina screen or someone zooming into it, rather than
-      // blurring the moment it is viewed any bigger than it was taken.
-      scale: 3,
-      useCORS: true,
+    await exportElementAsPng(boardRef.value, title.value.trim() || 'tier-list', {
+      background: '#f7f6f1',
+      hide: EDIT_ONLY,
       onclone(doc) {
-        doc.querySelectorAll(EDIT_ONLY).forEach(el => el.remove())
         doc.querySelectorAll('.tm-avatar-selected').forEach(el => el.classList.remove('tm-avatar-selected'))
         // An <input> screenshots as an input — underline, placeholder and all. The title is a
         // heading in the picture, so it is swapped for one; an empty title leaves no gap.
@@ -300,15 +296,6 @@ async function exportImage() {
         })
       }
     })
-    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'))
-    if (!blob) return
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    const safeName = title.value.trim().replace(/[\\/:*?"<>|]/g, '-')
-    a.download = `${safeName || 'tier-list'}.png`
-    a.click()
-    URL.revokeObjectURL(url)
   } finally {
     exporting.value = false
   }
