@@ -100,7 +100,17 @@ function pickBindMove(mid) {
     </template>
 
     <template v-else-if="ep.kind === 'eneCount'">
-      <div class="overlay-title">{{ t('effectPrompt.eneCountTitle') }}</div>
+      <!-- Names the energy, because it is not always the move's own type: EBW02-049 is a
+           Fire-cost Dragon move that counts Lightning, and "target energy" alone would leave
+           the player guessing which pile to count. -->
+      <div class="overlay-title">
+        <img
+          v-if="ep.countedType"
+          :src="asset(`image/ICON/${ep.countedType}.png`)"
+          :alt="ep.countedType"
+          style="height:1em; width:1em; object-fit:contain; vertical-align:-0.15em; margin-right:0.25rem;"
+        >{{ t('effectPrompt.eneCountTitle') }}
+      </div>
       <div style="width:100%; max-width:18.75rem; margin:0.625rem auto 0;">
         <MoveCard :mv="ep.mv" :dmg-info="ep.dmgInfo" :owner="ep.mover" :opponent="ep.opp" :clickable="false" style="min-height:10.75rem;" />
       </div>

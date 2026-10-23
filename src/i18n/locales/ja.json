@@ -301,7 +301,7 @@
       "settings": "計算の前提",
       "exportImage": "画像を書き出す",
       "exportingImage": "書き出し中…",
-      "sortByEv": "期待値順に並べる",
+      "sortByNumber": "カード番号順に並べる",
       "countDefensive": "ダメージ軽減を回復として計算",
       "selfHpLabel": "残りHP",
       "selfHpAny": "指定なし",

@@ -133,6 +133,19 @@ export function runEffectQueue(queue, idx, ctx, hooks, done) {
   // Pins a player's character die for their next turn: rows whose orientations fall outside the
   // fixed set become unselectable (see charaDiceOrientationAllowed). Mirrors `charaDiceBlocked`
   // in lifecycle — set here, consumed next turn, cleared when that turn resolves.
+  // `DAMAGE_EXTRA_ENE_<energy>` — counts a named energy instead of the move's own type.
+  // EBW02-049 ドラゴンバースト is a Fire-cost Dragon move that counts Lightning, which is what
+  // this exists for; the bare `DAMAGE_EXTRA_ENE` below still means "this move's type".
+  const eneTypedMatch = /^DAMAGE_EXTRA_ENE_(.+)$/.exec(eff.type)
+  if (eneTypedMatch) {
+    const countedType = eneTypedMatch[1]
+    hooks.showEneCountPrompt(eff.value, ctx, count => {
+      ctx.dmgToOpp += count * eff.value
+      next()
+    }, countedType)
+    return
+  }
+
   const fixCharaDiceEnemyMatch = /^FIX_CHARADICE_ENEMY_(.+)$/.exec(eff.type)
   if (fixCharaDiceEnemyMatch) {
     const orientations = fixCharaDiceEnemyMatch[1].split(',').map(s => s.trim()).filter(s => s !== "")
@@ -218,10 +231,12 @@ export function runEffectQueue(queue, idx, ctx, hooks, done) {
       })
       return
     case "DAMAGE_EXTRA_ENE":
+      // Bare form: counts the move's own type. Every card did until EBW02-049 — see the
+      // suffixed branch above.
       hooks.showEneCountPrompt(eff.value, ctx, count => {
         ctx.dmgToOpp += count * eff.value
         next()
-      })
+      }, ctx.mv.type)
       return
     case "MOD_DICE_STEAL":
       ctx.opp.diceMod = (ctx.opp.diceMod || 0) - eff.value

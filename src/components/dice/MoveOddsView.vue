@@ -8,7 +8,7 @@ import { moveExpectedValue } from '../../game/moveExpectedValue'
 import { buildTempoTable } from '../../game/tempoValue'
 import { ASSUMED_ENEMY_LAST_DAMAGE } from '../../game/suggestedDice'
 import MoveCard from '../MoveCard.vue'
-import html2canvas from 'html2canvas'
+import { exportElementAsPng } from '../../data/exportImage'
 
 // Which dice sets exist upstream, and their labels, so this view can report a move's odds
 // under each configuration side by side.
@@ -85,6 +85,12 @@ const showBreakdownDetail = ref(false)
 // low-HP moves key off, so it's the value at which that premise means anything.
 const showSettings = ref(false)
 const sortByEv = ref(true)
+// The same switch, stated the way a player thinks about it: "leave the list in card order".
+// Two refs would be two sources of truth for one question and would eventually disagree.
+const sortByNumber = computed({
+  get: () => !sortByEv.value,
+  set: v => { sortByEv.value = !v }
+})
 const countDefensiveValue = ref(true)
 const countTempoValue = ref(true)
 const selfHpText = ref('40')
@@ -289,19 +295,7 @@ async function exportImage() {
   if (!exportTargetRef.value || exporting.value) return
   exporting.value = true
   try {
-    const canvas = await html2canvas(exportTargetRef.value, {
-      backgroundColor: '#ffffff',
-      scale: 2,
-      useCORS: true
-    })
-    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'))
-    if (!blob) return
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `plakoro-move-odds-${selectedCharacter.value.name}.png`
-    a.click()
-    URL.revokeObjectURL(url)
+    await exportElementAsPng(exportTargetRef.value, `plakoro-move-odds-${selectedCharacter.value.name}`)
   } finally {
     exporting.value = false
   }
@@ -335,7 +329,10 @@ async function exportImage() {
     <!-- odds table -->
     <template v-else>
       <div ref="exportTargetRef" style="display:flex; flex-direction:column; align-items:center; width:100%;">
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap; width:100%; max-width:40rem; padding:0 0.625rem 0.5rem;">
+      <!-- A column, not a space-between row: each of these is its own line (who is selected,
+           which dice are in play, what the table shows). Side by side they shared a line and
+           re-flowed into each other at every width. -->
+      <div style="display:flex; flex-direction:column; gap:0.375rem; width:100%; max-width:40rem; padding:0 0.625rem 0.5rem;">
         <div style="display:flex; align-items:center; gap:0.375rem;">
           <div style="width:2rem; height:2rem; border-radius:0.375rem; overflow:hidden; flex-shrink:0;">
             <img :src="selectedCharacter.imageUrl || asset(`image/CHARA/${selectedCharacter.name}.png`)" class="img-icon" :alt="selectedCharacter.name">
@@ -364,6 +361,12 @@ async function exportImage() {
               style="width:1rem; height:1rem; line-height:1; border:1px solid var(--line); border-radius:0.25rem; background:#fff; font-weight:800; cursor:pointer; padding:0;"
             >+</button>
           </div>
+        </div>
+
+        <!-- Second row: what the table shows, kept off the dice line above. Those steppers are
+             the thing being adjusted most often, and burying them behind four checkboxes that
+             wrap differently at every width made them hard to find twice in a row. -->
+        <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
           <label style="display:flex; align-items:center; gap:0.1875rem; font-size:0.625rem; font-weight:800; color:var(--sub); cursor:pointer;">
             <input type="checkbox" v-model="showCounts" style="width:0.75rem; height:0.75rem; margin:0;">
             {{ t('diceBuilder.showCountsLabel') }}
@@ -371,6 +374,10 @@ async function exportImage() {
           <label style="display:flex; align-items:center; gap:0.1875rem; font-size:0.625rem; font-weight:800; color:var(--sub); cursor:pointer;">
             <input type="checkbox" v-model="showBreakdownDetail" style="width:0.75rem; height:0.75rem; margin:0;">
             {{ t('diceBuilder.moveOdds.showBreakdownDetail') }}
+          </label>
+          <label style="display:flex; align-items:center; gap:0.1875rem; font-size:0.625rem; font-weight:800; color:var(--sub); cursor:pointer;">
+            <input type="checkbox" v-model="sortByNumber" style="width:0.75rem; height:0.75rem; margin:0;">
+            {{ t('diceBuilder.moveOdds.sortByNumber') }}
           </label>
           <button class="btn secondary" style="padding:0.1875rem 0.5rem; font-size:0.625rem;" @click="showSettings = !showSettings">
             {{ t('diceBuilder.moveOdds.settings') }}
@@ -388,10 +395,6 @@ async function exportImage() {
         style="width:100%; max-width:40rem; margin:0 0.625rem 0.5rem; padding:0.5rem 0.625rem; border:0.0625rem solid var(--line); border-radius:0.5rem; display:flex; flex-direction:column; gap:0.375rem;"
       >
         <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
-          <label style="display:flex; align-items:center; gap:0.25rem; font-size:0.625rem; font-weight:800; color:var(--sub); cursor:pointer;">
-            <input type="checkbox" v-model="sortByEv" style="width:0.75rem; height:0.75rem; margin:0;">
-            {{ t('diceBuilder.moveOdds.sortByEv') }}
-          </label>
           <label style="display:flex; align-items:center; gap:0.25rem; font-size:0.625rem; font-weight:800; color:var(--sub); cursor:pointer;">
             <input type="checkbox" v-model="countDefensiveValue" style="width:0.75rem; height:0.75rem; margin:0;">
             {{ t('diceBuilder.moveOdds.countDefensive') }}

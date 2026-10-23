@@ -39,6 +39,9 @@ export const NOTE_UNSUPPORTED = 'unsupported' // no handler — data has outgrow
 // effect *is* the rolls, so its branch is unconditional and no "die missed" branch exists.
 const MULTI_ROLL_CHARA = /^DAMAGE_EXTRA_(\d+)CHARADICE$/
 
+// `DAMAGE_EXTRA_ENE_<energy>` — counts a named energy rather than the move's own type.
+const ENE_TYPED = /^DAMAGE_EXTRA_ENE_(.+)$/
+
 function faceCountOf(orientationList) {
   return String(orientationList).split(',').map(s => s.trim()).filter(s => s !== '').length
 }
@@ -162,6 +165,13 @@ function applyEffect(eff, state, env) {
     return
   }
 
+  // Counts a named energy rather than the move's own type — see the DAMAGE_EXTRA_ENE case.
+  const eneTyped = ENE_TYPED.exec(type)
+  if (eneTyped) {
+    state.damage += env.payingTypeMean(eneTyped[1]) * value
+    return
+  }
+
   // Pinning a character die to a chosen face isn't in the table, so it stays a known zero.
   if (/^FIX_CHARADICE/.test(type)) {
     addTempo(state, type, value, env)
@@ -186,10 +196,16 @@ function applyEffect(eff, state, env) {
     case 'DAMAGE_MULTIPLY':
       state.damage *= value
       break
-    // The energy that paid for the move is the same energy this counts, so the figure is the
-    // mean over the rolls that could pay — not over all rolls.
+    // The mean is taken over the rolls that could pay for the move, not over all rolls: a roll
+    // that cannot cast it contributes nothing either way.
+    //
+    // Which energy gets counted is NOT the move's own type. It was on every card until
+    // EBW02-049 ドラゴンバースト, a Fire-cost Dragon move that counts Lightning — so the type
+    // is named in the effect (`DAMAGE_EXTRA_ENE_かみなり`) and read from there. The bare form
+    // still means "the move's own type", which is what the upstream rows in generated/ carry
+    // and what fetch-data will keep writing.
     case 'DAMAGE_EXTRA_ENE':
-      state.damage += env.payingTypeMean() * value
+      state.damage += env.payingTypeMean(mv.type) * value
       break
     case 'DAMAGE_BY_ENEMY_3DICE': {
       const mean = env.enemyDiceMean()
@@ -340,7 +356,7 @@ export function moveExpectedValue(mv, options) {
 
   // Both of these cost a pass of their own and only one printed move each needs them, so
   // they stay lazy and memoised rather than being computed for every move in the list.
-  let payingTypeMeanCache = null
+  const payingTypeMeanCache = new Map()
   let enemyDiceMeanCache = null
   const env = {
     charaHits: CHARA_DIE_FACE_COUNT,
@@ -354,11 +370,11 @@ export function moveExpectedValue(mv, options) {
       prereqMoveSucceeded: false,
       ...prev
     },
-    payingTypeMean: () => {
-      if (payingTypeMeanCache === null) {
-        payingTypeMeanCache = conditionalTypeMean(rolls, mv.cost, mv.type)
+    payingTypeMean: countedType => {
+      if (!payingTypeMeanCache.has(countedType)) {
+        payingTypeMeanCache.set(countedType, conditionalTypeMean(rolls, mv.cost, countedType))
       }
-      return payingTypeMeanCache
+      return payingTypeMeanCache.get(countedType)
     },
     enemyDiceMean: () => {
       if (!enemyDice || enemyDice.length === 0) return null

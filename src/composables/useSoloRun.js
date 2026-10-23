@@ -392,9 +392,11 @@ export function useSoloRun(charactersRef, movesRef) {
     state.effectPrompt = { kind: "bindWaza", targetKey, count, picked: [], onDone }
     state.phase = "effectPrompt"
   }
-  function showEneCountPrompt(effectValue, ctx, onPick) {
+  // `countedType` is the energy being counted, which is usually but NOT always the move's own
+  // type — EBW02-049 is a Fire-cost Dragon move counting Lightning.
+  function showEneCountPrompt(effectValue, ctx, onPick, countedType = ctx.mv.type) {
     const dmgInfo = computeDisplayDamage(ctx.mv, ctx.mover, ctx.opp)
-    state.effectPrompt = { kind: "eneCount", effectValue, mv: ctx.mv, dmgInfo, mover: ctx.mover, opp: ctx.opp, onPick }
+    state.effectPrompt = { kind: "eneCount", effectValue, countedType, mv: ctx.mv, dmgInfo, mover: ctx.mover, opp: ctx.opp, onPick }
     state.phase = "effectPrompt"
   }
   function showCharaDiceEnemyManualPrompt(orientations, effectValue, ctx, onPick) {

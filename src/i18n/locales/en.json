@@ -301,7 +301,7 @@
       "settings": "Assumptions",
       "exportImage": "Export image",
       "exportingImage": "Exporting…",
-      "sortByEv": "Sort by expected value",
+      "sortByNumber": "Sort by card number",
       "countDefensive": "Count damage reduction as healing",
       "selfHpLabel": "Remaining HP",
       "selfHpAny": "Unset",

@@ -342,14 +342,17 @@ export function useBattleState(movesRef) {
   // turn's own energy roll (state.energyRolledTypes) — the one already thrown for the move's
   // own cost check — not a new roll. Same shape as the charaDiceSelect 'self' fix: read it
   // straight from the real result instead of asking the player to recount it by hand.
-  function showEneCountPrompt(effectValue, ctx, onPick) {
+  // `countedType` is the energy being counted, which is usually but NOT always the move's own
+  // type — EBW02-049 is a Fire-cost Dragon move counting Lightning. Defaulted for safety, but
+  // effectQueue always passes it.
+  function showEneCountPrompt(effectValue, ctx, onPick, countedType = ctx.mv.type) {
     if (onlineModeActive && state.energyRolledTypes) {
-      const count = state.energyRolledTypes.filter(ty => ty === ctx.mv.type).length
+      const count = state.energyRolledTypes.filter(ty => ty === countedType).length
       onPick(count)
       return
     }
     const dmgInfo = computeDisplayDamage(ctx.mv, ctx.mover, ctx.opp)
-    state.effectPrompt = { kind: "eneCount", effectValue, mv: ctx.mv, dmgInfo, mover: ctx.mover, opp: ctx.opp, onPick }
+    state.effectPrompt = { kind: "eneCount", effectValue, countedType, mv: ctx.mv, dmgInfo, mover: ctx.mover, opp: ctx.opp, onPick }
     state.phase = "effectPrompt"
   }
 

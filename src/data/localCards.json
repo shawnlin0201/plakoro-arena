@@ -1527,7 +1527,7 @@
       "waza_effect_value": 0,
       "chara_die1": "立,上",
       "chara_effect1": "エネコロで出たかみなりエネルギーの数×20ダメージ追加。",
-      "chara_effect_type1": "DAMAGE_EXTRA_ENE",
+      "chara_effect_type1": "DAMAGE_EXTRA_ENE_かみなり",
       "chara_effect_value1": 20,
       "chara_die2": null,
       "chara_effect2": null,
