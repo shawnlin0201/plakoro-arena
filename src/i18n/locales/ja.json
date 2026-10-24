@@ -94,7 +94,8 @@
     "rerollCharaDie": "キャラコロを振りなおす（残り {n} 回）",
     "rerollPickTitle": "「{from}」：相手のエネコロを {n} 個選んで振りなおさせる",
     "rerollThrowing": "振りなおし中…",
-    "rerollWaiting": "相手が振りなおすエネコロを選んでいます…"
+    "rerollWaiting": "相手が振りなおすエネコロを選んでいます…",
+    "rerollThrowTitle": "相手に指定された {n} 個のエネコロを振りなおす"
   },
   "effectPrompt": {
     "diceRollLabel": "{n}個",

@@ -94,7 +94,8 @@
     "rerollCharaDie": "Reroll character die ({n} left)",
     "rerollPickTitle": "{from}: choose {n} of their energy dice to reroll",
     "rerollThrowing": "Rerolling…",
-    "rerollWaiting": "Waiting for your opponent to choose…"
+    "rerollWaiting": "Waiting for your opponent to choose…",
+    "rerollThrowTitle": "Your opponent made you reroll these {n} energy dice"
   },
   "effectPrompt": {
     "diceRollLabel": "{n}",

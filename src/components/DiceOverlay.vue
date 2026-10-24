@@ -201,8 +201,16 @@ function confirmRerollPick() {
 // Throws only the named dice and splices their new faces back into the existing result —
 // the dice nobody pointed at keep what they rolled, and the cost check is redone over the
 // whole hand afterwards because a reroll can turn a payable roll into an unpayable one.
-watch(iThrowReroll, async should => {
-  if (!should || rerollingEnergy.value || !diceCanvasRef.value) return
+//
+// Triggered by the player, not automatically. An earlier version watched `iThrowReroll` and
+// threw as soon as it turned true, which never fired: the canvas it needs is created by the
+// same `v-if` in the same tick, so `diceCanvasRef` was still null and the watcher bailed out
+// with nothing to retry it. Putting it behind a button fixes that by construction — by the
+// time anyone can press it the canvas is mounted — and it is the right shape anyway, since
+// every other throw in this game is something the player does.
+async function throwRerollDice() {
+  if (rolling.value || rerollingEnergy.value || !req.value?.indices) return
+  if (!diceCanvasRef.value) return
   rerollingEnergy.value = true
   rolling.value = true
   try {
@@ -221,13 +229,13 @@ watch(iThrowReroll, async should => {
     const rolledTypes = perDie.flat()
     battle.setDiceRollResult(
       state.charaDieFace, rolledTypes, canPayCost(rolledTypes, mv.value.cost),
-      diceCanvasRef.value ? state.diceTransforms : null, perDie)
+      state.diceTransforms, perDie)
     battle.clearDiceRerollRequest()
   } finally {
     rerollingEnergy.value = false
     rolling.value = false
   }
-})
+}
 
 // Online only, opponent's side: replays the mover's exact throw (same dice, same final pose) —
 // see the module doc comment above.
@@ -344,7 +352,29 @@ function goBack() {
           @click="confirmRerollPick"
         >{{ t('common.confirm') }}</button>
       </template>
-      <div v-else class="dr-reroll-title">{{ t(iThrowReroll ? 'dice.rerollThrowing' : 'dice.rerollWaiting') }}</div>
+      <!-- This side's dice were named; they throw the ones that were picked. -->
+      <template v-else-if="iThrowReroll">
+        <div class="dr-reroll-title">{{ t('dice.rerollThrowTitle', { n: req.indices.length }) }}</div>
+        <div class="dr-reroll-dice">
+          <div v-for="i in req.indices" :key="i" class="dr-reroll-die">
+            <div class="dr-reroll-head">
+              <span class="dr-reroll-name">{{ t('diceBuilder.die', { n: i + 1 }) }}</span>
+            </div>
+            <div v-if="rerollTargetDice[i]?.die" class="dr-reroll-faces">
+              <span v-for="row in REROLL_FACE_ROWS" :key="row.key" class="dr-reroll-face">
+                <ChipIcon :types="faceTypes(rerollTargetDice[i].die, row.key)" :size="1.25" />
+              </span>
+            </div>
+          </div>
+        </div>
+        <button
+          class="btn wide"
+          :disabled="rolling"
+          :style="rolling ? 'opacity:.6;' : ''"
+          @click="throwRerollDice"
+        >{{ rerollingEnergy ? t('dice.rerollThrowing') : t('dice.throwCharaDie') }}</button>
+      </template>
+      <div v-else class="dr-reroll-title">{{ t('dice.rerollWaiting') }}</div>
     </div>
 
     <template v-else-if="!isMyTurn">

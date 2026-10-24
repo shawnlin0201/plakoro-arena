@@ -94,7 +94,8 @@
     "rerollCharaDie": "重擲角色骰（剩 {n} 次）",
     "rerollPickTitle": "「{from}」：選 {n} 顆對手的能量骰重擲",
     "rerollThrowing": "重擲中…",
-    "rerollWaiting": "等待對手選擇要重擲的骰子…"
+    "rerollWaiting": "等待對手選擇要重擲的骰子…",
+    "rerollThrowTitle": "對手指定你重擲這 {n} 顆能量骰"
   },
   "effectPrompt": {
     "diceRollLabel": "{n}個",
