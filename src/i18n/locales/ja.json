@@ -89,7 +89,8 @@
     "moveFail": "ワザ失敗",
     "throwCharaDie": "サイコロを振る",
     "opponentResolving": "相手がワザを判定中…",
-    "opponentRolled": "相手のロール結果"
+    "opponentRolled": "相手のロール結果",
+    "rerollCharaDie": "キャラコロを振りなおす（残り {n} 回）"
   },
   "effectPrompt": {
     "diceRollLabel": "{n}個",

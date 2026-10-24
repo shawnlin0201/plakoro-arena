@@ -89,7 +89,8 @@
     "moveFail": "Move Fails",
     "throwCharaDie": "Throw Dice",
     "opponentResolving": "Opponent is resolving their move…",
-    "opponentRolled": "Opponent's roll result"
+    "opponentRolled": "Opponent's roll result",
+    "rerollCharaDie": "Reroll character die ({n} left)"
   },
   "effectPrompt": {
     "diceRollLabel": "{n}",

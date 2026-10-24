@@ -89,7 +89,8 @@
     "moveFail": "招式失敗",
     "throwCharaDie": "丟擲骰子",
     "opponentResolving": "對方判定招式中…",
-    "opponentRolled": "對方的擲骰結果"
+    "opponentRolled": "對方的擲骰結果",
+    "rerollCharaDie": "重擲角色骰（剩 {n} 次）"
   },
   "effectPrompt": {
     "diceRollLabel": "{n}個",

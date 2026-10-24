@@ -722,6 +722,9 @@ export function useBattleState(movesRef) {
     setEnergyDice,
     pickMove,
     backToMoveSelect,
+    // Exposed for the reroll granted by チャンスタックル / ラッキーパンチ: online is the one
+    // mode where the app owns the throw, so it has to be the app that discards the first one.
+    clearDiceRoll,
     setDiceRollResult,
     resolveTurn,
     submitEffectPrompt,

@@ -46,6 +46,35 @@ const oppDiceCanvasRef = ref(null)
 const resultAcked = ref(false)
 const awaitingAck = computed(() => !!online.role.value && !!state.charaDieFace && !resultAcked.value)
 
+// Rerolls granted by チャンスタックル / ラッキーパンチ on a previous turn.
+//
+// In hotseat and solo the player just rerolls their real die, so the move-select notice is the
+// whole implementation. Online is the opposite: the app threw the die, so it has to be the app
+// that throws it again — a notice there would be telling the player to do something they have
+// no way to do.
+//
+// Counted down locally and not synced: the opponent's replay follows state.diceTransforms,
+// which a reroll overwrites like any other throw, so they see the final dice either way.
+const rerollsLeft = ref(0)
+watch(() => state.phase, phase => {
+  if (phase !== 'diceRoll') return
+  const n = (p.value.pendingNotices || []).find(x => x.kind === 'rerollCharaSelf')
+  rerollsLeft.value = n ? n.n : 0
+}, { immediate: true })
+
+const canReroll = computed(() => !!online.role.value && !!state.charaDieFace && rerollsLeft.value > 0)
+
+async function rerollDice() {
+  if (rolling.value || rerollsLeft.value <= 0) return
+  rerollsLeft.value -= 1
+  // Clears the settled result so the gate reopens on `needsThrow`, then throws again. The
+  // second result replaces the first outright — the card grants another throw, not a choice
+  // between the two.
+  battle.clearDiceRoll()
+  resultAcked.value = false
+  await throwDice()
+}
+
 function waitForCanvas(canvasRef) {
   if (canvasRef.value) return Promise.resolve()
   return new Promise(resolve => {
@@ -267,6 +296,15 @@ function goBack() {
           <div v-if="hasChara" class="dr-inline-icon half"><img :src="asset(`image/ICON/${state.charaDieFace}.png`)" class="img-icon" :alt="state.charaDieFace"></div>
         </div>
         <div class="dr-result-ack-label" :class="state.energySuccess ? 'succ' : 'fail'">{{ state.energySuccess ? t('common.success') : t('common.fail') }}</div>
+        <!-- Offered before the confirm, because taking it means this result is being thrown
+             away: once confirmed the player moves on to picking what the roll achieved. -->
+        <button
+          v-if="canReroll"
+          class="btn wide secondary"
+          :disabled="rolling"
+          :style="rolling ? 'opacity:.6;' : ''"
+          @click="rerollDice"
+        >{{ t('dice.rerollCharaDie', { n: rerollsLeft }) }}</button>
         <button class="btn wide" @click="resultAcked = true">{{ t('common.confirm') }}</button>
       </div>
     </div>
