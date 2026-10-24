@@ -95,7 +95,9 @@
     "rerollPickTitle": "「{from}」：相手のエネコロを {n} 個選んで振りなおさせる",
     "rerollThrowing": "振りなおし中…",
     "rerollWaiting": "相手が振りなおすエネコロを選んでいます…",
-    "rerollThrowTitle": "相手に指定された {n} 個のエネコロを振りなおす"
+    "rerollThrowTitle": "相手に指定された {n} 個のエネコロを振りなおす",
+    "dropPickTitle": "この番は {n} 個少ない — 振らないエネコロを選ぶ",
+    "dropMark": "振らない"
   },
   "effectPrompt": {
     "diceRollLabel": "{n}個",

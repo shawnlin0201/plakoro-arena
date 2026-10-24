@@ -95,7 +95,9 @@
     "rerollPickTitle": "{from}: choose {n} of their energy dice to reroll",
     "rerollThrowing": "Rerolling…",
     "rerollWaiting": "Waiting for your opponent to choose…",
-    "rerollThrowTitle": "Your opponent made you reroll these {n} energy dice"
+    "rerollThrowTitle": "Your opponent made you reroll these {n} energy dice",
+    "dropPickTitle": "Throw {n} fewer this turn — choose which to leave out",
+    "dropMark": "out"
   },
   "effectPrompt": {
     "diceRollLabel": "{n}",

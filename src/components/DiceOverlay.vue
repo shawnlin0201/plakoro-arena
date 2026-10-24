@@ -93,11 +93,31 @@ function waitForCanvas(canvasRef) {
   })
 }
 
-// Which of the mover's 3 configured energy dice get thrown this turn (cycling if energyCount
-// differs from 3) is fully determined by public state (turnCount/diceMod), so both sides derive
-// the identical list independently — nothing extra needs to sync for this part.
+// Which of the mover's configured energy dice get thrown this turn.
+//
+// Normally all of them (cycling if the count exceeds the three configured). When an effect has
+// taken dice away, the player says which ones to leave out — their three dice are usually
+// built differently, so "lose one" is a real decision and taking the first N made it for them.
+const dropped = ref([])
+watch(() => state.phase, phase => { if (phase === 'diceRoll') dropped.value = [] })
+
+const configuredCount = computed(() => (p.value.energyDice || []).length || 3)
+// How many have to sit out. Only ever positive when diceMod is negative.
+const mustDrop = computed(() => Math.max(0, configuredCount.value - energyCount.value))
+const choosingDice = computed(() => mustDrop.value > 0 && dropped.value.length < mustDrop.value)
+
+function toggleDropped(i) {
+  const at = dropped.value.indexOf(i)
+  if (at >= 0) dropped.value.splice(at, 1)
+  else if (dropped.value.length < mustDrop.value) dropped.value.push(i)
+}
+
 function diceForThrow(energyDiceConfig) {
-  return Array.from({ length: energyCount.value }, (_, i) => energyDiceConfig[i % energyDiceConfig.length])
+  const kept = energyDiceConfig
+    .map((die, i) => ({ die, i }))
+    .filter(({ i }) => !dropped.value.includes(i))
+  if (!kept.length) return []
+  return Array.from({ length: energyCount.value }, (_, i) => kept[i % kept.length].die)
 }
 
 async function buildThrowFaces(energyDiceConfig) {
@@ -473,7 +493,37 @@ function goBack() {
     </div>
     <div v-if="needsThrow || awaitingAck" class="dr-throw-gate">
       <div class="dr-throw-canvas"><DiceRoll3DCanvas ref="diceCanvasRef" @rolled="onDiceRolled" /></div>
-      <button v-if="needsThrow" class="btn wide" :disabled="rolling" :style="rolling ? 'opacity:.6;' : ''" @click="throwDice">{{ t('dice.throwCharaDie') }}</button>
+      <!-- An effect took dice away: the player says which of their own to leave out, since
+           the three are usually built differently and losing one is a real choice. -->
+      <template v-if="needsThrow && mustDrop > 0">
+        <div class="dr-reroll-title">{{ t('dice.dropPickTitle', { n: mustDrop }) }}</div>
+        <div class="dr-reroll-dice">
+          <button
+            v-for="(die, i) in (p.energyDice || [])"
+            :key="i"
+            class="dr-reroll-die"
+            :class="{ on: dropped.includes(i) }"
+            @click="toggleDropped(i)"
+          >
+            <div class="dr-reroll-head">
+              <span class="dr-reroll-name">{{ t('diceBuilder.die', { n: i + 1 }) }}</span>
+              <span v-if="dropped.includes(i)" class="dr-reroll-name">{{ t('dice.dropMark') }}</span>
+            </div>
+            <div class="dr-reroll-faces">
+              <span v-for="row in REROLL_FACE_ROWS" :key="row.key" class="dr-reroll-face">
+                <ChipIcon :types="faceTypes(die, row.key)" :size="1.25" />
+              </span>
+            </div>
+          </button>
+        </div>
+      </template>
+      <button
+        v-if="needsThrow"
+        class="btn wide"
+        :disabled="rolling || choosingDice"
+        :style="(rolling || choosingDice) ? 'opacity:.6;' : ''"
+        @click="throwDice"
+      >{{ t('dice.throwCharaDie') }}</button>
       <div v-else class="dr-result-ack">
         <div class="dr-opponent-result-icons">
           <div v-for="(ty, i) in state.energyRolledTypes" :key="i" class="dr-inline-icon half"><img :src="asset(`image/ICON/${ty}.png`)" class="img-icon" :alt="ty"></div>
