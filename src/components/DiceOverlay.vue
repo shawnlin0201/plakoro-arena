@@ -157,7 +157,6 @@ const iPickReroll = computed(() =>
 // The side whose dice they are does the throwing, because their client owns the canvas.
 const iThrowReroll = computed(() =>
   !!req.value && !!req.value.indices && (!online.myKey.value || online.myKey.value === req.value.targetKey))
-const rerollWaiting = computed(() => !!req.value && !iPickReroll.value && !iThrowReroll.value)
 
 const rerollPicked = ref([])
 watch(req, r => { if (!r) rerollPicked.value = [] })
@@ -183,12 +182,16 @@ watch(iThrowReroll, async should => {
   try {
     const indices = req.value.indices
     const { buildEnergyDieFaces } = await import('../game/diceTextures')
-    const subset = indices.map(i => lastRollDice[i])
+    // This client threw the original roll, so it still has the die configurations. Falling
+    // back to the player's configured set covers a reload mid-turn, where the textures are
+    // the same anyway — the dice never change during a match.
+    const config = lastRollDice.length ? lastRollDice : diceForThrow(p.value.energyDice)
+    const subset = indices.map(i => config[i])
     const faces = await Promise.all(subset.map(buildEnergyDieFaces))
     const results = await diceCanvasRef.value.setDice(faces)
     if (!results) return
     const perDie = [...(state.energyDieTypes || [])]
-    indices.forEach((dieIndex, k) => { perDie[dieIndex] = faceTypes(lastRollDice[dieIndex], results[k]) })
+    indices.forEach((dieIndex, k) => { perDie[dieIndex] = faceTypes(config[dieIndex], results[k]) })
     const rolledTypes = perDie.flat()
     battle.setDiceRollResult(
       state.charaDieFace, rolledTypes, canPayCost(rolledTypes, mv.value.cost),
@@ -273,7 +276,38 @@ function goBack() {
 
 <template>
   <div class="dice-overlay">
-    <template v-if="!isMyTurn">
+    <!-- Somebody has to name which of this player's dice go again. Sits above the throw gate
+         and replaces it, because the roll is not allowed to settle until it is resolved. -->
+    <div v-if="req" class="dr-throw-gate">
+      <!-- Only the side that has to rethrow needs a canvas; the caster is just pointing. -->
+      <div v-if="iThrowReroll" class="dr-throw-canvas"><DiceRoll3DCanvas ref="diceCanvasRef" @rolled="onDiceRolled" /></div>
+      <template v-if="iPickReroll">
+        <div class="dr-reroll-title">{{ t('dice.rerollPickTitle', { from: req.from, n: req.n }) }}</div>
+        <div class="dr-reroll-dice">
+          <button
+            v-for="(types, i) in (state.energyDieTypes || [])"
+            :key="i"
+            class="dr-reroll-die"
+            :class="{ on: rerollPicked.includes(i) }"
+            @click="toggleRerollPick(i)"
+          >
+            <span v-if="!types.length" class="dr-reroll-blank">—</span>
+            <span v-for="(ty, j) in types" :key="j" class="dr-inline-icon half">
+              <img :src="asset(`image/ICON/${ty}.png`)" class="img-icon" :alt="ty">
+            </span>
+          </button>
+        </div>
+        <button
+          class="btn wide"
+          :disabled="rerollPicked.length !== req.n"
+          :style="rerollPicked.length !== req.n ? 'opacity:.5;' : ''"
+          @click="confirmRerollPick"
+        >{{ t('common.confirm') }}</button>
+      </template>
+      <div v-else class="dr-reroll-title">{{ t(iThrowReroll ? 'dice.rerollThrowing' : 'dice.rerollWaiting') }}</div>
+    </div>
+
+    <template v-else-if="!isMyTurn">
     <div class="dr-top-row">
       <div
         class="dr-move-card"
@@ -367,37 +401,7 @@ function goBack() {
         <span class="dr-flow-word">{{ t('dice.rollSuffix') }}</span>
       </div>
     </div>
-    <!-- Somebody has to name which of this player's dice go again. Sits above the throw gate
-         and replaces it, because the roll is not allowed to settle until it is resolved. -->
-    <div v-if="req" class="dr-throw-gate">
-      <div class="dr-throw-canvas"><DiceRoll3DCanvas ref="diceCanvasRef" @rolled="onDiceRolled" /></div>
-      <template v-if="iPickReroll">
-        <div class="dr-reroll-title">{{ t('dice.rerollPickTitle', { from: req.from, n: req.n }) }}</div>
-        <div class="dr-reroll-dice">
-          <button
-            v-for="(types, i) in (state.energyDieTypes || [])"
-            :key="i"
-            class="dr-reroll-die"
-            :class="{ on: rerollPicked.includes(i) }"
-            @click="toggleRerollPick(i)"
-          >
-            <span v-if="!types.length" class="dr-reroll-blank">—</span>
-            <span v-for="(ty, j) in types" :key="j" class="dr-inline-icon half">
-              <img :src="asset(`image/ICON/${ty}.png`)" class="img-icon" :alt="ty">
-            </span>
-          </button>
-        </div>
-        <button
-          class="btn wide"
-          :disabled="rerollPicked.length !== req.n"
-          :style="rerollPicked.length !== req.n ? 'opacity:.5;' : ''"
-          @click="confirmRerollPick"
-        >{{ t('common.confirm') }}</button>
-      </template>
-      <div v-else class="dr-reroll-title">{{ t(iThrowReroll ? 'dice.rerollThrowing' : 'dice.rerollWaiting') }}</div>
-    </div>
-
-    <div v-else-if="needsThrow || awaitingAck" class="dr-throw-gate">
+    <div v-if="needsThrow || awaitingAck" class="dr-throw-gate">
       <div class="dr-throw-canvas"><DiceRoll3DCanvas ref="diceCanvasRef" @rolled="onDiceRolled" /></div>
       <button v-if="needsThrow" class="btn wide" :disabled="rolling" :style="rolling ? 'opacity:.6;' : ''" @click="throwDice">{{ t('dice.throwCharaDie') }}</button>
       <div v-else class="dr-result-ack">

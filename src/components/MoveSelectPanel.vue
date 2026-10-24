@@ -66,13 +66,23 @@ function onPick(mid) {
 
 <template>
   <div class="move-select-panel" :class="{ 'resolve-panel': resolvePhase }" :style="panelStyle">
-    <div v-if="!resolvePhase && !isMyTurn" class="move-select-status">{{ waitingLabel }}</div>
-    <template v-else>
-      <div v-if="!resolvePhase && notices.length" class="ms-notices">
-        <div v-for="n in notices" :key="n.key" class="ms-notice">{{ n.text }}</div>
-      </div>
-      <MovesGrid :player="p" :opponent="opp" :moves-map="moves" :interactive="!resolvePhase" @pick="onPick" />
-    </template>
+    <!-- The waiting side sees the same cards, just inert. Hiding them left the person with
+         nothing to read while the other player decides — and these are their own four moves,
+         so there is nothing to conceal. The banner stays, because "I can see the cards" is
+         not the same as "it is my turn". -->
+    <div v-if="!resolvePhase && !isMyTurn" class="ms-notices">
+      <div class="ms-notice">{{ waitingLabel }}</div>
+    </div>
+    <div v-else-if="!resolvePhase && notices.length" class="ms-notices">
+      <div v-for="n in notices" :key="n.key" class="ms-notice">{{ n.text }}</div>
+    </div>
+    <MovesGrid
+      :player="p"
+      :opponent="opp"
+      :moves-map="moves"
+      :interactive="!resolvePhase && isMyTurn"
+      @pick="onPick"
+    />
   </div>
 </template>
 
