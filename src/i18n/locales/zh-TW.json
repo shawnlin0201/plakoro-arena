@@ -91,7 +91,10 @@
     "throwCharaDie": "丟擲骰子",
     "opponentResolving": "對方判定招式中…",
     "opponentRolled": "對方的擲骰結果",
-    "rerollCharaDie": "重擲角色骰（剩 {n} 次）"
+    "rerollCharaDie": "重擲角色骰（剩 {n} 次）",
+    "rerollPickTitle": "「{from}」：選 {n} 顆對手的能量骰重擲",
+    "rerollThrowing": "重擲中…",
+    "rerollWaiting": "等待對手選擇要重擲的骰子…"
   },
   "effectPrompt": {
     "diceRollLabel": "{n}個",

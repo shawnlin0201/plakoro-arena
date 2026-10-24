@@ -53,6 +53,9 @@ function newCombatant() {
     // Set by そそのかす: this side's move is chosen by their opponent next turn. Unlike the
     // notices above the app does enforce this one, because it owns the move-select screen.
     moveChosenByOpponent: false,
+    // Solo never fires this (no opponent casts ほりかえす), but the shape stays identical to
+    // the duel host so a shared effect handler cannot write a field that does not exist.
+    pendingDiceReroll: null,
     diceMod: 0,
     diceModBadges: [],
     bannedMoveIds: [],

@@ -91,7 +91,10 @@
     "throwCharaDie": "Throw Dice",
     "opponentResolving": "Opponent is resolving their move…",
     "opponentRolled": "Opponent's roll result",
-    "rerollCharaDie": "Reroll character die ({n} left)"
+    "rerollCharaDie": "Reroll character die ({n} left)",
+    "rerollPickTitle": "{from}: choose {n} of their energy dice to reroll",
+    "rerollThrowing": "Rerolling…",
+    "rerollWaiting": "Waiting for your opponent to choose…"
   },
   "effectPrompt": {
     "diceRollLabel": "{n}",

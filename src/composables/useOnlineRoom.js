@@ -16,6 +16,7 @@ const MUTATING_ACTIONS = [
   'openCharSelect', 'openMoveSelect', 'closeModal', 'toggleMoveInModal',
   'confirmCharacterMoves', 'onCardTap', 'startBattle', 'setReadyForFirst', 'setEnergyDice',
   'pickMove', 'backToMoveSelect', 'setDiceRollResult', 'resolveTurn', 'submitEffectPrompt',
+  'submitDiceReroll', 'clearDiceRerollRequest',
   'pickBindWazaMove', 'confirmTurnResult', 'submitCharaThrowResult', 'submitEnergyThrowResult',
   'resetGame'
 ]

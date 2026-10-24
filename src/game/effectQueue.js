@@ -294,6 +294,9 @@ export function runEffectQueue(queue, idx, ctx, hooks, done) {
       next()
       break
     case "REROLL_DICE_ENEMY":
+      // Both: the flag drives the real picker when the app owns the dice, and the notice is
+      // what tells two people sharing one device that it is about to ask.
+      ctx.opp.pendingDiceReroll = { n: eff.value, from: ctx.mv.name }
       ctx.opp.pendingNotices = withNotice(ctx.opp.pendingNotices, {
         kind: 'rerollDiceEnemy', n: eff.value, from: ctx.mv.name
       })

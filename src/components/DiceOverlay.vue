@@ -109,6 +109,9 @@ async function buildThrowFaces(energyDiceConfig) {
 
 let lastRollDice = []
 
+// Declared up here because onDiceRolled() reads it, and that runs on every settle.
+const rerollingEnergy = ref(false)
+
 async function throwDice() {
   if (rolling.value || !diceCanvasRef.value) return
   resultAcked.value = false
@@ -126,6 +129,9 @@ async function throwDice() {
 }
 
 function onDiceRolled(results, transforms) {
+  // An energy reroll throws a subset with no character die in it, so none of the reading
+  // below applies — the watcher that started it splices the result back in itself.
+  if (rerollingEnergy.value) return
   const charaFace = results[results.length - 1]
   // A reroll threw one die, so there is no energy in `results` to read — and none to re-read:
   // keep what the original throw produced, including its cost verdict.
@@ -135,10 +141,64 @@ function onDiceRolled(results, transforms) {
     return
   }
   const energyResults = results.slice(0, -1)
-  const rolledTypes = energyResults.flatMap((faceKey, i) => faceTypes(lastRollDice[i], faceKey))
+  const perDie = energyResults.map((faceKey, i) => faceTypes(lastRollDice[i], faceKey))
+  const rolledTypes = perDie.flat()
   const success = canPayCost(rolledTypes, mv.value.cost)
-  battle.setDiceRollResult(charaFace, rolledTypes, success, transforms)
+  battle.setDiceRollResult(charaFace, rolledTypes, success, transforms, perDie)
 }
+
+// --- ほりかえす / ジュエルフラッシュ: the opponent names dice, this side rethrows them -----
+
+const req = computed(() => state.diceRerollRequest)
+// Whoever cast it does the choosing; in hotseat (myKey null) that is simply whoever is holding
+// the device, which the move-select notice has already warned about.
+const iPickReroll = computed(() =>
+  !!req.value && !req.value.indices && (!online.myKey.value || online.myKey.value === req.value.byKey))
+// The side whose dice they are does the throwing, because their client owns the canvas.
+const iThrowReroll = computed(() =>
+  !!req.value && !!req.value.indices && (!online.myKey.value || online.myKey.value === req.value.targetKey))
+const rerollWaiting = computed(() => !!req.value && !iPickReroll.value && !iThrowReroll.value)
+
+const rerollPicked = ref([])
+watch(req, r => { if (!r) rerollPicked.value = [] })
+
+function toggleRerollPick(i) {
+  const at = rerollPicked.value.indexOf(i)
+  if (at >= 0) rerollPicked.value.splice(at, 1)
+  else if (rerollPicked.value.length < req.value.n) rerollPicked.value.push(i)
+}
+
+function confirmRerollPick() {
+  if (rerollPicked.value.length !== req.value.n) return
+  battle.submitDiceReroll(rerollPicked.value)
+}
+
+// Throws only the named dice and splices their new faces back into the existing result —
+// the dice nobody pointed at keep what they rolled, and the cost check is redone over the
+// whole hand afterwards because a reroll can turn a payable roll into an unpayable one.
+watch(iThrowReroll, async should => {
+  if (!should || rerollingEnergy.value || !diceCanvasRef.value) return
+  rerollingEnergy.value = true
+  rolling.value = true
+  try {
+    const indices = req.value.indices
+    const { buildEnergyDieFaces } = await import('../game/diceTextures')
+    const subset = indices.map(i => lastRollDice[i])
+    const faces = await Promise.all(subset.map(buildEnergyDieFaces))
+    const results = await diceCanvasRef.value.setDice(faces)
+    if (!results) return
+    const perDie = [...(state.energyDieTypes || [])]
+    indices.forEach((dieIndex, k) => { perDie[dieIndex] = faceTypes(lastRollDice[dieIndex], results[k]) })
+    const rolledTypes = perDie.flat()
+    battle.setDiceRollResult(
+      state.charaDieFace, rolledTypes, canPayCost(rolledTypes, mv.value.cost),
+      diceCanvasRef.value ? state.diceTransforms : null, perDie)
+    battle.clearDiceRerollRequest()
+  } finally {
+    rerollingEnergy.value = false
+    rolling.value = false
+  }
+})
 
 // Online only, opponent's side: replays the mover's exact throw (same dice, same final pose) —
 // see the module doc comment above.
@@ -307,7 +367,37 @@ function goBack() {
         <span class="dr-flow-word">{{ t('dice.rollSuffix') }}</span>
       </div>
     </div>
-    <div v-if="needsThrow || awaitingAck" class="dr-throw-gate">
+    <!-- Somebody has to name which of this player's dice go again. Sits above the throw gate
+         and replaces it, because the roll is not allowed to settle until it is resolved. -->
+    <div v-if="req" class="dr-throw-gate">
+      <div class="dr-throw-canvas"><DiceRoll3DCanvas ref="diceCanvasRef" @rolled="onDiceRolled" /></div>
+      <template v-if="iPickReroll">
+        <div class="dr-reroll-title">{{ t('dice.rerollPickTitle', { from: req.from, n: req.n }) }}</div>
+        <div class="dr-reroll-dice">
+          <button
+            v-for="(types, i) in (state.energyDieTypes || [])"
+            :key="i"
+            class="dr-reroll-die"
+            :class="{ on: rerollPicked.includes(i) }"
+            @click="toggleRerollPick(i)"
+          >
+            <span v-if="!types.length" class="dr-reroll-blank">—</span>
+            <span v-for="(ty, j) in types" :key="j" class="dr-inline-icon half">
+              <img :src="asset(`image/ICON/${ty}.png`)" class="img-icon" :alt="ty">
+            </span>
+          </button>
+        </div>
+        <button
+          class="btn wide"
+          :disabled="rerollPicked.length !== req.n"
+          :style="rerollPicked.length !== req.n ? 'opacity:.5;' : ''"
+          @click="confirmRerollPick"
+        >{{ t('common.confirm') }}</button>
+      </template>
+      <div v-else class="dr-reroll-title">{{ t(iThrowReroll ? 'dice.rerollThrowing' : 'dice.rerollWaiting') }}</div>
+    </div>
+
+    <div v-else-if="needsThrow || awaitingAck" class="dr-throw-gate">
       <div class="dr-throw-canvas"><DiceRoll3DCanvas ref="diceCanvasRef" @rolled="onDiceRolled" /></div>
       <button v-if="needsThrow" class="btn wide" :disabled="rolling" :style="rolling ? 'opacity:.6;' : ''" @click="throwDice">{{ t('dice.throwCharaDie') }}</button>
       <div v-else class="dr-result-ack">
@@ -372,3 +462,24 @@ function goBack() {
     </template>
   </div>
 </template>
+
+<style scoped>
+/* The dice this roll produced, one button each, tapped to nominate it for a rethrow. An empty
+   face shows a dash rather than nothing, so a die that contributed no energy is still a thing
+   you can point at. */
+.dr-reroll-title { font-size: 0.75rem; font-weight: 800; color: var(--ink); text-align: center; padding: 0.25rem 0.5rem; }
+.dr-reroll-dice { display: flex; gap: 0.375rem; justify-content: center; flex-wrap: wrap; padding-bottom: 0.375rem; }
+.dr-reroll-die {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+  min-width: 2rem;
+  padding: 0.25rem 0.375rem;
+  border: 0.125rem solid var(--line);
+  border-radius: 0.375rem;
+  background: #fff;
+  cursor: pointer;
+}
+.dr-reroll-die.on { border-color: var(--accent-strong); background: var(--bg); }
+.dr-reroll-blank { font-size: 0.75rem; font-weight: 800; color: var(--sub); }
+</style>

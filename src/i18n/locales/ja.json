@@ -91,7 +91,10 @@
     "throwCharaDie": "サイコロを振る",
     "opponentResolving": "相手がワザを判定中…",
     "opponentRolled": "相手のロール結果",
-    "rerollCharaDie": "キャラコロを振りなおす（残り {n} 回）"
+    "rerollCharaDie": "キャラコロを振りなおす（残り {n} 回）",
+    "rerollPickTitle": "「{from}」：相手のエネコロを {n} 個選んで振りなおさせる",
+    "rerollThrowing": "振りなおし中…",
+    "rerollWaiting": "相手が振りなおすエネコロを選んでいます…"
   },
   "effectPrompt": {
     "diceRollLabel": "{n}個",

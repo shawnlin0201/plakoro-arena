@@ -46,6 +46,9 @@ function newPlayer() {
     // Set by そそのかす: this side's move is chosen by their opponent next turn. Unlike the
     // notices above the app does enforce this one, because it owns the move-select screen.
     moveChosenByOpponent: false,
+    // Set by ほりかえす / ジュエルフラッシュ: { n, from }. Consumed the moment this side's
+    // next roll settles, which turns it into state.diceRerollRequest.
+    pendingDiceReroll: null,
     diceMod: 0,
     diceModBadges: [],
     bannedMoveIds: [],
@@ -95,8 +98,15 @@ function freshState() {
     // reset whenever a fresh dice-roll phase begins.
     charaDieFace: null,
     energyRolledTypes: null,
+    // The same roll, kept per die instead of flattened: [['みず'], ['みず','あく'], []]. The
+    // flat list above cannot be unpicked, because a dual-chip face contributes two types from
+    // one die — and ほりかえす / ジュエルフラッシュ need "which DIE" to make anyone reroll one.
+    energyDieTypes: null,
     energySuccess: null,
     diceTransforms: null,
+    // { targetKey, byKey, n, from, indices } while somebody is naming which of the target's
+    // energy dice must be rerolled; null otherwise. `indices` stays null until they choose.
+    diceRerollRequest: null,
     // Online only: gates the handoff to the next turn behind the receiving side actually
     // acknowledging the damage + dice result — see showTurnResultConfirm()/confirmTurnResult().
     turnResult: null,
@@ -222,6 +232,7 @@ export function useBattleState(movesRef) {
   function clearDiceRoll() {
     state.charaDieFace = null
     state.energyRolledTypes = null
+    state.energyDieTypes = null
     state.energySuccess = null
     state.diceTransforms = null
   }
@@ -245,11 +256,41 @@ export function useBattleState(movesRef) {
   // is the real cost check (canPayCost against those types); `transforms` is each die's exact
   // final position/quaternion from that physics run, broadcast so the opponent's canvas can
   // replay the identical result instead of guessing.
-  function setDiceRollResult(charaDieFace, energyRolledTypes, energySuccess, transforms) {
+  function setDiceRollResult(charaDieFace, energyRolledTypes, energySuccess, transforms, energyDieTypes = null) {
     state.charaDieFace = charaDieFace
     state.energyRolledTypes = energyRolledTypes
     state.energySuccess = energySuccess
     state.diceTransforms = transforms
+    if (energyDieTypes) state.energyDieTypes = energyDieTypes
+
+    // Somebody made this player's dice rerollable (ほりかえす / ジュエルフラッシュ). Hand the
+    // choice of which ones to the player who cast it, before this roll is allowed to settle.
+    const mover = state.players[state.turnPlayer]
+    if (mover.pendingDiceReroll && !state.diceRerollRequest) {
+      state.diceRerollRequest = {
+        targetKey: state.turnPlayer,
+        byKey: opponentKey(state.turnPlayer),
+        n: mover.pendingDiceReroll.n,
+        from: mover.pendingDiceReroll.from,
+        indices: null
+      }
+      mover.pendingDiceReroll = null
+    }
+  }
+
+  /**
+   * The caster names which of the opponent's dice have to go again.
+   *
+   * Only records the choice: the actual throw belongs to the client holding that player's
+   * dice canvas, which watches for `indices` and rerolls exactly those (see DiceOverlay).
+   */
+  function submitDiceReroll(indices) {
+    if (!state.diceRerollRequest || state.diceRerollRequest.indices) return
+    state.diceRerollRequest = { ...state.diceRerollRequest, indices: [...indices] }
+  }
+
+  function clearDiceRerollRequest() {
+    state.diceRerollRequest = null
   }
 
   const effectQueueHooks = {
@@ -281,6 +322,7 @@ export function useBattleState(movesRef) {
     // Consumed by the turn they applied to, alongside every other next-turn modifier.
     mover.pendingNotices = []
     mover.moveChosenByOpponent = false
+    state.diceRerollRequest = null
     state.phase = "resolve"
 
     if (result.kind === "fail") {
@@ -723,6 +765,8 @@ export function useBattleState(movesRef) {
     pickMove,
     backToMoveSelect,
     setDiceRollResult,
+    submitDiceReroll,
+    clearDiceRerollRequest,
     resolveTurn,
     submitEffectPrompt,
     pickBindWazaMove,
