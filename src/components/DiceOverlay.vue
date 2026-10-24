@@ -56,23 +56,33 @@ const awaitingAck = computed(() => !!online.role.value && !!state.charaDieFace &
 // Counted down locally and not synced: the opponent's replay follows state.diceTransforms,
 // which a reroll overwrites like any other throw, so they see the final dice either way.
 const rerollsLeft = ref(0)
+// Declared before the watcher below, which clears it: `immediate: true` runs during setup, so
+// a `const` further down would still be in its temporal dead zone.
+const rerollingChara = ref(false)
 watch(() => state.phase, phase => {
   if (phase !== 'diceRoll') return
   const n = (p.value.pendingNotices || []).find(x => x.kind === 'rerollCharaSelf')
   rerollsLeft.value = n ? n.n : 0
+  rerollingChara.value = false
 }, { immediate: true })
 
 const canReroll = computed(() => !!online.role.value && !!state.charaDieFace && rerollsLeft.value > 0)
 
-async function rerollDice() {
-  if (rolling.value || rerollsLeft.value <= 0) return
+// The CHARACTER die only. The card grants another throw of that one die, not of the whole
+// handful — the energy that was rolled stays rolled, and with it whether the move can be paid
+// for at all. Throwing everything again would quietly re-decide that too.
+async function rerollCharaDie() {
+  if (rolling.value || rerollingChara.value || rerollsLeft.value <= 0) return
   rerollsLeft.value -= 1
-  // Clears the settled result so the gate reopens on `needsThrow`, then throws again. The
-  // second result replaces the first outright — the card grants another throw, not a choice
-  // between the two.
-  battle.clearDiceRoll()
-  resultAcked.value = false
-  await throwDice()
+  rerollingChara.value = true
+  rolling.value = true
+  try {
+    const { buildCharaDieFaces } = await import('../game/diceTextures')
+    const charaFaces = await buildCharaDieFaces()
+    await diceCanvasRef.value.setDice([charaFaces])
+  } finally {
+    rolling.value = false
+  }
 }
 
 function waitForCanvas(canvasRef) {
@@ -102,6 +112,9 @@ let lastRollDice = []
 async function throwDice() {
   if (rolling.value || !diceCanvasRef.value) return
   resultAcked.value = false
+  // A superseded reroll never emits, so the flag could otherwise survive into this throw and
+  // make a full roll keep the previous turn's energy.
+  rerollingChara.value = false
   rolling.value = true
   try {
     const { rollDice, faces } = await buildThrowFaces(p.value.energyDice)
@@ -114,6 +127,13 @@ async function throwDice() {
 
 function onDiceRolled(results, transforms) {
   const charaFace = results[results.length - 1]
+  // A reroll threw one die, so there is no energy in `results` to read — and none to re-read:
+  // keep what the original throw produced, including its cost verdict.
+  if (rerollingChara.value) {
+    rerollingChara.value = false
+    battle.setDiceRollResult(charaFace, state.energyRolledTypes, state.energySuccess, transforms)
+    return
+  }
   const energyResults = results.slice(0, -1)
   const rolledTypes = energyResults.flatMap((faceKey, i) => faceTypes(lastRollDice[i], faceKey))
   const success = canPayCost(rolledTypes, mv.value.cost)
@@ -303,7 +323,7 @@ function goBack() {
           class="btn wide secondary"
           :disabled="rolling"
           :style="rolling ? 'opacity:.6;' : ''"
-          @click="rerollDice"
+          @click="rerollCharaDie"
         >{{ t('dice.rerollCharaDie', { n: rerollsLeft }) }}</button>
         <button class="btn wide" @click="resultAcked = true">{{ t('common.confirm') }}</button>
       </div>
