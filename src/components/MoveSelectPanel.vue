@@ -17,16 +17,10 @@ const state = battle.state
 const p = computed(() => state.players[state.turnPlayer])
 const opp = computed(() => state.players[battle.opponentKey(state.turnPlayer)])
 
-// Whose decision this is — usually the player whose turn it is, but そそのかす hands it to
-// their opponent. The grid follows this rather than `turnPlayer`, so the move list appears on
-// whichever client is actually choosing and the other side waits.
-//
-// Hotseat passes this trivially (myKey is null, so every client "is" the picker) and the
-// move-select notice is what tells the two players to swap the device.
-const pickerKey = computed(() => {
-  const tp = state.turnPlayer
-  return p.value.moveChosenByOpponent ? battle.opponentKey(tp) : tp
-})
+// Whose decision this is. Read off the step rather than worked out here — the engine states
+// it when it enters the phase (see enterPhase), which is the only place that knows whether an
+// effect has handed the choice to the other side.
+const pickerKey = computed(() => state.actorKey || state.turnPlayer)
 
 // Online only: while actually picking (not resolvePhase, which just shows the already-picked
 // move to both sides afterward), the side not choosing only learns that a choice is being

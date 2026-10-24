@@ -81,6 +81,9 @@ function newPlayer() {
 function freshState() {
   return {
     phase: "select",
+    // Who the current step is waiting on. Usually `turnPlayer`, but an effect can hand the
+    // decision to the other side — see enterPhase. null while nobody in particular is acting.
+    actorKey: null,
     players: { A: newPlayer(), B: newPlayer() },
     // Online-only: the side the first-pick wheel has landed on, set before `firstPlayer` while
     // phase is "drawingFirst" so both clients animate toward the same result.
@@ -230,11 +233,33 @@ export function useBattleState(movesRef) {
     state.turnPlayer = firstKey
     state.turnCount = 0
     state.revealed = true
-    state.phase = "moveSelect"
+    enterPhase("moveSelect", moveActorKey(firstKey))
     showTurnCutIn(firstKey)
   }
 
   // --- move / dice / effect resolution (phases: moveSelect, diceRoll, resolve, effectPrompt) ---
+
+  /**
+   * Move the battle to a new step, saying who is expected to act.
+   *
+   * The actor is the point. It used to be inferred — every screen read `turnPlayer` and
+   * assumed that was whoever should be looking at it — which is wrong whenever an effect
+   * hands the decision to the other side (そそのかす picks your move for you; ほりかえす has
+   * one player choose dice and the other throw them). Each of those shipped as a bug where
+   * the wrong client saw the controls, because there was nowhere to say otherwise.
+   *
+   * `actorKey` null means nobody in particular: a result everyone is just watching.
+   */
+  // Whose decision the move for `turnKey` is. そそのかす is the only thing that moves it.
+  function moveActorKey(turnKey) {
+    const p = state.players[turnKey]
+    return p && p.moveChosenByOpponent ? opponentKey(turnKey) : turnKey
+  }
+
+  function enterPhase(kind, actorKey = state.turnPlayer) {
+    state.phase = kind
+    state.actorKey = actorKey
+  }
 
   function clearDiceRoll() {
     state.charaDieFace = null
@@ -247,14 +272,14 @@ export function useBattleState(movesRef) {
   function pickMove(mid) {
     state.selectedMove = mid
     clearDiceRoll()
-    state.phase = "diceRoll"
+    enterPhase("diceRoll")
   }
 
   function backToMoveSelect() {
     if (state.repeatActive) return
     state.selectedMove = null
     clearDiceRoll()
-    state.phase = "moveSelect"
+    enterPhase("moveSelect", moveActorKey(state.turnPlayer))
   }
 
   // Online only: called once the active side's 3D throw (energy dice + character die) settles
@@ -319,7 +344,7 @@ export function useBattleState(movesRef) {
     mover.pendingNotices = []
     mover.moveChosenByOpponent = false
     state.diceRerollRequest = null
-    state.phase = "resolve"
+    enterPhase("resolve")
 
     if (result.kind === "fail") {
       opp.incomingDamageMod = 0
@@ -461,7 +486,7 @@ export function useBattleState(movesRef) {
       ? { picked: [] }
       : { mv: ctx.mv, dmgInfo: computeDisplayDamage(ctx.mv, ctx.mover, ctx.opp), mover: ctx.mover, opp: ctx.opp }
     state.effectPrompt = { ...ask, ...display }
-    state.phase = "effectPrompt"
+    enterPhase("effectPrompt")
   }
 
   // A yes/no about the die the attacker just physically threw. Same self-report shape as
@@ -483,7 +508,7 @@ export function useBattleState(movesRef) {
       mover: ctx.mover,
       opp: ctx.opp
     }
-    state.phase = "effectPrompt"
+    enterPhase("effectPrompt")
   }
 
 
@@ -504,7 +529,7 @@ export function useBattleState(movesRef) {
     // `progress` is only for the overlay to say "throw 2 of 3, 1 hit so far" — the count that
     // decides anything lives in the effect, not here.
     state.charaThrowTask = { rollerKey, orientations, resultKind, progress, lastFace: null, transforms: null }
-    state.phase = "charaThrowTask"
+    enterPhase("charaThrowTask")
   }
 
   // Every throw task exists to answer the effect queue, so it resolves the same way a typed
@@ -512,7 +537,7 @@ export function useBattleState(movesRef) {
   // no stored callback to lose any more.
   function finishCharaThrowTask(result) {
     state.charaThrowTask = null
-    state.phase = "resolve"
+    enterPhase("resolve")
     submitEffectPrompt(result)
   }
 
@@ -527,7 +552,7 @@ export function useBattleState(movesRef) {
 
   function beginEnergyThrowTask(rollerKey, n) {
     state.energyThrowTask = { rollerKey, n, rolledTypes: null, transforms: null }
-    state.phase = "energyThrowTask"
+    enterPhase("energyThrowTask")
   }
 
   function submitEnergyThrowResult(rolledTypes, transforms) {
@@ -537,7 +562,7 @@ export function useBattleState(movesRef) {
     rolledTypes.forEach(ty => { counts[ty] = (counts[ty] || 0) + 1 })
     const maxCount = Object.values(counts).reduce((m, c) => Math.max(m, c), 0)
     state.energyThrowTask = null
-    state.phase = "resolve"
+    enterPhase("resolve")
     submitEffectPrompt(maxCount)
   }
 
@@ -546,7 +571,7 @@ export function useBattleState(movesRef) {
   function submitEffectPrompt(value) {
     const wasShield = state.effectPrompt && state.effectPrompt.kind === "charaShield"
     state.effectPrompt = null
-    state.phase = "resolve"
+    enterPhase("resolve")
     if (wasShield) {
       // Not a queue answer — the queue is already finished. It decides whether the damage
       // lands, then the damage step runs again from the stored context.
@@ -570,7 +595,7 @@ export function useBattleState(movesRef) {
     if (ep.picked.length >= ep.count) {
       const picked = ep.picked.slice()
       state.effectPrompt = null
-      state.phase = "resolve"
+      enterPhase("resolve")
       runEffects(picked)
     }
   }
@@ -611,7 +636,7 @@ export function useBattleState(movesRef) {
     state.turnPlayer = oppKey
     state.turnCount++
     state.selectedMove = null
-    state.phase = "moveSelect"
+    enterPhase("moveSelect", moveActorKey(oppKey))
     showTurnCutIn(oppKey)
   }
 
@@ -621,7 +646,7 @@ export function useBattleState(movesRef) {
   // touches those until clearDiceRoll() runs for the next pick).
   function showTurnResultConfirm(oppKey, mv, dmgToOpp) {
     state.turnResult = { oppKey, mvName: mv.name, mvType: mv.type, dmgToOpp }
-    state.phase = "turnResultConfirm"
+    enterPhase("turnResultConfirm")
   }
 
   function confirmTurnResult() {
@@ -680,14 +705,14 @@ export function useBattleState(movesRef) {
           if (mover.hp <= 0) deadKeys.push(moverKey)
           Promise.all(deadKeys.map(k => new Promise(res => frameOutDeadMon(k, res)))).then(() => {
             state.winner = winnerKey
-            state.phase = "win"
+            enterPhase("win")
           })
           return
         }
         if (ctx.repeatValue) {
           state.repeatActive = true
           clearDiceRoll()
-          state.phase = "diceRoll"
+          enterPhase("diceRoll")
           return
         }
         state.repeatActive = false
