@@ -198,11 +198,10 @@ const rerollTargetDice = computed(() => {
 })
 // Whoever cast it does the choosing; in hotseat (myKey null) that is simply whoever is holding
 // the device, which the move-select notice has already warned about.
-const iPickReroll = computed(() =>
-  !!req.value && !req.value.indices && (!online.myKey.value || online.myKey.value === req.value.byKey))
+const amActor = computed(() => !online.myKey.value || online.myKey.value === state.actorKey)
+const iPickReroll = computed(() => state.phase === 'rerollPick' && amActor.value)
 // The side whose dice they are does the throwing, because their client owns the canvas.
-const iThrowReroll = computed(() =>
-  !!req.value && !!req.value.indices && (!online.myKey.value || online.myKey.value === req.value.targetKey))
+const iThrowReroll = computed(() => state.phase === 'rerollThrow' && amActor.value)
 
 const rerollPicked = ref([])
 watch(req, r => { if (!r) rerollPicked.value = [] })

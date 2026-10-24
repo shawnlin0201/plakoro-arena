@@ -8,6 +8,8 @@ function withNotice(current, notice) {
   return out
 }
 
+import { STEP, plantMod } from './turnMods'
+
 export function pushDiceModBadge(player, name, type) {
   if (!player.diceModBadges) player.diceModBadges = []
   if (player.diceModBadges.some(b => b.name === name)) return
@@ -127,7 +129,7 @@ function applyOneEffect(eff, ctx, answer) {
   if (reduceTakenHpLowMatch) {
     const n = parseInt(reduceTakenHpLowMatch[1], 10)
     if (ctx.mover.hp <= n) {
-      ctx.mover.incomingDamageMod = (ctx.mover.incomingDamageMod || 0) + eff.value
+      plantMod(ctx.mover, { step: STEP.DAMAGE, kind: 'damageDelta', delta: eff.value, from: ctx.mv.name })
     }
     return null
   }
@@ -223,10 +225,12 @@ function applyOneEffect(eff, ctx, answer) {
   // to the attacker on their turn, which is one prompt of a shape that already exists.
   const nullifyIfEnemyChara = /^MOD_NULLIFY_TAKEN_IF_ENEMY_CHARADICE_(.+)$/.exec(eff.type)
   if (nullifyIfEnemyChara) {
-    ctx.mover.incomingNullifyIfCharaDice = {
+    plantMod(ctx.mover, {
+      step: STEP.DAMAGE,
+      kind: 'nullifyIfCharaDice',
       orientations: nullifyIfEnemyChara[1].split(',').map(x => x.trim()).filter(Boolean),
       from: ctx.mv.name
-    }
+    })
     return null
   }
 
@@ -254,15 +258,15 @@ function applyOneEffect(eff, ctx, answer) {
     case "SPECIAL_IGNORE_WEAKNESS":
       return null
     case "MOD_REDUCE_TAKEN":
-      ctx.mover.incomingDamageMod = (ctx.mover.incomingDamageMod || 0) + eff.value
+      plantMod(ctx.mover, { step: STEP.DAMAGE, kind: 'damageDelta', delta: eff.value, from: ctx.mv.name })
       return null
     case "MOD_NULLIFY_TAKEN":
-      ctx.mover.incomingDamageNullify = eff.value
+      plantMod(ctx.mover, { step: STEP.DAMAGE, kind: 'damageSetTo', value: eff.value, from: ctx.mv.name })
       return null
     // The conditional cousin: nothing is blocked unless the hit is small enough. Cleared the
     // same turn the unconditional one is (see the two battle hosts).
     case "NULLIFY_TAKEN_LE":
-      ctx.mover.incomingDamageNullifyAtMost = eff.value
+      plantMod(ctx.mover, { step: STEP.DAMAGE, kind: 'nullifyAtMost', value: eff.value, from: ctx.mv.name })
       return null
     // "If this Pokemon took no move damage on the previous opponent turn." Reads the flag the
     // hosts commit at end of turn, the same way DAMAGE_EXTRA_DICE_SUCCESS_SELF_* reads

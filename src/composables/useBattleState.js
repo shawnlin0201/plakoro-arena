@@ -1,3 +1,4 @@
+import { clearMods, modOf, modSum, STEP } from '../game/turnMods'
 import { reactive } from 'vue'
 import { loadMoveHistory, saveMoveHistoryForChar } from '../data/moveHistory'
 import { computeDisplayDamage as computeDisplayDamagePure, isCharaColorConditionMet } from '../game/damage'
@@ -28,11 +29,10 @@ function newPlayer() {
     hp: 0,
     maxHp: 0,
     lastMoveId: null,
-    incomingDamageMod: 0,
-    incomingDamageNullify: null,
-    // Set by NULLIFY_TAKEN_LE: incoming damage at or below this becomes zero. Same lifecycle
-    // as incomingDamageNullify above — set on your turn, consumed on theirs, then cleared.
-    incomingDamageNullifyAtMost: null,
+    // Everything an effect planted on this player for their next turn, tagged with the
+    // step it changes — see game/turnMods.js. One list, one lifecycle, in place of a
+    // field per effect each with its own clearing.
+    mods: [],
     // Whether this side took move damage on the turn that just finished. `committed` is the
     // settled value a later turn reads, mirroring committedLastMoveFailed.
     tookDamage: false,
@@ -42,9 +42,6 @@ function newPlayer() {
     // shown at the moment they apply, not simulations. Cleared when that turn starts.
     pendingNotices: [],
     // { orientations, from } while ふわふわひこう is shielding this side: the attacker is
-    // asked whether their character die landed on one of those faces, and if it did the
-    // damage — and only the damage — is cancelled. Same lifecycle as incomingDamageNullify.
-    incomingNullifyIfCharaDice: null,
     // Set by そそのかす: this side's move is chosen by their opponent next turn. Unlike the
     // notices above the app does enforce this one, because it owns the move-select screen.
     moveChosenByOpponent: false,
@@ -307,6 +304,11 @@ export function useBattleState(movesRef) {
         indices: null
       }
       mover.pendingDiceReroll = null
+      // A step of its own, and the one place in the game where the actor changes midway: the
+      // player who cast it names the dice, the player who owns them throws. Saying so here
+      // means no screen has to infer it, and the reroll panel wins by being the current phase
+      // rather than by sitting earlier in a v-if chain.
+      enterPhase("rerollPick", state.diceRerollRequest.byKey)
     }
   }
 
@@ -319,10 +321,13 @@ export function useBattleState(movesRef) {
   function submitDiceReroll(indices) {
     if (!state.diceRerollRequest || state.diceRerollRequest.indices) return
     state.diceRerollRequest = { ...state.diceRerollRequest, indices: [...indices] }
+    enterPhase("rerollThrow", state.diceRerollRequest.targetKey)
   }
 
   function clearDiceRerollRequest() {
     state.diceRerollRequest = null
+    // Back to the roll that was held up while this was resolved.
+    enterPhase("diceRoll", state.turnPlayer)
   }
 
   function resolveTurn(result) {
@@ -347,10 +352,7 @@ export function useBattleState(movesRef) {
     enterPhase("resolve")
 
     if (result.kind === "fail") {
-      opp.incomingDamageMod = 0
-      opp.incomingDamageNullify = null
-      opp.incomingDamageNullifyAtMost = null
-      opp.incomingNullifyIfCharaDice = null
+      clearMods(opp)
       proceedToAnimateWithCtx({ moverKey, mover, oppKey, opp, mv, dmgToOpp: 0, dmgToSelf: 0, isMiss: true })
       return
     }
@@ -673,7 +675,7 @@ export function useBattleState(movesRef) {
   // the card is explicit that other effects still apply, which is why this runs after the
   // effect queue rather than instead of it.
   function proceedToAnimateWithCtx(ctx) {
-    const shield = ctx.opp.incomingNullifyIfCharaDice
+    const shield = modOf(ctx.opp, STEP.DAMAGE, 'nullifyIfCharaDice')
     if (shield && !ctx.charaShieldAsked && Math.max(ctx.dmgToOpp, 0) > 0) {
       // Recorded in state, not captured in a closure: the answer comes back through
       // submitEffectPrompt, which re-enters this function from the stored context.
@@ -683,8 +685,9 @@ export function useBattleState(movesRef) {
     }
     state.effectCtx = null
     const { moverKey, mover, oppKey, opp, mv } = ctx
-    const dmgToOpp = (opp.incomingDamageNullify !== null && opp.incomingDamageNullify !== undefined)
-      ? Math.max(opp.incomingDamageNullify, 0)
+    const nullifyMod = modOf(opp, STEP.DAMAGE, 'damageSetTo')
+    const dmgToOpp = nullifyMod
+      ? Math.max(nullifyMod.value, 0)
       : Math.max(ctx.dmgToOpp, 0)
     const dmgToSelf = ctx.dmgToSelf
 
@@ -716,10 +719,7 @@ export function useBattleState(movesRef) {
           return
         }
         state.repeatActive = false
-        opp.incomingDamageMod = 0
-        opp.incomingDamageNullify = null
-        opp.incomingDamageNullifyAtMost = null
-        opp.incomingNullifyIfCharaDice = null
+        clearMods(opp)
         // Settle it for both sides: the attacker took nothing this turn unless their own
         // move hurt them, and the defender's flag was set when the damage landed.
         mover.committedTookDamage = mover.tookDamage

@@ -1,3 +1,5 @@
+import { modOf, modSum, STEP } from './turnMods'
+
 // Returns the character's matching weakness entry ({ type, damage }) for an incoming move
 // type, or null if the move doesn't hit a weakness. A character can carry more than one
 // weakness, but a move only ever has one type, so at most one entry can match.
@@ -51,19 +53,22 @@ export function computeDisplayDamage(mv, mover, target, movesMap) {
     base += hitWeakness.damage
     mode = "weak"
   }
-  if (target.incomingDamageMod) {
-    base += target.incomingDamageMod
-    if (mode === "normal") mode = target.incomingDamageMod > 0 ? "up" : "down"
+  // What the defender was left with on their opponent's last turn. Order matters and is the
+  // reason these are applied here rather than wherever each was planted: a flat adjustment
+  // first, then anything that overrides the figure outright, then the thresholds — which have
+  // to see the final number, so a big hit still lands in full.
+  const delta = modSum(target, STEP.DAMAGE, 'damageDelta')
+  if (delta) {
+    base += delta
+    if (mode === "normal") mode = delta > 0 ? "up" : "down"
   }
-  if (target.incomingDamageNullify !== null && target.incomingDamageNullify !== undefined) {
-    base = target.incomingDamageNullify
+  const setTo = modOf(target, STEP.DAMAGE, 'damageSetTo')
+  if (setTo) {
+    base = setTo.value
     mode = base < mv.baseDamage ? "down" : base > mv.baseDamage ? "up" : "normal"
   }
-  // ボスゴドラ's shields: "if this would deal N or less, it deals nothing". Unlike the
-  // unconditional nullify above it has to see the damage first, so it is applied last — after
-  // every modifier that could push the figure over or under the line. A big hit lands in full.
-  if (target.incomingDamageNullifyAtMost !== null && target.incomingDamageNullifyAtMost !== undefined
-      && base <= target.incomingDamageNullifyAtMost) {
+  const atMost = modOf(target, STEP.DAMAGE, 'nullifyAtMost')
+  if (atMost && base <= atMost.value) {
     base = 0
     mode = "down"
   }

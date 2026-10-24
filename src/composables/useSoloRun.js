@@ -1,3 +1,4 @@
+import { clearMods, modOf, modSum, STEP } from '../game/turnMods'
 import { reactive } from 'vue'
 import { computeDisplayDamage as computeDisplayDamagePure, isCharaColorConditionMet } from '../game/damage'
 import { advanceEffectQueue } from '../game/effectQueue'
@@ -33,11 +34,10 @@ function newCombatant() {
     lastMoveFailed: false,
     committedLastMoveId: null,
     committedLastMoveFailed: false,
-    incomingDamageMod: 0,
-    incomingDamageNullify: null,
-    // Set by NULLIFY_TAKEN_LE: incoming damage at or below this becomes zero. Same lifecycle
-    // as incomingDamageNullify above — set on your turn, consumed on theirs, then cleared.
-    incomingDamageNullifyAtMost: null,
+    // Everything an effect planted on this player for their next turn, tagged with the
+    // step it changes — see game/turnMods.js. One list, one lifecycle, in place of a
+    // field per effect each with its own clearing.
+    mods: [],
     // Whether this side took move damage on the turn that just finished. `committed` is the
     // settled value a later turn reads, mirroring committedLastMoveFailed.
     tookDamage: false,
@@ -47,9 +47,6 @@ function newCombatant() {
     // shown at the moment they apply, not simulations. Cleared when that turn starts.
     pendingNotices: [],
     // { orientations, from } while ふわふわひこう is shielding this side: the attacker is
-    // asked whether their character die landed on one of those faces, and if it did the
-    // damage — and only the damage — is cancelled. Same lifecycle as incomingDamageNullify.
-    incomingNullifyIfCharaDice: null,
     // Set by そそのかす: this side's move is chosen by their opponent next turn. Unlike the
     // notices above the app does enforce this one, because it owns the move-select screen.
     moveChosenByOpponent: false,
@@ -185,10 +182,7 @@ export function useSoloRun(charactersRef, movesRef) {
     c.lastMoveFailed = false
     c.committedLastMoveId = null
     c.committedLastMoveFailed = false
-    c.incomingDamageMod = 0
-    c.incomingDamageNullify = null
-    c.incomingDamageNullifyAtMost = null
-    c.incomingNullifyIfCharaDice = null
+    clearMods(c)
     c.tookDamage = false
     c.committedTookDamage = false
     c.pendingNotices = []
@@ -378,10 +372,7 @@ export function useSoloRun(charactersRef, movesRef) {
     state.phase = "resolve"
 
     if (result.kind === "fail") {
-      opp.incomingDamageMod = 0
-      opp.incomingDamageNullify = null
-      opp.incomingDamageNullifyAtMost = null
-      opp.incomingNullifyIfCharaDice = null
+      clearMods(opp)
       proceedToAnimateWithCtx({ moverKey, mover, oppKey, opp, mv, dmgToOpp: 0, dmgToSelf: 0, isMiss: true })
       return
     }
@@ -565,7 +556,7 @@ export function useSoloRun(charactersRef, movesRef) {
   // the card is explicit that other effects still apply, which is why this runs after the
   // effect queue rather than instead of it.
   function proceedToAnimateWithCtx(ctx) {
-    const shield = ctx.opp.incomingNullifyIfCharaDice
+    const shield = modOf(ctx.opp, STEP.DAMAGE, 'nullifyIfCharaDice')
     if (shield && !ctx.charaShieldAsked && Math.max(ctx.dmgToOpp, 0) > 0) {
       if (state.effectCtx) state.effectCtx.charaShieldAsked = true
       showCharaShieldPrompt(shield, ctx)
@@ -573,8 +564,9 @@ export function useSoloRun(charactersRef, movesRef) {
     }
     state.effectCtx = null
     const { moverKey, mover, oppKey, opp, mv } = ctx
-    let dmgToOpp = (opp.incomingDamageNullify !== null && opp.incomingDamageNullify !== undefined)
-      ? Math.max(opp.incomingDamageNullify, 0)
+    let nullifyMod = modOf(opp, STEP.DAMAGE, 'damageSetTo')
+    let dmgToOpp = nullifyMod
+      ? Math.max(nullifyMod.value, 0)
       : Math.max(ctx.dmgToOpp, 0)
     dmgToOpp = Math.max(dmgToOpp - (opp.defBonus || 0), 0)
     const dmgToSelf = ctx.dmgToSelf
@@ -606,10 +598,7 @@ export function useSoloRun(charactersRef, movesRef) {
           return
         }
         state.repeatActive = false
-        opp.incomingDamageMod = 0
-        opp.incomingDamageNullify = null
-        opp.incomingDamageNullifyAtMost = null
-        opp.incomingNullifyIfCharaDice = null
+        clearMods(opp)
         // Settle it for both sides: the attacker took nothing this turn unless their own
         // move hurt them, and the defender's flag was set when the damage landed.
         mover.committedTookDamage = mover.tookDamage
