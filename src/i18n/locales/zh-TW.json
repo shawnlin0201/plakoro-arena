@@ -102,7 +102,6 @@
     "enemyRollTitle": "對手要擲{label}能量骰",
     "diceSubSingle": "請選擇擲出的能量數量。",
     "diceSubMulti": "請選擇擲出最多的能量類型的數量。",
-    "charaDiceCountTitle": "共擲{n}次角色骰，選擇成功的次數。",
     "charaDiceRepeatTitle": "選擇角色骰連續成功的次數。",
     "bindWazaTitle": "請選擇下回合無法使用的招式",
     "bindWazaRemaining": "還要選{remaining}個",
@@ -116,7 +115,11 @@
     "charaShieldPrefix": "對手上回合使用了「{from}」。你這回合的角色骰是否擲出了 ",
     "charaShieldSuffix": "？擲出的話，這招的傷害無效（傷害以外的效果照常）。",
     "charaShieldYes": "有，傷害無效",
-    "charaShieldNo": "沒有，照常結算"
+    "charaShieldNo": "沒有，照常結算",
+    "charaDiceStepTitle": "第 {index} / {total} 次擲角色骰",
+    "charaDiceStepOpen": "第 {index} 次擲角色骰（失手為止）",
+    "charaDiceStepHint": "擲到 ",
+    "charaDiceStepHits": " 算成功　目前 {hits} 次"
   },
   "turnResult": {
     "title": "本回合結果",
@@ -126,11 +129,11 @@
     "charaYourTurn": "輪到你擲角色骰",
     "charaWaiting": "對方正在擲角色骰…",
     "charaOrientationHint": "擲出以下方向則成功：",
-    "charaProgressCount": "已成功{count}次，還需再擲{remaining}次",
     "charaProgressRepeat": "已連續成功{count}次，繼續擲到失手為止",
     "throwAgain": "再擲一次",
     "energyYourTurn": "輪到你擲{n}顆能量骰",
-    "energyWaiting": "對方正在擲{n}顆能量骰…"
+    "energyWaiting": "對方正在擲{n}顆能量骰…",
+    "charaProgressStep": "第 {index} / {total} 擲，目前成功 {hits} 次"
   },
   "win": {
     "victorySuffix": "獲勝！",

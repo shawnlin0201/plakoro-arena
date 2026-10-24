@@ -102,7 +102,6 @@
     "enemyRollTitle": "相手はエネコロを{label}振る",
     "diceSubSingle": "出たエネルギーの数を選んで下さい。",
     "diceSubMulti": "一番多く出たタイプのエネルギーの数を選んで下さい。",
-    "charaDiceCountTitle": "合計{n}回キャラコロを振り、成功した数を選択。",
     "charaDiceRepeatTitle": "キャラコロが連続で成功した数を選択。",
     "bindWazaTitle": "次のターン使用できなくするワザを選択して下さい",
     "bindWazaRemaining": "あと{remaining}個選んで下さい",
@@ -116,7 +115,11 @@
     "charaShieldPrefix": "相手は前の番に「{from}」を使った。この番のキャラコロは ",
     "charaShieldSuffix": " が出た？出ていれば、このワザのダメージは受けない（ダメージ以外の効果は受ける）。",
     "charaShieldYes": "出た（ダメージ無効）",
-    "charaShieldNo": "出ていない"
+    "charaShieldNo": "出ていない",
+    "charaDiceStepTitle": "キャラコロ {total} 回中 {index} 回目",
+    "charaDiceStepOpen": "キャラコロ {index} 回目（失敗するまで）",
+    "charaDiceStepHint": "成功は ",
+    "charaDiceStepHits": "　ここまで {hits} 回"
   },
   "turnResult": {
     "title": "このターンの結果",
@@ -126,11 +129,11 @@
     "charaYourTurn": "あなたの番です。キャラコロを振ってください",
     "charaWaiting": "相手がキャラコロを振っています…",
     "charaOrientationHint": "出たら成功：",
-    "charaProgressCount": "成功{count}回、残り{remaining}回",
     "charaProgressRepeat": "連続成功{count}回、失敗するまで続けます",
     "throwAgain": "もう一度振る",
     "energyYourTurn": "あなたの番です。エネコロを{n}個振ってください",
-    "energyWaiting": "相手がエネコロを{n}個振っています…"
+    "energyWaiting": "相手がエネコロを{n}個振っています…",
+    "charaProgressStep": "{total} 回中 {index} 回目 — ここまで {hits} 回成功"
   },
   "win": {
     "victorySuffix": "勝利！",

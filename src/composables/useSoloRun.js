@@ -1,6 +1,6 @@
 import { reactive } from 'vue'
 import { computeDisplayDamage as computeDisplayDamagePure, isCharaColorConditionMet } from '../game/damage'
-import { runEffectQueue as runEffectQueueShared } from '../game/effectQueue'
+import { advanceEffectQueue } from '../game/effectQueue'
 import { buildAiOpponentForTier, scaleMoveForFloor, maxAffordableCostForTier } from '../game/aiOpponent'
 import { generateActMap, reachableNodeIds as mapReachableNodeIds } from '../game/mapGen'
 import { drawRandomEvent } from '../game/eventPool'
@@ -85,6 +85,9 @@ function freshRunState() {
     ai: newCombatant(),
     selectedMove: null,
     effectPrompt: null,
+    // The effect queue's position while one is running — see useBattleState's field of the
+    // same name. Plain data so the turn can be resumed rather than held in a closure.
+    effectCtx: null,
     repeatActive: false,
     upgradeChoices: null,
     learnMoveChoices: null,
@@ -355,17 +358,6 @@ export function useSoloRun(charactersRef, movesRef) {
 
   // --- resolution (shared effect-queue engine) ---
 
-  const effectQueueHooks = {
-    showDicePrompt,
-    showCharaDiceCountPrompt,
-    showCharaDiceRepeatPrompt,
-    showBindWazaPrompt,
-    showEneCountPrompt,
-    showCharaDiceEnemyManualPrompt,
-    showCharaDiceComboEnemyPrompt,
-    showCharaDiceSelectPrompt
-  }
-
   function resolveTurn(result) {
     const moverKey = state.turn
     const mover = state[moverKey]
@@ -400,46 +392,73 @@ export function useSoloRun(charactersRef, movesRef) {
       queue.push({ type: result.ce.type, value: result.ce.value })
     }
     const dmgInfo = result.dmgInfo || computeDisplayDamage(mv, mover, opp)
-    const ctx = { moverKey, mover, oppKey, opp, mv, dmgToOpp: dmgInfo.raw + (mover.atkBonus || 0), dmgToSelf: 0 }
-    runEffectQueueShared(queue, 0, ctx, effectQueueHooks, () => proceedToAnimateWithCtx(ctx))
+    const ceIndex = result.kind === "chara" && result.ce ? (mv.chara || []).indexOf(result.ce) : null
+    state.effectCtx = {
+      moverKey, oppKey, moveId: mv.id, ceIndex,
+      queue, cursor: 0,
+      dmgToOpp: dmgInfo.raw + (mover.atkBonus || 0), dmgToSelf: 0,
+      charaShieldAsked: false
+    }
+    runEffects()
+  }
+
+  // Same shape as duel mode's — see useBattleState for why none of this is held in closures.
+  function hydrateEffectCtx() {
+    const c = state.effectCtx
+    if (!c) return null
+    const mv = movesRef.value[c.moveId]
+    const chara = (mv && mv.chara) || []
+    return {
+      ...c,
+      mover: state.players[c.moverKey],
+      opp: state.players[c.oppKey],
+      mv,
+      ce: c.ceIndex === null || c.ceIndex < 0 ? null : chara[c.ceIndex]
+    }
+  }
+
+  function runEffects(answer) {
+    const ctx = hydrateEffectCtx()
+    if (!ctx) return
+    const ask = advanceEffectQueue(ctx, answer)
+    Object.assign(state.effectCtx, {
+      cursor: ctx.cursor, dmgToOpp: ctx.dmgToOpp, dmgToSelf: ctx.dmgToSelf,
+      // Multi-throw effects keep a tally here between throws; plain data, so it survives.
+      multi: ctx.multi || null
+    })
+    if (ask) {
+      presentAsk(ask, ctx)
+      return
+    }
+    proceedToAnimateWithCtx(ctx)
+  }
+
+  // Solo has no online paths and no second device, so every request is a question for the one
+  // player at the table.
+  function presentAsk(ask, ctx) {
+    if (ask.kind === 'charaDiceSelect' && ask.target === 'self' && state.charaDieFace
+        && ask.orientations.includes(state.charaDieFace)) {
+      submitEffectPrompt(state.charaDieFace)
+      return
+    }
+    const display = ask.kind === 'bindWaza'
+      ? { picked: [] }
+      : { mv: ctx.mv, dmgInfo: computeDisplayDamage(ctx.mv, ctx.mover, ctx.opp), mover: ctx.mover, opp: ctx.opp }
+    state.effectPrompt = { ...ask, ...display }
+    state.phase = "effectPrompt"
   }
 
   // --- effect prompts (same shapes as duel mode) ---
 
-  function showDicePrompt(n, multiplier, ctx, onPick) {
-    state.effectPrompt = { kind: "diceNumber", max: n * 2, multiplier, onPick }
-    state.phase = "effectPrompt"
-  }
-  function showCharaDiceCountPrompt(n, effectValue, ctx, onPick) {
-    const dmgInfo = computeDisplayDamage(ctx.mv, ctx.mover, ctx.opp)
-    state.effectPrompt = { kind: "charaDiceCount", n, effectValue, mv: ctx.mv, dmgInfo, mover: ctx.mover, opp: ctx.opp, onPick }
-    state.phase = "effectPrompt"
-  }
-  function showCharaDiceRepeatPrompt(effectValue, ctx, onPick) {
-    const dmgInfo = computeDisplayDamage(ctx.mv, ctx.mover, ctx.opp)
-    state.effectPrompt = { kind: "charaDiceRepeat", effectValue, mv: ctx.mv, dmgInfo, mover: ctx.mover, opp: ctx.opp, onPick }
-    state.phase = "effectPrompt"
-  }
-  function showBindWazaPrompt(targetKey, count, onDone) {
-    state.effectPrompt = { kind: "bindWaza", targetKey, count, picked: [], onDone }
-    state.phase = "effectPrompt"
-  }
-  // `countedType` is the energy being counted, which is usually but NOT always the move's own
-  // type — EBW02-049 is a Fire-cost Dragon move counting Lightning.
-  function showEneCountPrompt(effectValue, ctx, onPick, countedType = ctx.mv.type) {
-    const dmgInfo = computeDisplayDamage(ctx.mv, ctx.mover, ctx.opp)
-    state.effectPrompt = { kind: "eneCount", effectValue, countedType, mv: ctx.mv, dmgInfo, mover: ctx.mover, opp: ctx.opp, onPick }
-    state.phase = "effectPrompt"
-  }
   // A yes/no about the die the attacker just physically threw. Same self-report shape as
   // showCharaDiceEnemyManualPrompt below, but about the *mover's* die and asked on behalf of
   // the defender's standing shield rather than the move being cast.
-  function showCharaShieldPrompt(shield, ctx, onPick) {
+  function showCharaShieldPrompt(shield, ctx) {
     // When the app threw the die itself, the answer is already on screen — asking the player
     // to retype it would be asking them to confirm something the app knows better. Only the
     // physical-dice modes have a question to ask.
     if (state.charaDieFace) {
-      onPick(shield.orientations.includes(state.charaDieFace))
+      submitEffectPrompt(shield.orientations.includes(state.charaDieFace))
       return
     }
     state.effectPrompt = {
@@ -448,41 +467,26 @@ export function useSoloRun(charactersRef, movesRef) {
       sourceName: shield.from,
       mv: ctx.mv,
       mover: ctx.mover,
-      opp: ctx.opp,
-      onPick
+      opp: ctx.opp
     }
     state.phase = "effectPrompt"
   }
 
-  function showCharaDiceEnemyManualPrompt(orientations, effectValue, ctx, onPick) {
-    const dmgInfo = computeDisplayDamage(ctx.mv, ctx.mover, ctx.opp)
-    state.effectPrompt = { kind: "charaDiceEnemyManual", orientations, effectValue, mv: ctx.mv, dmgInfo, mover: ctx.mover, opp: ctx.opp, onPick }
-    state.phase = "effectPrompt"
-  }
-
-  // The opponent rolls their character die n times; the player reports how many landed on one
-  // of `orientations`. A count, not a yes/no — that's what separates it from the prompt above.
-  function showCharaDiceComboEnemyPrompt(n, orientations, effectValue, ctx, onPick) {
-    const dmgInfo = computeDisplayDamage(ctx.mv, ctx.mover, ctx.opp)
-    state.effectPrompt = { kind: "charaDiceComboEnemy", n, orientations, effectValue, mv: ctx.mv, dmgInfo, mover: ctx.mover, opp: ctx.opp, onPick }
-    state.phase = "effectPrompt"
-  }
-
-  // The player reports which orientation their character die actually showed, and that becomes
-  // the orientation their (or the opponent's) die is pinned to next turn.
-  function showCharaDiceSelectPrompt(orientations, effectValue, ctx, target, onPick) {
-    const dmgInfo = computeDisplayDamage(ctx.mv, ctx.mover, ctx.opp)
-    state.effectPrompt = { kind: "charaDiceSelect", orientations, effectValue, target, mv: ctx.mv, dmgInfo, mover: ctx.mover, opp: ctx.opp, onPick }
-    state.phase = "effectPrompt"
-  }
-
   function submitEffectPrompt(value) {
-    const ep = state.effectPrompt
-    if (!ep) return
-    const cb = ep.onPick
+    const wasShield = state.effectPrompt && state.effectPrompt.kind === "charaShield"
     state.effectPrompt = null
     state.phase = "resolve"
-    cb(value)
+    if (wasShield) {
+      const ctx = hydrateEffectCtx()
+      if (!ctx) return
+      if (value) {
+        ctx.dmgToOpp = 0
+        state.effectCtx.dmgToOpp = 0
+      }
+      proceedToAnimateWithCtx(ctx)
+      return
+    }
+    runEffects(value)
   }
 
   function pickBindWazaMove(mid) {
@@ -491,11 +495,10 @@ export function useSoloRun(charactersRef, movesRef) {
     if (ep.picked.includes(mid)) return
     ep.picked.push(mid)
     if (ep.picked.length >= ep.count) {
-      const cb = ep.onDone
       const picked = ep.picked.slice()
       state.effectPrompt = null
       state.phase = "resolve"
-      cb(picked)
+      runEffects(picked)
     }
   }
 
@@ -564,13 +567,11 @@ export function useSoloRun(charactersRef, movesRef) {
   function proceedToAnimateWithCtx(ctx) {
     const shield = ctx.opp.incomingNullifyIfCharaDice
     if (shield && !ctx.charaShieldAsked && Math.max(ctx.dmgToOpp, 0) > 0) {
-      ctx.charaShieldAsked = true
-      showCharaShieldPrompt(shield, ctx, hit => {
-        if (hit) ctx.dmgToOpp = 0
-        proceedToAnimateWithCtx(ctx)
-      })
+      if (state.effectCtx) state.effectCtx.charaShieldAsked = true
+      showCharaShieldPrompt(shield, ctx)
       return
     }
+    state.effectCtx = null
     const { moverKey, mover, oppKey, opp, mv } = ctx
     let dmgToOpp = (opp.incomingDamageNullify !== null && opp.incomingDamageNullify !== undefined)
       ? Math.max(opp.incomingDamageNullify, 0)

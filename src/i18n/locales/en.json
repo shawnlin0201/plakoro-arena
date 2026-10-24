@@ -102,7 +102,6 @@
     "enemyRollTitle": "Opponent rolls {label} energy dice",
     "diceSubSingle": "Choose the number of energy shown.",
     "diceSubMulti": "Choose the count of the most-rolled energy type.",
-    "charaDiceCountTitle": "Roll the character die {n} times total, then choose the number of successes.",
     "charaDiceRepeatTitle": "Choose how many times in a row the character die succeeded.",
     "bindWazaTitle": "Choose the move(s) that can't be used next turn",
     "bindWazaRemaining": "Choose {remaining} more",
@@ -116,7 +115,11 @@
     "charaShieldPrefix": "Your opponent used {from} last turn. Did your character die land on ",
     "charaShieldSuffix": "? If it did, this move deals no damage (other effects still apply).",
     "charaShieldYes": "Yes — no damage",
-    "charaShieldNo": "No — damage lands"
+    "charaShieldNo": "No — damage lands",
+    "charaDiceStepTitle": "Character die, throw {index} of {total}",
+    "charaDiceStepOpen": "Character die, throw {index} — keep going until it misses",
+    "charaDiceStepHint": "Counts as a hit on ",
+    "charaDiceStepHits": " — {hits} so far"
   },
   "turnResult": {
     "title": "Turn Result",
@@ -126,11 +129,11 @@
     "charaYourTurn": "Your turn to throw the character die",
     "charaWaiting": "Opponent is throwing the character die…",
     "charaOrientationHint": "Success if it lands on:",
-    "charaProgressCount": "{count} success(es) so far, {remaining} more throw(s) to go",
     "charaProgressRepeat": "{count} success(es) in a row — keep going until it misses",
     "throwAgain": "Throw Again",
     "energyYourTurn": "Your turn to throw {n} energy dice",
-    "energyWaiting": "Opponent is throwing {n} energy dice…"
+    "energyWaiting": "Opponent is throwing {n} energy dice…",
+    "charaProgressStep": "Throw {index} of {total} — {hits} hit(s) so far"
   },
   "win": {
     "victorySuffix": " Wins!",
