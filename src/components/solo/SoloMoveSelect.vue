@@ -1,4 +1,5 @@
 <script setup>
+import { modOf, STEP } from '../../game/turnMods'
 import { computed, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { typeBgColor } from '../../data/constants'
@@ -25,12 +26,13 @@ const rows = computed(() => player.value.moveIds.map(mid => {
   // Show as "XX(+YY)" so the player can see their attack bonus is applied on top of
   // the move's own number, matching how resolveTurn actually adds atkBonus at cast time.
   const dmgInfo = atk > 0 ? { ...baseDmgInfo, display: `${baseDmgInfo.display}(+${atk})` } : baseDmgInfo
-  const isBanned = (player.value.committedBannedMoveIds || []).includes(mid)
+  const ban = modOf(player.value, STEP.MOVE_SELECT, 'banMoves')
+  const isBanned = !!(ban && ban.ids.includes(mid))
   // Same labels as duel mode's MovesGrid — a disabled card has to say why it's disabled,
   // otherwise it reads as the app being broken.
   const disableBadge = disabled
     ? (isBanned
-      ? { kind: 'bind', label: player.value.committedBannedMoveSourceName || t('moveCard.unusable') }
+      ? { kind: 'bind', label: (ban && ban.from) || t('moveCard.unusable') }
       : { kind: 'lastused', label: t('moveCard.usedLastTurn') })
     : null
   return { mid, mv, disabled, dmgInfo, disableBadge }

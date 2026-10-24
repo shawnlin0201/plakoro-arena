@@ -1,4 +1,5 @@
 <script setup>
+import { modOf, STEP } from '../game/turnMods'
 import { computed, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { typeBgColor } from '../data/constants'
@@ -29,7 +30,7 @@ const isMyTurn = computed(() => !online.myKey.value || online.myKey.value === pi
 
 // Told to the person waiting, since "the opponent is thinking" is misleading when the one
 // thinking is choosing *for* them.
-const waitingLabel = computed(() => (p.value.moveChosenByOpponent
+const waitingLabel = computed(() => (modOf(p.value, STEP.MOVE_SELECT, 'pickedByOpponent')
   ? t('moveSelect.opponentPickingYours')
   : t('moveSelect.opponentThinking')))
 

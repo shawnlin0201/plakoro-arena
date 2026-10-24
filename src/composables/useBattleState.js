@@ -44,16 +44,11 @@ function newPlayer() {
     // { orientations, from } while ふわふわひこう is shielding this side: the attacker is
     // Set by そそのかす: this side's move is chosen by their opponent next turn. Unlike the
     // notices above the app does enforce this one, because it owns the move-select screen.
-    moveChosenByOpponent: false,
     // Set by ほりかえす / ジュエルフラッシュ: { n, from }. Consumed the moment this side's
     // next roll settles, which turns it into state.diceRerollRequest.
     pendingDiceReroll: null,
     diceMod: 0,
     diceModBadges: [],
-    bannedMoveIds: [],
-    bannedMoveSourceName: "",
-    committedBannedMoveIds: [],
-    committedBannedMoveSourceName: "",
     charaDiceBlocked: false,
     // Online-only: this side has tapped "ready" and is waiting for the opponent, so the first
     // player can be drawn instead of either side just picking themselves. Unused in hotseat.
@@ -249,8 +244,9 @@ export function useBattleState(movesRef) {
    */
   // Whose decision the move for `turnKey` is. そそのかす is the only thing that moves it.
   function moveActorKey(turnKey) {
-    const p = state.players[turnKey]
-    return p && p.moveChosenByOpponent ? opponentKey(turnKey) : turnKey
+    return modOf(state.players[turnKey], STEP.MOVE_SELECT, 'pickedByOpponent')
+      ? opponentKey(turnKey)
+      : turnKey
   }
 
   function enterPhase(kind, actorKey = state.turnPlayer) {
@@ -339,20 +335,20 @@ export function useBattleState(movesRef) {
     const mv = MOVES[state.selectedMove]
     mover.lastMoveId = state.selectedMove
     mover.lastMoveFailed = result.kind === "fail"
-    mover.bannedMoveIds = []
-    mover.bannedMoveSourceName = ""
     mover.diceMod = 0
     mover.diceModBadges = []
     mover.charaDiceBlocked = false
     mover.fixCharaDice = null
     // Consumed by the turn they applied to, alongside every other next-turn modifier.
     mover.pendingNotices = []
-    mover.moveChosenByOpponent = false
+    // The mover has now picked and acted, so whatever was planted for their moveSelect is
+    // spent. Their damage mods are not — those are tested when the other side attacks.
+    clearMods(mover, [STEP.MOVE_SELECT])
     state.diceRerollRequest = null
     enterPhase("resolve")
 
     if (result.kind === "fail") {
-      clearMods(opp)
+      clearMods(opp, [STEP.DAMAGE])
       proceedToAnimateWithCtx({ moverKey, mover, oppKey, opp, mv, dmgToOpp: 0, dmgToSelf: 0, isMiss: true })
       return
     }
@@ -719,7 +715,7 @@ export function useBattleState(movesRef) {
           return
         }
         state.repeatActive = false
-        clearMods(opp)
+        clearMods(opp, [STEP.DAMAGE])
         // Settle it for both sides: the attacker took nothing this turn unless their own
         // move hurt them, and the defender's flag was set when the damage landed.
         mover.committedTookDamage = mover.tookDamage
@@ -728,10 +724,6 @@ export function useBattleState(movesRef) {
         opp.tookDamage = false
         mover.committedLastMoveId = mover.lastMoveId
         mover.committedLastMoveFailed = mover.lastMoveFailed
-        mover.committedBannedMoveIds = mover.bannedMoveIds
-        mover.committedBannedMoveSourceName = mover.bannedMoveSourceName
-        opp.committedBannedMoveIds = opp.bannedMoveIds
-        opp.committedBannedMoveSourceName = opp.bannedMoveSourceName
         // Online only: the turn doesn't actually hand off until the side that just got hit taps
         // through a summary of the damage + dice result — otherwise the screen can flip to their
         // move-select before they've had a chance to see what happened (see

@@ -1,4 +1,5 @@
 <script setup>
+import { modOf, STEP } from '../game/turnMods'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { computeDisplayDamage } from '../game/damage'
@@ -17,12 +18,13 @@ const emit = defineEmits(['pick'])
 const rows = computed(() => props.player.moveIds.map(mid => {
   const mv = props.movesMap[mid]
   const isLastUsed = mid === props.player.committedLastMoveId
-  const isBanned = !!(props.player.committedBannedMoveIds && props.player.committedBannedMoveIds.includes(mid))
+  const ban = modOf(props.player, STEP.MOVE_SELECT, 'banMoves')
+  const isBanned = !!(ban && ban.ids.includes(mid))
   const disabled = isLastUsed || isBanned
   const dmgInfo = computeDisplayDamage(mv, props.player, props.opponent, props.movesMap)
   const disableBadge = disabled
     ? (isBanned
-      ? { kind: 'bind', label: props.player.committedBannedMoveSourceName || t('moveCard.unusable') }
+      ? { kind: 'bind', label: (ban && ban.from) || t('moveCard.unusable') }
       : { kind: 'lastused', label: t('moveCard.usedLastTurn') })
     : null
   return { mid, mv, disabled, dmgInfo, disableBadge }

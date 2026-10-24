@@ -49,16 +49,11 @@ function newCombatant() {
     // { orientations, from } while ふわふわひこう is shielding this side: the attacker is
     // Set by そそのかす: this side's move is chosen by their opponent next turn. Unlike the
     // notices above the app does enforce this one, because it owns the move-select screen.
-    moveChosenByOpponent: false,
     // Solo never fires this (no opponent casts ほりかえす), but the shape stays identical to
     // the duel host so a shared effect handler cannot write a field that does not exist.
     pendingDiceReroll: null,
     diceMod: 0,
     diceModBadges: [],
-    bannedMoveIds: [],
-    bannedMoveSourceName: "",
-    committedBannedMoveIds: [],
-    committedBannedMoveSourceName: "",
     charaDiceBlocked: false,
     // See useBattleState: set by FIX_CHARADICE_*, consumed on this player's next turn.
     fixCharaDice: null,
@@ -182,17 +177,12 @@ export function useSoloRun(charactersRef, movesRef) {
     c.lastMoveFailed = false
     c.committedLastMoveId = null
     c.committedLastMoveFailed = false
-    clearMods(c)
+    clearMods(c, [STEP.DAMAGE])
     c.tookDamage = false
     c.committedTookDamage = false
     c.pendingNotices = []
-    c.moveChosenByOpponent = false
     c.diceMod = 0
     c.diceModBadges = []
-    c.bannedMoveIds = []
-    c.bannedMoveSourceName = ""
-    c.committedBannedMoveIds = []
-    c.committedBannedMoveSourceName = ""
     c.charaDiceBlocked = false
     c.fixCharaDice = null
     c.attackAnim = null
@@ -271,7 +261,8 @@ export function useSoloRun(charactersRef, movesRef) {
   // every option, but a tower run starts at 2 moves, where they can.
   function availableMoveIds(who) {
     const c = state[who]
-    return c.moveIds.filter(mid => mid !== c.committedLastMoveId && !(c.committedBannedMoveIds || []).includes(mid))
+    const ban = modOf(c, STEP.MOVE_SELECT, 'banMoves')
+    return c.moveIds.filter(mid => mid !== c.committedLastMoveId && !(ban && ban.ids.includes(mid)))
   }
 
   function pickMove(mid) {
@@ -283,7 +274,8 @@ export function useSoloRun(charactersRef, movesRef) {
 
   function aiTakeTurn() {
     const ai = state.ai
-    const notSealed = ai.moveIds.filter(mid => !(ai.committedBannedMoveIds || []).includes(mid))
+    const aiBan = modOf(ai, STEP.MOVE_SELECT, 'banMoves')
+    const notSealed = ai.moveIds.filter(mid => !(aiBan && aiBan.ids.includes(mid)))
     if (notSealed.length === 0) {
       // Every move the AI knows is actually sealed — it truly has nothing it can do.
       state.phase = "aiSkip"
@@ -304,14 +296,11 @@ export function useSoloRun(charactersRef, movesRef) {
     const ai = state.ai
     ai.committedLastMoveId = null
     ai.committedLastMoveFailed = false
-    ai.committedBannedMoveIds = []
-    ai.committedBannedMoveSourceName = ""
-    // A skipped turn never runs resolveTurn for the AI, so its live bannedMoveIds (only ever
-    // cleared at the top of resolveTurn for whoever's turn it is) would otherwise still hold
-    // the seal — and get re-committed onto the AI after every later player turn, making the
-    // seal outlast its intended one-turn duration.
-    ai.bannedMoveIds = []
-    ai.bannedMoveSourceName = ""
+
+    // resolveTurn never runs for a skipped turn, so the modifiers planted for it have to be
+    // spent here or they would carry into the next one. (The old two-field version was worse
+    // than that: the live seal got re-committed after every later turn, so it never expired.)
+    clearMods(ai, [STEP.MOVE_SELECT])
     state.turn = "player"
     state.selectedMove = null
     state.phase = "moveSelect"
@@ -324,12 +313,9 @@ export function useSoloRun(charactersRef, movesRef) {
     const p = state.player
     p.committedLastMoveId = null
     p.committedLastMoveFailed = false
-    p.committedBannedMoveIds = []
-    p.committedBannedMoveSourceName = ""
-    // Same reasoning as skipAiTurn: resolveTurn never runs for a skipped turn, so the live
-    // seal fields have to be cleared here or they'd be re-committed on every later turn.
-    p.bannedMoveIds = []
-    p.bannedMoveSourceName = ""
+
+    // Same reasoning as skipAiTurn.
+    clearMods(p, [STEP.MOVE_SELECT])
     state.turn = "ai"
     state.selectedMove = null
     state.phase = "moveSelect"
@@ -360,19 +346,19 @@ export function useSoloRun(charactersRef, movesRef) {
     const mv = moveForTurn()
     mover.lastMoveId = state.selectedMove
     mover.lastMoveFailed = result.kind === "fail"
-    mover.bannedMoveIds = []
-    mover.bannedMoveSourceName = ""
     mover.diceMod = 0
     mover.diceModBadges = []
     mover.charaDiceBlocked = false
     mover.fixCharaDice = null
     // Consumed by the turn they applied to, alongside every other next-turn modifier.
     mover.pendingNotices = []
-    mover.moveChosenByOpponent = false
+    // The mover has now picked and acted, so whatever was planted for their moveSelect is
+    // spent. Their damage mods are not — those are tested when the other side attacks.
+    clearMods(mover, [STEP.MOVE_SELECT])
     state.phase = "resolve"
 
     if (result.kind === "fail") {
-      clearMods(opp)
+      clearMods(opp, [STEP.DAMAGE])
       proceedToAnimateWithCtx({ moverKey, mover, oppKey, opp, mv, dmgToOpp: 0, dmgToSelf: 0, isMiss: true })
       return
     }
@@ -598,7 +584,7 @@ export function useSoloRun(charactersRef, movesRef) {
           return
         }
         state.repeatActive = false
-        clearMods(opp)
+        clearMods(opp, [STEP.DAMAGE])
         // Settle it for both sides: the attacker took nothing this turn unless their own
         // move hurt them, and the defender's flag was set when the damage landed.
         mover.committedTookDamage = mover.tookDamage
@@ -607,10 +593,6 @@ export function useSoloRun(charactersRef, movesRef) {
         opp.tookDamage = false
         mover.committedLastMoveId = mover.lastMoveId
         mover.committedLastMoveFailed = mover.lastMoveFailed
-        mover.committedBannedMoveIds = mover.bannedMoveIds
-        mover.committedBannedMoveSourceName = mover.bannedMoveSourceName
-        opp.committedBannedMoveIds = opp.bannedMoveIds
-        opp.committedBannedMoveSourceName = opp.bannedMoveSourceName
         state.turn = oppKey
         state.selectedMove = null
         state.phase = "moveSelect"

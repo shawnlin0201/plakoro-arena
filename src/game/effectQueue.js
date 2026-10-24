@@ -362,7 +362,7 @@ function applyOneEffect(eff, ctx, answer) {
       return null
     case "SPECIAL_PICK_ENEMY_WAZA":
       // The one of the four the app can actually enforce: it owns the move-select screen.
-      ctx.opp.moveChosenByOpponent = true
+      plantMod(ctx.opp, { step: STEP.MOVE_SELECT, kind: 'pickedByOpponent', from: ctx.mv.name })
       ctx.opp.pendingNotices = withNotice(ctx.opp.pendingNotices, {
         kind: 'pickEnemyWaza', n: 1, from: ctx.mv.name
       })
@@ -374,8 +374,7 @@ function applyOneEffect(eff, ctx, answer) {
       return null
     case "SPECIAL_BIND_WAZA":
       if (answer === undefined) return { kind: 'bindWaza', targetKey: ctx.oppKey, count: eff.value }
-      ctx.opp.bannedMoveIds = answer
-      ctx.opp.bannedMoveSourceName = ctx.mv.name
+      plantMod(ctx.opp, { step: STEP.MOVE_SELECT, kind: 'banMoves', ids: answer, from: ctx.mv.name })
       return null
     case "DAMAGE_EXTRA_ENE":
       // Bare form: counts the move's own type. Every card did until EBW02-049 — see the

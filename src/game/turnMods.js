@@ -57,11 +57,24 @@ export function modSum(player, step, kind) {
 }
 
 /**
- * Drop everything planted for this player — one lifecycle for the lot.
+ * Drop the modifiers a turn has finished with.
  *
- * Called once, when the turn these were planted for finishes. The old per-field clearing was
- * spread across the two battle hosts in half a dozen places.
+ * Scoped by step, because the two halves expire at different moments even though both are
+ * spent during the same turn. A `diceRoll` or `moveSelect` modifier was planted on the player
+ * who is now taking their turn, and is done the moment they have acted. A `damage` one is a
+ * shield its owner put on themselves, tested when the other side attacks — so it expires at
+ * the end of the attacker's turn, not its owner's.
+ *
+ * Clearing everything at either moment would be wrong in one direction or the other: too
+ * early wipes a ban before its turn arrives, too late leaves a shield up for two turns.
+ *
+ * @param {object} player
+ * @param {string[]} [steps]  which steps to clear; omit for all of them (new battle, reset)
  */
-export function clearMods(player) {
-  player.mods = []
+export function clearMods(player, steps) {
+  if (!steps) {
+    player.mods = []
+    return
+  }
+  player.mods = (player.mods || []).filter(m => !steps.includes(m.step))
 }
