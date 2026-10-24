@@ -4,9 +4,10 @@ import { useI18n } from 'vue-i18n'
 import { typeBgColor } from '../data/constants'
 import { isCharaColorConditionMet } from '../game/damage'
 import { charaDiceOrientationAllowed } from '../game/effectQueue'
-import { faceTypes } from '../game/diceParts'
+import { FACE_KEYS, faceTypes } from '../game/diceParts'
 import { canPayCost } from '../game/energyPayment'
 import { asset } from '../data/assetPath'
+import ChipIcon from './dice/ChipIcon.vue'
 
 // Same treatment as the price-log chart and the 3D dice tray elsewhere: Three.js/cannon-es
 // only get downloaded when a turn actually needs the character-die throw (online mode).
@@ -150,6 +151,31 @@ function onDiceRolled(results, transforms) {
 // --- ほりかえす / ジュエルフラッシュ: the opponent names dice, this side rethrows them -----
 
 const req = computed(() => state.diceRerollRequest)
+
+// Everything the caster needs to decide with: not just what each die rolled, but what it
+// could have rolled. A die showing nothing useful is only worth rerolling if its other five
+// faces are better than the one you already have, and that is unknowable from the result
+// alone. The target's build is already in shared state (players[key].energyDice), so their
+// opponent can draw the real thing rather than a summary of it.
+const FACE_LABEL_KEYS = {
+  convex: 'convex', concave: 'concave',
+  single1: 'single', single2: 'single',
+  dual1: 'dual', dual2: 'dual'
+}
+const REROLL_FACE_ROWS = FACE_KEYS.map(key => ({ key, labelKey: FACE_LABEL_KEYS[key] }))
+const rerollTargetDice = computed(() => {
+  if (!req.value) return []
+  const target = state.players[req.value.targetKey]
+  const config = target?.energyDice || []
+  const rolled = state.energyDieTypes || []
+  // One entry per die actually thrown this turn, which can exceed the configured three when
+  // a dice-count modifier is in play — diceForThrow cycles the set, so mirror that here.
+  return (rolled.length ? rolled : config).map((types, i) => ({
+    index: i,
+    die: config.length ? config[i % config.length] : null,
+    rolled: rolled[i] || []
+  }))
+})
 // Whoever cast it does the choosing; in hotseat (myKey null) that is simply whoever is holding
 // the device, which the move-select notice has already warned about.
 const iPickReroll = computed(() =>
@@ -285,16 +311,30 @@ function goBack() {
         <div class="dr-reroll-title">{{ t('dice.rerollPickTitle', { from: req.from, n: req.n }) }}</div>
         <div class="dr-reroll-dice">
           <button
-            v-for="(types, i) in (state.energyDieTypes || [])"
-            :key="i"
+            v-for="d in rerollTargetDice"
+            :key="d.index"
             class="dr-reroll-die"
-            :class="{ on: rerollPicked.includes(i) }"
-            @click="toggleRerollPick(i)"
+            :class="{ on: rerollPicked.includes(d.index) }"
+            @click="toggleRerollPick(d.index)"
           >
-            <span v-if="!types.length" class="dr-reroll-blank">—</span>
-            <span v-for="(ty, j) in types" :key="j" class="dr-inline-icon half">
-              <img :src="asset(`image/ICON/${ty}.png`)" class="img-icon" :alt="ty">
-            </span>
+            <div class="dr-reroll-head">
+              <span class="dr-reroll-name">{{ t('diceBuilder.die', { n: d.index + 1 }) }}</span>
+              <span class="dr-reroll-result">
+                <template v-if="d.rolled.length">
+                  <span v-for="(ty, j) in d.rolled" :key="j" class="dr-inline-icon half">
+                    <img :src="asset(`image/ICON/${ty}.png`)" class="img-icon" :alt="ty">
+                  </span>
+                </template>
+                <span v-else class="dr-reroll-blank">—</span>
+              </span>
+            </div>
+            <!-- All six faces, because "is it worth rerolling" is a question about the five
+                 faces that did not come up. -->
+            <div v-if="d.die" class="dr-reroll-faces">
+              <span v-for="row in REROLL_FACE_ROWS" :key="row.key" class="dr-reroll-face">
+                <ChipIcon :types="faceTypes(d.die, row.key)" :size="1.25" />
+              </span>
+            </div>
           </button>
         </div>
         <button
@@ -475,15 +515,22 @@ function goBack() {
 .dr-reroll-dice { display: flex; gap: 0.375rem; justify-content: center; flex-wrap: wrap; padding-bottom: 0.375rem; }
 .dr-reroll-die {
   display: flex;
-  align-items: center;
-  gap: 0.125rem;
-  min-width: 2rem;
-  padding: 0.25rem 0.375rem;
+  flex-direction: column;
+  gap: 0.1875rem;
+  padding: 0.3125rem 0.375rem;
   border: 0.125rem solid var(--line);
   border-radius: 0.375rem;
   background: #fff;
   cursor: pointer;
 }
+/* What it rolled, on the same line as which die it is — the two facts that identify it. */
+.dr-reroll-head { display: flex; align-items: center; gap: 0.25rem; }
+.dr-reroll-name { font-size: 0.5rem; font-weight: 800; color: var(--sub); }
+.dr-reroll-result { display: flex; align-items: center; gap: 0.0625rem; margin-left: auto; }
+/* The build underneath, at a glance rather than at reading size: it is there to be compared
+   with the other two dice, not studied. */
+.dr-reroll-faces { display: flex; gap: 0.0625rem; }
+.dr-reroll-face { display: flex; }
 .dr-reroll-die.on { border-color: var(--accent-strong); background: var(--bg); }
 .dr-reroll-blank { font-size: 0.75rem; font-weight: 800; color: var(--sub); }
 </style>
