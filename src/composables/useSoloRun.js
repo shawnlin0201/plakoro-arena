@@ -42,6 +42,17 @@ function newCombatant() {
     // settled value a later turn reads, mirroring committedLastMoveFailed.
     tookDamage: false,
     committedTookDamage: false,
+    // Things this side must do on their next turn that the app cannot do for them — reroll a
+    // die, swap a chip. Hotseat and solo are played with real dice, so these are reminders
+    // shown at the moment they apply, not simulations. Cleared when that turn starts.
+    pendingNotices: [],
+    // { orientations, from } while ふわふわひこう is shielding this side: the attacker is
+    // asked whether their character die landed on one of those faces, and if it did the
+    // damage — and only the damage — is cancelled. Same lifecycle as incomingDamageNullify.
+    incomingNullifyIfCharaDice: null,
+    // Set by そそのかす: this side's move is chosen by their opponent next turn. Unlike the
+    // notices above the app does enforce this one, because it owns the move-select screen.
+    moveChosenByOpponent: false,
     diceMod: 0,
     diceModBadges: [],
     bannedMoveIds: [],
@@ -171,8 +182,11 @@ export function useSoloRun(charactersRef, movesRef) {
     c.incomingDamageMod = 0
     c.incomingDamageNullify = null
     c.incomingDamageNullifyAtMost = null
+    c.incomingNullifyIfCharaDice = null
     c.tookDamage = false
     c.committedTookDamage = false
+    c.pendingNotices = []
+    c.moveChosenByOpponent = false
     c.diceMod = 0
     c.diceModBadges = []
     c.bannedMoveIds = []
@@ -363,12 +377,16 @@ export function useSoloRun(charactersRef, movesRef) {
     mover.diceModBadges = []
     mover.charaDiceBlocked = false
     mover.fixCharaDice = null
+    // Consumed by the turn they applied to, alongside every other next-turn modifier.
+    mover.pendingNotices = []
+    mover.moveChosenByOpponent = false
     state.phase = "resolve"
 
     if (result.kind === "fail") {
       opp.incomingDamageMod = 0
       opp.incomingDamageNullify = null
       opp.incomingDamageNullifyAtMost = null
+      opp.incomingNullifyIfCharaDice = null
       proceedToAnimateWithCtx({ moverKey, mover, oppKey, opp, mv, dmgToOpp: 0, dmgToSelf: 0, isMiss: true })
       return
     }
@@ -410,6 +428,29 @@ export function useSoloRun(charactersRef, movesRef) {
     state.effectPrompt = { kind: "eneCount", effectValue, countedType, mv: ctx.mv, dmgInfo, mover: ctx.mover, opp: ctx.opp, onPick }
     state.phase = "effectPrompt"
   }
+  // A yes/no about the die the attacker just physically threw. Same self-report shape as
+  // showCharaDiceEnemyManualPrompt below, but about the *mover's* die and asked on behalf of
+  // the defender's standing shield rather than the move being cast.
+  function showCharaShieldPrompt(shield, ctx, onPick) {
+    // When the app threw the die itself, the answer is already on screen — asking the player
+    // to retype it would be asking them to confirm something the app knows better. Only the
+    // physical-dice modes have a question to ask.
+    if (state.charaDieFace) {
+      onPick(shield.orientations.includes(state.charaDieFace))
+      return
+    }
+    state.effectPrompt = {
+      kind: "charaShield",
+      orientations: shield.orientations,
+      sourceName: shield.from,
+      mv: ctx.mv,
+      mover: ctx.mover,
+      opp: ctx.opp,
+      onPick
+    }
+    state.phase = "effectPrompt"
+  }
+
   function showCharaDiceEnemyManualPrompt(orientations, effectValue, ctx, onPick) {
     const dmgInfo = computeDisplayDamage(ctx.mv, ctx.mover, ctx.opp)
     state.effectPrompt = { kind: "charaDiceEnemyManual", orientations, effectValue, mv: ctx.mv, dmgInfo, mover: ctx.mover, opp: ctx.opp, onPick }
@@ -512,7 +553,21 @@ export function useSoloRun(charactersRef, movesRef) {
     setTimeout(cb, 1000)
   }
 
+  // Asked only when ふわふわひこう is actually shielding the defender, and only when this
+  // turn's damage would otherwise land — a 0-damage turn has nothing to cancel, and asking
+  // anyway would be a prompt for no reason. Answering yes zeroes the damage and nothing else:
+  // the card is explicit that other effects still apply, which is why this runs after the
+  // effect queue rather than instead of it.
   function proceedToAnimateWithCtx(ctx) {
+    const shield = ctx.opp.incomingNullifyIfCharaDice
+    if (shield && !ctx.charaShieldAsked && Math.max(ctx.dmgToOpp, 0) > 0) {
+      ctx.charaShieldAsked = true
+      showCharaShieldPrompt(shield, ctx, hit => {
+        if (hit) ctx.dmgToOpp = 0
+        proceedToAnimateWithCtx(ctx)
+      })
+      return
+    }
     const { moverKey, mover, oppKey, opp, mv } = ctx
     let dmgToOpp = (opp.incomingDamageNullify !== null && opp.incomingDamageNullify !== undefined)
       ? Math.max(opp.incomingDamageNullify, 0)
@@ -550,6 +605,7 @@ export function useSoloRun(charactersRef, movesRef) {
         opp.incomingDamageMod = 0
         opp.incomingDamageNullify = null
         opp.incomingDamageNullifyAtMost = null
+        opp.incomingNullifyIfCharaDice = null
         // Settle it for both sides: the attacker took nothing this turn unless their own
         // move hurt them, and the defender's flag was set when the damage landed.
         mover.committedTookDamage = mover.tookDamage

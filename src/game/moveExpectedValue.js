@@ -176,6 +176,15 @@ function applyEffect(eff, state, env) {
     return
   }
 
+  // チルタリス's shield: the damage is cancelled only if the attacker's character die happens
+  // to land on one of these faces. That probability is knowable — it is faces/6 — but what it
+  // saves is not: the calculator has no opponent, so it cannot know what they would have hit
+  // for. Same unknowable shape as MOD_NULLIFY_TAKEN, which is also left to the tempo table.
+  if (/^MOD_NULLIFY_TAKEN_IF_ENEMY_CHARADICE_/.test(type)) {
+    addTempo(state, type, value, env)
+    return
+  }
+
   // A shield with a ceiling: worth the hit it blocks, but only against a hit small enough to
   // be blocked. The calculator has no opponent to ask, so it credits the ceiling — the most
   // it can ever be worth — under the same opt-in as any other damage reduction, and the

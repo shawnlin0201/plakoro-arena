@@ -1,3 +1,13 @@
+// Notices are keyed by kind, and a second one of the same kind keeps the bigger count rather
+// than queueing twice: two sources of "reroll a die" is still one reroll step, just a longer
+// one. Returns a new array so the reactive proxies in both battle hosts see the change.
+function withNotice(current, notice) {
+  const existing = (current || []).find(n => n.kind === notice.kind)
+  const out = (current || []).filter(n => n.kind !== notice.kind)
+  out.push(existing && existing.n > notice.n ? existing : notice)
+  return out
+}
+
 export function pushDiceModBadge(player, name, type) {
   if (!player.diceModBadges) player.diceModBadges = []
   if (player.diceModBadges.some(b => b.name === name)) return
@@ -146,6 +156,24 @@ export function runEffectQueue(queue, idx, ctx, hooks, done) {
     return
   }
 
+  // チルタリス「ふわふわひこう」: next opponent turn, if THEIR character die comes up on one
+  // of these faces, this move's damage does not land (other effects still do).
+  //
+  // The long-standing blocker (TODO.md) was that the engine only learns the die's face when
+  // it happens to match the current move's own conditions. That assumed the app rolls the
+  // die — it does not: hotseat and solo are played with real dice and the app asks what came
+  // up (the 3D canvas is online-only). So the shield is armed here and the question is put
+  // to the attacker on their turn, which is one prompt of a shape that already exists.
+  const nullifyIfEnemyChara = /^MOD_NULLIFY_TAKEN_IF_ENEMY_CHARADICE_(.+)$/.exec(eff.type)
+  if (nullifyIfEnemyChara) {
+    ctx.mover.incomingNullifyIfCharaDice = {
+      orientations: nullifyIfEnemyChara[1].split(',').map(x => x.trim()).filter(Boolean),
+      from: ctx.mv.name
+    }
+    next()
+    return
+  }
+
   const fixCharaDiceEnemyMatch = /^FIX_CHARADICE_ENEMY_(.+)$/.exec(eff.type)
   if (fixCharaDiceEnemyMatch) {
     const orientations = fixCharaDiceEnemyMatch[1].split(',').map(s => s.trim()).filter(s => s !== "")
@@ -247,6 +275,44 @@ export function runEffectQueue(queue, idx, ctx, hooks, done) {
         next()
       })
       return
+    // --- effects the app records but cannot carry out for you -------------------------
+    //
+    // Hotseat and solo are played with real dice: the app records which face came up, it does
+    // not throw anything (the 3D canvas is online-only — see DiceOverlay's `needsThrow`). So
+    // "reroll a die" and "swap your chips" are things the players do at the table, and the
+    // honest implementation is to make sure the right person is told at the right moment
+    // rather than to pretend to simulate it.
+    //
+    // Each of these parks a notice on whoever it applies to, consumed on their next turn.
+    case "REROLL_CHARADICE_SELF":
+      // Value is how many rerolls, not a damage figure: チャンスタックル grants one on its
+      // own and upgrades to two when the character die cooperates, so they do not stack —
+      // the larger wins.
+      ctx.mover.pendingNotices = withNotice(ctx.mover.pendingNotices, {
+        kind: 'rerollCharaSelf', n: eff.value, from: ctx.mv.name
+      })
+      next()
+      break
+    case "REROLL_DICE_ENEMY":
+      ctx.opp.pendingNotices = withNotice(ctx.opp.pendingNotices, {
+        kind: 'rerollDiceEnemy', n: eff.value, from: ctx.mv.name
+      })
+      next()
+      break
+    case "SPECIAL_PICK_ENEMY_WAZA":
+      // The one of the four the app can actually enforce: it owns the move-select screen.
+      ctx.opp.moveChosenByOpponent = true
+      ctx.opp.pendingNotices = withNotice(ctx.opp.pendingNotices, {
+        kind: 'pickEnemyWaza', n: 1, from: ctx.mv.name
+      })
+      next()
+      break
+    case "SPECIAL_SWAP_CHIP":
+      ctx.mover.pendingNotices = withNotice(ctx.mover.pendingNotices, {
+        kind: 'swapChip', n: eff.value, from: ctx.mv.name
+      })
+      next()
+      break
     case "SPECIAL_BIND_WAZA":
       hooks.showBindWazaPrompt(ctx.oppKey, eff.value, pickedIds => {
         ctx.opp.bannedMoveIds = pickedIds

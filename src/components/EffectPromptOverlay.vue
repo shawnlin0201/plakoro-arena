@@ -122,6 +122,20 @@ function pickBindMove(mid) {
       </div>
     </template>
 
+    <!-- The defender cast ふわふわひこう last turn; this asks the attacker what their own
+         character die just did. Yes cancels the damage and nothing else, which is why the
+         buttons say blocked / landed rather than success / fail. No move card: the question
+         is about the die, not about the move being cast. -->
+    <template v-else-if="ep.kind === 'charaShield'">
+      <div class="overlay-title">
+        {{ t('effectPrompt.charaShieldPrefix', { from: ep.sourceName }) }}<img v-for="(ori, i) in ep.orientations" :key="i" :src="asset(`image/ICON/${ori}.png`)" :alt="ori" style="height:1em; width:1em; object-fit:contain; vertical-align:-0.15em; margin:0 0.0625rem;">{{ t('effectPrompt.charaShieldSuffix') }}
+      </div>
+      <div style="display:flex; gap:0.75rem; justify-content:center; margin-top:0.875rem;">
+        <button class="btn" @click="submit(true)">{{ t('effectPrompt.charaShieldYes') }}</button>
+        <button class="btn fail" @click="submit(false)">{{ t('effectPrompt.charaShieldNo') }}</button>
+      </div>
+    </template>
+
     <template v-else-if="ep.kind === 'charaDiceEnemyManual'">
       <div class="overlay-title">
         {{ t('effectPrompt.charaDiceEnemyPrefix') }}<img v-for="(ori, i) in ep.orientations" :key="i" :src="asset(`image/ICON/${ori}.png`)" :alt="ori" style="height:1em; width:1em; object-fit:contain; vertical-align:-0.15em; margin:0 0.0625rem;">{{ t('effectPrompt.charaDiceEnemySuffix') }}

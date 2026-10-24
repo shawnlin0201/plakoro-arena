@@ -67,7 +67,13 @@
   "moveSelect": {
     "title": "{name} のワザを4つ選択",
     "confirm": "選択したワザで確定",
-    "opponentThinking": "相手がワザを選択中…"
+    "opponentThinking": "相手がワザを選択中…",
+    "notice": {
+      "rerollCharaSelf": "「{from}」：この番、キャラコロを {n} 回振りなおせる。",
+      "rerollDiceEnemy": "「{from}」：相手が選んだエネコロ {n} 個を振りなおす。",
+      "pickEnemyWaza": "「{from}」：この番に使うワザは相手が選ぶ。",
+      "swapChip": "「{from}」：エネコロを 1 個選び、カスタムチップを好きなだけつけ替えられる。"
+    }
   },
   "moveCard": {
     "usedLastTurn": "前ターン使用",
@@ -100,7 +106,11 @@
     "charaDiceComboPrefix": "相手のキャラコロを{n}回振り、",
     "charaDiceComboSuffix": "が出るたびに{dmg}ダメージ追加。成功した数を選択。",
     "charaDiceSelectSelfTitle": "出たキャラコロの向きを選択。次の自分の番、自分のキャラコロはその向きになります。",
-    "charaDiceSelectEnemyTitle": "出たキャラコロの向きを選択。次の相手の番、相手のキャラコロはその向きになります。"
+    "charaDiceSelectEnemyTitle": "出たキャラコロの向きを選択。次の相手の番、相手のキャラコロはその向きになります。",
+    "charaShieldPrefix": "相手は前の番に「{from}」を使った。この番のキャラコロは ",
+    "charaShieldSuffix": " が出た？出ていれば、このワザのダメージは受けない（ダメージ以外の効果は受ける）。",
+    "charaShieldYes": "出た（ダメージ無効）",
+    "charaShieldNo": "出ていない"
   },
   "turnResult": {
     "title": "このターンの結果",
