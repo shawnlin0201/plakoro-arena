@@ -73,7 +73,8 @@
       "rerollDiceEnemy": "{from}: your opponent names {n} of your energy dice — reroll those.",
       "pickEnemyWaza": "{from}: your opponent chooses which move you use this turn.",
       "swapChip": "{from}: you may pick one energy die and swap its custom chips freely."
-    }
+    },
+    "opponentPickingYours": "Your opponent is choosing your move…"
   },
   "moveCard": {
     "usedLastTurn": "Used last turn",

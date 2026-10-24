@@ -17,10 +17,27 @@ const state = battle.state
 const p = computed(() => state.players[state.turnPlayer])
 const opp = computed(() => state.players[battle.opponentKey(state.turnPlayer)])
 
+// Whose decision this is — usually the player whose turn it is, but そそのかす hands it to
+// their opponent. The grid follows this rather than `turnPlayer`, so the move list appears on
+// whichever client is actually choosing and the other side waits.
+//
+// Hotseat passes this trivially (myKey is null, so every client "is" the picker) and the
+// move-select notice is what tells the two players to swap the device.
+const pickerKey = computed(() => {
+  const tp = state.turnPlayer
+  return p.value.moveChosenByOpponent ? battle.opponentKey(tp) : tp
+})
+
 // Online only: while actually picking (not resolvePhase, which just shows the already-picked
-// move to both sides afterward), the opponent only learns that a choice is being made, not
-// which moves are on the table.
-const isMyTurn = computed(() => !online.myKey.value || online.myKey.value === state.turnPlayer)
+// move to both sides afterward), the side not choosing only learns that a choice is being
+// made, not which moves are on the table.
+const isMyTurn = computed(() => !online.myKey.value || online.myKey.value === pickerKey.value)
+
+// Told to the person waiting, since "the opponent is thinking" is misleading when the one
+// thinking is choosing *for* them.
+const waitingLabel = computed(() => (p.value.moveChosenByOpponent
+  ? t('moveSelect.opponentPickingYours')
+  : t('moveSelect.opponentThinking')))
 
 const panelStyle = computed(() => ({
   background: typeBgColor(p.value.character.type),
@@ -49,7 +66,7 @@ function onPick(mid) {
 
 <template>
   <div class="move-select-panel" :class="{ 'resolve-panel': resolvePhase }" :style="panelStyle">
-    <div v-if="!resolvePhase && !isMyTurn" class="move-select-status">{{ t('moveSelect.opponentThinking') }}</div>
+    <div v-if="!resolvePhase && !isMyTurn" class="move-select-status">{{ waitingLabel }}</div>
     <template v-else>
       <div v-if="!resolvePhase && notices.length" class="ms-notices">
         <div v-for="n in notices" :key="n.key" class="ms-notice">{{ n.text }}</div>

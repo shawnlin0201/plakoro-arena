@@ -73,7 +73,8 @@
       "rerollDiceEnemy": "「{from}」：相手が選んだエネコロ {n} 個を振りなおす。",
       "pickEnemyWaza": "「{from}」：この番に使うワザは相手が選ぶ。",
       "swapChip": "「{from}」：エネコロを 1 個選び、カスタムチップを好きなだけつけ替えられる。"
-    }
+    },
+    "opponentPickingYours": "相手があなたのワザを選んでいます…"
   },
   "moveCard": {
     "usedLastTurn": "前ターン使用",

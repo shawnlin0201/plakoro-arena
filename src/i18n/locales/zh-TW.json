@@ -73,7 +73,8 @@
       "rerollDiceEnemy": "「{from}」：對手指定你擲出的 {n} 顆能量骰，那幾顆要重擲。",
       "pickEnemyWaza": "「{from}」：這回合你要用哪個招式，由對手決定。",
       "swapChip": "「{from}」：你可以選 1 顆能量骰，任意更換上面的客製晶片。"
-    }
+    },
+    "opponentPickingYours": "對手正在替你選招…"
   },
   "moveCard": {
     "usedLastTurn": "上回合已使用",
