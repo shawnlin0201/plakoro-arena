@@ -20,6 +20,7 @@ import WinScreen from './components/WinScreen.vue'
 import Modal from './components/Modal.vue'
 import TurnCutIn from './components/TurnCutIn.vue'
 import TurnStepper from './components/TurnStepper.vue'
+import { DICE_PHASES, IN_TURN_PHASES, RESOLVING_PHASES } from './game/turnSteps'
 import GlobalTopBar from './components/GlobalTopBar.vue'
 import MusicPlayer from './components/MusicPlayer.vue'
 import { showMusicPlayer } from './data/musicPlayerUi'
@@ -95,7 +96,7 @@ function exitToHome() {
 const stageRef = ref(null)
 useStageLayout(stageRef)
 
-const inBattleBoard = computed(() => ['moveSelect', 'diceRoll', 'resolve', 'effectPrompt', 'charaThrowTask', 'energyThrowTask', 'turnResultConfirm'].includes(state.phase))
+const inBattleBoard = computed(() => IN_TURN_PHASES.includes(state.phase))
 
 // Each side has their own modal slot (state.modals.A / .B) so opening one never closes the
 // other's — this picks out whichever slot this client should actually render: your own seat
@@ -151,9 +152,9 @@ onBeforeUnmount(uninstallButtonSfx)
         <Board v-else :turn-mode="inBattleBoard" />
 
         <MoveSelectPanel v-if="state.phase === 'moveSelect'" />
-        <DiceOverlay v-if="state.phase === 'diceRoll'" />
+        <DiceOverlay v-if="DICE_PHASES.includes(state.phase)" />
         <MoveSelectPanel
-          v-if="['resolve', 'effectPrompt', 'charaThrowTask', 'energyThrowTask', 'turnResultConfirm'].includes(state.phase)"
+          v-if="RESOLVING_PHASES.includes(state.phase)"
           resolve-phase
         />
         <EffectPromptOverlay v-if="state.phase === 'effectPrompt'" />

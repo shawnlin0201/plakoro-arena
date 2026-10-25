@@ -12,6 +12,7 @@ import { moveExpectedValue } from './moveExpectedValue'
 import { enumerateRolls } from './energyPayment'
 import { CHARA_DIE_FACE_COUNT } from './energyPayment'
 import { randomDie } from './diceParts'
+import { IN_TURN_PHASES, OUTSIDE_TURN } from './turnSteps'
 import generatedChara from '../data/generated/chara.json'
 import generatedWaza from '../data/generated/waza.json'
 import localCards from '../data/localCards.json'
@@ -200,20 +201,13 @@ describe.each(CHARA.map(c => [String(c.name).trim(), c]))('%s', (name, chara) =>
   })
 })
 
-// The stepper is a view of the engine's own phases, so it only stays honest if every phase
-// the engine can enter is one the stepper knows about. Adding a phase and forgetting to map
-// it would leave the bar blank mid-turn — visible, but only if someone happened to look.
-describe('turn stepper coverage', () => {
-  // Mirrors TurnStepper.vue's STEPS. Kept here rather than imported because importing a .vue
-  // file would drag in a Vue environment for a check that is really about the engine.
-  const MAPPED = new Set([
-    'moveSelect',
-    'diceRoll', 'rerollPick', 'rerollThrow',
-    'resolve', 'effectPrompt', 'charaThrowTask', 'energyThrowTask',
-    'turnResultConfirm'
-  ])
-  // Phases that are deliberately outside a turn: setup, the first-player draw, and the end.
-  const OUTSIDE_A_TURN = new Set(['select', 'drawingFirst', 'win'])
+// turnSteps.js is what decides both what renders and what the stepper shows, so a phase the
+// engine can reach but that file has never heard of renders nothing at all. That is not a
+// cosmetic failure: adding rerollPick/rerollThrow without updating the router left the reroll
+// panel completely unrendered, and the screen fell through to a bare board.
+describe('turn step coverage', () => {
+  const MAPPED = new Set(IN_TURN_PHASES)
+  const OUTSIDE_A_TURN = new Set(OUTSIDE_TURN)
 
   it('maps every phase the engine enters', async () => {
     const { readFileSync } = await import('fs')

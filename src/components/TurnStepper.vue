@@ -12,22 +12,16 @@
 import { computed, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { modsFor, STEP } from '../game/turnMods'
+import { TURN_STEPS, stepIndexOf } from '../game/turnSteps'
 
 const battle = inject('battle')
 const online = inject('online', null)
 const { t } = useI18n()
 const state = battle.state
 
-// The steps a turn runs through, in order. Several engine phases are one step to a player:
-// answering a prompt and throwing extra dice are both still "working out what the move did".
-const STEPS = [
-  { key: 'moveSelect', phases: ['moveSelect'] },
-  { key: 'diceRoll', phases: ['diceRoll', 'rerollPick', 'rerollThrow'] },
-  { key: 'resolve', phases: ['resolve', 'effectPrompt', 'charaThrowTask', 'energyThrowTask'] },
-  { key: 'damage', phases: ['turnResultConfirm'] }
-]
+const STEPS = TURN_STEPS
 
-const currentIndex = computed(() => STEPS.findIndex(s => s.phases.includes(state.phase)))
+const currentIndex = computed(() => stepIndexOf(state.phase))
 const visible = computed(() => currentIndex.value >= 0)
 
 const actor = computed(() => (state.actorKey ? state.players[state.actorKey] : null))
