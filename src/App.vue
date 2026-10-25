@@ -60,6 +60,11 @@ const { isLoading, loadError } = characterData
 const mode = ref(null)
 const appVersion = __APP_VERSION__
 
+// Held back from release: the bar breaks its own layout mid-turn and has not been looked at
+// yet. One line to put back — the component stays, and so does game/turnSteps.js, which is
+// now what routes every phase to its screen whether or not this is rendered.
+const SHOW_TURN_STEPPER = false
+
 // A mode can be entered carrying a request from the mode that opened it — the tier list hands
 // the dice builder a character and the build its figure assumed. `from` is where "back" goes,
 // so a screen opened from another screen returns there rather than dropping the player home
@@ -167,7 +172,7 @@ onBeforeUnmount(uninstallButtonSfx)
         <WinScreen v-if="state.phase === 'win'" />
         <Modal v-if="activeModalKey" :player-key="activeModalKey" />
         <TurnCutIn v-if="state.turnCutIn" />
-        <TurnStepper />
+        <TurnStepper v-if="SHOW_TURN_STEPPER" />
       </template>
 
       <DiceBuilderApp v-else-if="mode === 'diceBuilder'" :open-odds="modeRequest" @back="leaveMode()" />
