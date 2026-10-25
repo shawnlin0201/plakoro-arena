@@ -812,5 +812,15 @@
     },
     "comingSoon": "Online battle is coming soon",
     "notRankedOnline": "You have no online battles yet"
+  },
+  "stepper": {
+    "step": {
+      "moveSelect": "Move",
+      "diceRoll": "Dice",
+      "resolve": "Effects",
+      "damage": "Damage"
+    },
+    "yourTurn": "Your turn",
+    "theirTurn": "Opponent"
   }
 }

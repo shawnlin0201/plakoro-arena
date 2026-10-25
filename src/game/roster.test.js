@@ -199,3 +199,28 @@ describe.each(CHARA.map(c => [String(c.name).trim(), c]))('%s', (name, chara) =>
     })
   })
 })
+
+// The stepper is a view of the engine's own phases, so it only stays honest if every phase
+// the engine can enter is one the stepper knows about. Adding a phase and forgetting to map
+// it would leave the bar blank mid-turn — visible, but only if someone happened to look.
+describe('turn stepper coverage', () => {
+  // Mirrors TurnStepper.vue's STEPS. Kept here rather than imported because importing a .vue
+  // file would drag in a Vue environment for a check that is really about the engine.
+  const MAPPED = new Set([
+    'moveSelect',
+    'diceRoll', 'rerollPick', 'rerollThrow',
+    'resolve', 'effectPrompt', 'charaThrowTask', 'energyThrowTask',
+    'turnResultConfirm'
+  ])
+  // Phases that are deliberately outside a turn: setup, the first-player draw, and the end.
+  const OUTSIDE_A_TURN = new Set(['select', 'drawingFirst', 'win'])
+
+  it('maps every phase the engine enters', async () => {
+    const { readFileSync } = await import('fs')
+    const src = readFileSync('src/composables/useBattleState.js', 'utf8')
+    const entered = new Set([...src.matchAll(/enterPhase\("(\w+)"/g)].map(m => m[1]))
+    expect(entered.size).toBeGreaterThan(0)
+    const unmapped = [...entered].filter(p => !MAPPED.has(p) && !OUTSIDE_A_TURN.has(p))
+    expect(unmapped).toEqual([])
+  })
+})

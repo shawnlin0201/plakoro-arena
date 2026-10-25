@@ -811,5 +811,15 @@
     },
     "comingSoon": "線上對戰即將上線",
     "notRankedOnline": "你還沒有線上對戰紀錄"
+  },
+  "stepper": {
+    "step": {
+      "moveSelect": "選招",
+      "diceRoll": "擲骰",
+      "resolve": "結算",
+      "damage": "傷害"
+    },
+    "yourTurn": "輪到你",
+    "theirTurn": "等待對手"
   }
 }

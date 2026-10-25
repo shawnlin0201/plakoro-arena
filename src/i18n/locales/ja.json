@@ -812,5 +812,15 @@
     },
     "comingSoon": "オンライン対戦は近日公開",
     "notRankedOnline": "オンライン対戦の記録がまだありません"
+  },
+  "stepper": {
+    "step": {
+      "moveSelect": "ワザ選択",
+      "diceRoll": "コロ振り",
+      "resolve": "効果",
+      "damage": "ダメージ"
+    },
+    "yourTurn": "あなたの番",
+    "theirTurn": "相手の番"
   }
 }

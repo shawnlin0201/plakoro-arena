@@ -19,6 +19,7 @@ import ExtraRollOverlay from './components/ExtraRollOverlay.vue'
 import WinScreen from './components/WinScreen.vue'
 import Modal from './components/Modal.vue'
 import TurnCutIn from './components/TurnCutIn.vue'
+import TurnStepper from './components/TurnStepper.vue'
 import GlobalTopBar from './components/GlobalTopBar.vue'
 import MusicPlayer from './components/MusicPlayer.vue'
 import { showMusicPlayer } from './data/musicPlayerUi'
@@ -161,6 +162,7 @@ onBeforeUnmount(uninstallButtonSfx)
         <WinScreen v-if="state.phase === 'win'" />
         <Modal v-if="activeModalKey" :player-key="activeModalKey" />
         <TurnCutIn v-if="state.turnCutIn" />
+        <TurnStepper />
       </template>
 
       <DiceBuilderApp v-else-if="mode === 'diceBuilder'" :open-odds="modeRequest" @back="leaveMode()" />
