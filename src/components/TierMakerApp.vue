@@ -130,7 +130,16 @@ function nudgeInstance(tierId, instanceId, delta) {
   entries.value = { ...entries.value, [tierId]: arr }
 }
 
-const MAX_TYPES = 2
+// Four. Some characters' moves span that many types, and capping the badge at two made the
+// board say something untrue about them rather than merely incomplete.
+const MAX_TYPES = 4
+
+// Four dots at full size run right off a 2.75rem avatar, so the strip shrinks to fit instead.
+// One and two keep the size they have always had, so existing boards are untouched.
+const BADGE_SIZE = { 3: '0.8125rem', 4: '0.6875rem' }
+function badgeSize(types) {
+  return BADGE_SIZE[types.length] || '1rem'
+}
 
 // Always an array, including for instances saved before there was one.
 function typesOf(entry) {
@@ -180,9 +189,9 @@ const pickingCharacter = computed(() =>
 const pickingOptions = computed(() =>
   pickingCharacter.value ? typeOptionsFor(pickingCharacter.value) : [])
 
-// On when chosen, off when tapped again. Past two, the new one takes the second slot — the
-// first stays put, so changing your mind about the secondary never disturbs the main and no
-// tap is ever a dead one.
+// On when chosen, off when tapped again. Once full, the new one takes the last slot — the
+// earlier picks stay put, so changing your mind about the latest never disturbs the main type
+// and no tap is ever a dead one.
 function toggleType(type) {
   const entry = pickingEntry.value
   if (!entry) return
@@ -191,7 +200,7 @@ function toggleType(type) {
   let next
   if (current.includes(type)) next = current.filter(x => x !== type)
   else if (current.length < MAX_TYPES) next = [...current, type]
-  else next = [current[0], type]
+  else next = [...current.slice(0, MAX_TYPES - 1), type]
 
   const list = listFor(tierId)
   const idx = list.findIndex(e => e.id === entry.id)
@@ -409,9 +418,14 @@ async function onImportJsonFile(event) {
                 :class="{ 'tm-turn-badge-empty': !turnOrderOf(e) }"
                 @click.stop="cycleTurnOrder(tier.id, e.id)"
               >{{ turnOrderOf(e) === 'first' ? t('tierMaker.turnFirst') : turnOrderOf(e) === 'second' ? t('tierMaker.turnSecond') : '' }}</span>
-              <!-- One dot per type, up to two. The whole strip is the tap target, including
-                   when it is empty — an instance with no type still has to be reachable. -->
-              <span class="tm-badges" @click.stop="openPicker(tier.id, e.id)">
+              <!-- One dot per type, up to MAX_TYPES, stacked upward. The whole strip is the
+                   tap target, including when it is empty — an instance with no type still has
+                   to be reachable. -->
+              <span
+                class="tm-badges"
+                :style="{ '--tm-badge': badgeSize(typesOf(e)) }"
+                @click.stop="openPicker(tier.id, e.id)"
+              >
                 <span
                   v-for="ty in typesOf(e)"
                   :key="ty"
@@ -612,11 +626,13 @@ async function onImportJsonFile(event) {
   cursor: pointer;
 }
 .tm-badge {
-  width: 1rem;
-  height: 1rem;
+  width: var(--tm-badge, 1rem);
+  height: var(--tm-badge, 1rem);
   flex: none;
   border-radius: 50%;
-  border: 0.09375rem solid #fff;
+  /* Thinner ring as the dot shrinks: at 0.6875rem a 0.09375rem border eats enough of the
+     circle that the icon inside stops being identifiable, which is the dot's whole job. */
+  border: max(0.0625rem, calc(var(--tm-badge, 1rem) * 0.09)) solid #fff;
   overflow: hidden;
   display: block;
 }

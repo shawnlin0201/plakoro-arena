@@ -32,6 +32,7 @@ import LoginApp from './components/auth/LoginApp.vue'
 import AdminSwitchApp from './components/admin/AdminSwitchApp.vue'
 import AdminRewardsApp from './components/admin/AdminRewardsApp.vue'
 import { isSignedIn } from './data/currentPlayer'
+import { tapVersion } from './data/betaMode'
 import ModeSelect from './components/ModeSelect.vue'
 import SoloApp from './components/solo/SoloApp.vue'
 import DiceBuilderApp from './components/dice/DiceBuilderApp.vue'
@@ -131,8 +132,11 @@ onBeforeUnmount(uninstallButtonSfx)
         :aria-label="t('app.backToHome')"
         @click="showExitConfirm = true"
       >←</button>
+      <!-- Six taps here turn the unreleased cards on; see data/betaMode.js. Deliberately
+           still looks like a label — no pointer cursor, no hover state. -->
       <div
-        style="position:absolute; right:0.375rem; bottom:0.1875rem; z-index:300; font-size:0.5rem; font-weight:700; color:rgba(58,58,58,.5); cursor:default;"
+        style="position:absolute; right:0.375rem; bottom:0.1875rem; z-index:300; font-size:0.5rem; font-weight:700; color:rgba(58,58,58,.5); cursor:default; user-select:none;"
+        @click="tapVersion()"
       >v{{ appVersion }}</div>
 
       <div v-if="isLoading" style="display:flex; height:100%; align-items:center; justify-content:center; font-weight:800; font-size:1rem; color:var(--sub);">{{ t('app.loading') }}</div>

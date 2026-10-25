@@ -3,6 +3,7 @@ import { useI18n } from 'vue-i18n'
 
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { isAdminAccount, isAdminMode } from '../data/adminSession'
+import { isBeta } from '../data/betaMode'
 import { giftCount, hasGifts, refreshGifts } from '../data/gifts'
 import { refreshPoints } from '../data/points'
 import Icon from './Icon.vue'
@@ -153,7 +154,7 @@ const rows = computed(() => {
          on a single layer, and the only thing that moves is that layer's transform. -->
     <div class="mode-bg" aria-hidden="true"></div>
 
-    <h1 class="mode-wordmark">PLAKORO ARENA</h1>
+    <h1 class="mode-wordmark">PLAKORO ARENA<sup v-if="isBeta" class="mode-beta">(BETA)</sup></h1>
 
     <!-- A bounded box with real rows inside it, rather than cards left to wrap. The box itself
          is a fixed share of the screen (see .mode-grid); the rows divide that fixed height
@@ -671,4 +672,15 @@ const rows = computed(() => {
   padding: 0 0.5rem;
 }
 
+
+/* Small, raised, and in the muted ink rather than an accent: it marks the wordmark without
+   competing with it. The egg is the roster, not this. */
+.mode-beta {
+  font-size: 0.3em;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  margin-left: 0.25rem;
+  vertical-align: super;
+  color: var(--sub);
+}
 </style>
