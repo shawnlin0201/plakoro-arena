@@ -40,9 +40,9 @@ const rows = computed(() => player.value.moveIds.map(mid => {
 
 // Same reminders duel mode shows — see MoveSelectPanel. Solo has no second player to be
 // told by, so if the app does not say it nobody will.
-const notices = computed(() => (player.value.pendingNotices || []).map(n => ({
-  key: n.kind,
-  text: t(`moveSelect.notice.${n.kind}`, { n: n.n, from: n.from })
+const notices = computed(() => (player.value.mods || []).filter(m => m.notice).map(m => ({
+  key: m.notice,
+  text: t(`moveSelect.notice.${m.notice}`, { n: m.n, from: m.from })
 })))
 
 function pick(mid) {

@@ -42,21 +42,7 @@ function newCombatant() {
     // settled value a later turn reads, mirroring committedLastMoveFailed.
     tookDamage: false,
     committedTookDamage: false,
-    // Things this side must do on their next turn that the app cannot do for them — reroll a
-    // die, swap a chip. Hotseat and solo are played with real dice, so these are reminders
-    // shown at the moment they apply, not simulations. Cleared when that turn starts.
-    pendingNotices: [],
-    // { orientations, from } while ふわふわひこう is shielding this side: the attacker is
-    // Set by そそのかす: this side's move is chosen by their opponent next turn. Unlike the
-    // notices above the app does enforce this one, because it owns the move-select screen.
-    // Solo never fires this (no opponent casts ほりかえす), but the shape stays identical to
-    // the duel host so a shared effect handler cannot write a field that does not exist.
-    pendingDiceReroll: null,
-    diceMod: 0,
     diceModBadges: [],
-    charaDiceBlocked: false,
-    // See useBattleState: set by FIX_CHARADICE_*, consumed on this player's next turn.
-    fixCharaDice: null,
     attackAnim: null,
     hitBlink: false,
     dmgOverlay: null,
@@ -180,11 +166,7 @@ export function useSoloRun(charactersRef, movesRef) {
     clearMods(c, [STEP.DAMAGE])
     c.tookDamage = false
     c.committedTookDamage = false
-    c.pendingNotices = []
-    c.diceMod = 0
     c.diceModBadges = []
-    c.charaDiceBlocked = false
-    c.fixCharaDice = null
     c.attackAnim = null
     c.hitBlink = false
     c.dmgOverlay = null
@@ -346,15 +328,11 @@ export function useSoloRun(charactersRef, movesRef) {
     const mv = moveForTurn()
     mover.lastMoveId = state.selectedMove
     mover.lastMoveFailed = result.kind === "fail"
-    mover.diceMod = 0
     mover.diceModBadges = []
-    mover.charaDiceBlocked = false
-    mover.fixCharaDice = null
     // Consumed by the turn they applied to, alongside every other next-turn modifier.
-    mover.pendingNotices = []
     // The mover has now picked and acted, so whatever was planted for their moveSelect is
     // spent. Their damage mods are not — those are tested when the other side attacks.
-    clearMods(mover, [STEP.MOVE_SELECT])
+    clearMods(mover, [STEP.MOVE_SELECT, STEP.DICE_ROLL])
     state.phase = "resolve"
 
     if (result.kind === "fail") {

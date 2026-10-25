@@ -37,28 +37,13 @@ function newPlayer() {
     // settled value a later turn reads, mirroring committedLastMoveFailed.
     tookDamage: false,
     committedTookDamage: false,
-    // Things this side must do on their next turn that the app cannot do for them — reroll a
-    // die, swap a chip. Hotseat and solo are played with real dice, so these are reminders
-    // shown at the moment they apply, not simulations. Cleared when that turn starts.
-    pendingNotices: [],
-    // { orientations, from } while ふわふわひこう is shielding this side: the attacker is
-    // Set by そそのかす: this side's move is chosen by their opponent next turn. Unlike the
-    // notices above the app does enforce this one, because it owns the move-select screen.
-    // Set by ほりかえす / ジュエルフラッシュ: { n, from }. Consumed the moment this side's
-    // next roll settles, which turns it into state.diceRerollRequest.
-    pendingDiceReroll: null,
-    diceMod: 0,
     diceModBadges: [],
-    charaDiceBlocked: false,
     // Online-only: this side has tapped "ready" and is waiting for the opponent, so the first
     // player can be drawn instead of either side just picking themselves. Unused in hotseat.
     readyForFirst: false,
     // Online-only: this side's fixed set of 3 energy dice (same shape as the dice assembly
     // simulator's), thrown every turn for the rest of the match once configured.
     energyDice: null,
-    // { value, orientations } while another move has pinned this player's character die for
-    // their next turn; null the rest of the time. Same lifecycle as charaDiceBlocked above.
-    fixCharaDice: null,
     lastMoveFailed: false,
     committedLastMoveId: null,
     committedLastMoveFailed: false,
@@ -291,15 +276,17 @@ export function useBattleState(movesRef) {
     // Somebody made this player's dice rerollable (ほりかえす / ジュエルフラッシュ). Hand the
     // choice of which ones to the player who cast it, before this roll is allowed to settle.
     const mover = state.players[state.turnPlayer]
-    if (mover.pendingDiceReroll && !state.diceRerollRequest) {
+    const forced = modOf(mover, STEP.DICE_ROLL, 'forcedReroll')
+    if (forced && !state.diceRerollRequest) {
       state.diceRerollRequest = {
         targetKey: state.turnPlayer,
         byKey: opponentKey(state.turnPlayer),
-        n: mover.pendingDiceReroll.n,
-        from: mover.pendingDiceReroll.from,
+        n: forced.n,
+        from: forced.from,
         indices: null
       }
-      mover.pendingDiceReroll = null
+      // Spent the moment it becomes a request; the request itself is the live state now.
+      mover.mods = mover.mods.filter(m => m !== forced)
       // A step of its own, and the one place in the game where the actor changes midway: the
       // player who cast it names the dice, the player who owns them throws. Saying so here
       // means no screen has to infer it, and the reroll panel wins by being the current phase
@@ -335,15 +322,11 @@ export function useBattleState(movesRef) {
     const mv = MOVES[state.selectedMove]
     mover.lastMoveId = state.selectedMove
     mover.lastMoveFailed = result.kind === "fail"
-    mover.diceMod = 0
     mover.diceModBadges = []
-    mover.charaDiceBlocked = false
-    mover.fixCharaDice = null
     // Consumed by the turn they applied to, alongside every other next-turn modifier.
-    mover.pendingNotices = []
     // The mover has now picked and acted, so whatever was planted for their moveSelect is
     // spent. Their damage mods are not — those are tested when the other side attacks.
-    clearMods(mover, [STEP.MOVE_SELECT])
+    clearMods(mover, [STEP.MOVE_SELECT, STEP.DICE_ROLL])
     state.diceRerollRequest = null
     enterPhase("resolve")
 
@@ -657,8 +640,8 @@ export function useBattleState(movesRef) {
   function showTurnCutIn(key) {
     const p = state.players[key]
     const isFirstTurn = state.turnCount === 0
-    const energyCount = Math.max(0, (isFirstTurn ? 2 : 3) + (p.diceMod || 0))
-    const hasChara = !p.charaDiceBlocked
+    const energyCount = Math.max(0, (isFirstTurn ? 2 : 3) + modSum(p, STEP.DICE_ROLL, 'diceCount'))
+    const hasChara = !modOf(p, STEP.DICE_ROLL, 'charaDieBlocked')
     state.turnCutIn = { key, hasChara, energyCount }
     setTimeout(() => {
       state.turnCutIn = null

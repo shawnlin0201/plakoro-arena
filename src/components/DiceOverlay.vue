@@ -1,4 +1,5 @@
 <script setup>
+import { modOf, modSum, STEP } from '../game/turnMods'
 import { computed, defineAsyncComponent, inject, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { typeBgColor } from '../data/constants'
@@ -24,8 +25,8 @@ const p = computed(() => state.players[state.turnPlayer])
 const opp = computed(() => state.players[battle.opponentKey(state.turnPlayer)])
 const dmgInfo = computed(() => battle.computeDisplayDamage(mv.value, p.value, opp.value))
 const isFirstTurn = computed(() => state.turnCount === 0)
-const energyCount = computed(() => Math.max(0, (isFirstTurn.value ? 2 : 3) + (p.value.diceMod || 0)))
-const hasChara = computed(() => mv.value.chara && mv.value.chara.length > 0 && !p.value.charaDiceBlocked)
+const energyCount = computed(() => Math.max(0, (isFirstTurn.value ? 2 : 3) + modSum(p.value, STEP.DICE_ROLL, 'diceCount')))
+const hasChara = computed(() => mv.value.chara && mv.value.chara.length > 0 && !modOf(p.value, STEP.DICE_ROLL, 'charaDieBlocked'))
 
 // Online only: whoever's turn it is throws their own configured energy dice (see
 // EnergyDiceModal.vue) plus the (real, fixed 6-face) character die together in 3D. Both the
@@ -62,8 +63,8 @@ const rerollsLeft = ref(0)
 const rerollingChara = ref(false)
 watch(() => state.phase, phase => {
   if (phase !== 'diceRoll') return
-  const n = (p.value.pendingNotices || []).find(x => x.kind === 'rerollCharaSelf')
-  rerollsLeft.value = n ? n.n : 0
+  const granted = modOf(p.value, STEP.DICE_ROLL, 'rerollCharaDie')
+  rerollsLeft.value = granted ? granted.n : 0
   rerollingChara.value = false
 }, { immediate: true })
 
@@ -291,7 +292,7 @@ const canFail = computed(() => !online.role.value || state.energySuccess !== tru
 // A pinned character die (FIX_CHARADICE_*) leaves only the rows covering the pinned
 // orientations selectable, unlike charaDiceBlocked which disables the lot.
 function charaAvailable(ce) {
-  if (!hasChara.value || !charaDiceOrientationAllowed(ce.orientations, p.value.fixCharaDice)) return false
+  if (!hasChara.value || !charaDiceOrientationAllowed(ce.orientations, modOf(p.value, STEP.DICE_ROLL, 'fixCharaDie'))) return false
   if (online.role.value && state.charaDieFace && !ce.orientations.includes(state.charaDieFace)) return false
   if (!canSucceed.value) return false
   return true

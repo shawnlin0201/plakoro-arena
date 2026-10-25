@@ -1,13 +1,3 @@
-// Notices are keyed by kind, and a second one of the same kind keeps the bigger count rather
-// than queueing twice: two sources of "reroll a die" is still one reroll step, just a longer
-// one. Returns a new array so the reactive proxies in both battle hosts see the change.
-function withNotice(current, notice) {
-  const existing = (current || []).find(n => n.kind === notice.kind)
-  const out = (current || []).filter(n => n.kind !== notice.kind)
-  out.push(existing && existing.n > notice.n ? existing : notice)
-  return out
-}
-
 import { STEP, plantMod } from './turnMods'
 
 export function pushDiceModBadge(player, name, type) {
@@ -176,7 +166,7 @@ function applyOneEffect(eff, ctx, answer) {
   if (fixCharaSelectSelfMatch) {
     const orientations = fixCharaSelectSelfMatch[1].split(',').map(s => s.trim()).filter(s => s !== "")
     if (answer === undefined) return { kind: 'charaDiceSelect', orientations, effectValue: eff.value, target: 'self' }
-    ctx.mover.fixCharaDice = { value: eff.value, orientations: [answer] }
+    plantMod(ctx.mover, { step: STEP.DICE_ROLL, kind: 'fixCharaDie', value: eff.value, orientations: [answer], from: ctx.mv.name })
     pushDiceModBadge(ctx.mover, ctx.mv.name, ctx.mv.type)
     return null
   }
@@ -185,7 +175,7 @@ function applyOneEffect(eff, ctx, answer) {
   if (fixCharaSelectEnemyMatch) {
     const orientations = fixCharaSelectEnemyMatch[1].split(',').map(s => s.trim()).filter(s => s !== "")
     if (answer === undefined) return { kind: 'charaDiceSelect', orientations, effectValue: eff.value, target: 'enemy' }
-    ctx.opp.fixCharaDice = { value: eff.value, orientations: [answer] }
+    plantMod(ctx.opp, { step: STEP.DICE_ROLL, kind: 'fixCharaDie', value: eff.value, orientations: [answer], from: ctx.mv.name })
     pushDiceModBadge(ctx.opp, ctx.mv.name, ctx.mv.type)
     return null
   }
@@ -237,7 +227,7 @@ function applyOneEffect(eff, ctx, answer) {
   const fixCharaDiceEnemyMatch = /^FIX_CHARADICE_ENEMY_(.+)$/.exec(eff.type)
   if (fixCharaDiceEnemyMatch) {
     const orientations = fixCharaDiceEnemyMatch[1].split(',').map(s => s.trim()).filter(s => s !== "")
-    ctx.opp.fixCharaDice = { value: eff.value, orientations }
+    plantMod(ctx.opp, { step: STEP.DICE_ROLL, kind: 'fixCharaDie', value: eff.value, orientations, from: ctx.mv.name })
     pushDiceModBadge(ctx.opp, ctx.mv.name, ctx.mv.type)
     return null
   }
@@ -246,7 +236,7 @@ function applyOneEffect(eff, ctx, answer) {
   const fixCharaDiceSelfMatch = /^FIX_CHARADICE_SELF_(.+)$/.exec(eff.type)
   if (fixCharaDiceSelfMatch) {
     const orientations = fixCharaDiceSelfMatch[1].split(',').map(s => s.trim()).filter(s => s !== "")
-    ctx.mover.fixCharaDice = { value: eff.value, orientations }
+    plantMod(ctx.mover, { step: STEP.DICE_ROLL, kind: 'fixCharaDie', value: eff.value, orientations, from: ctx.mv.name })
     pushDiceModBadge(ctx.mover, ctx.mv.name, ctx.mv.type)
     return null
   }
@@ -287,23 +277,23 @@ function applyOneEffect(eff, ctx, answer) {
       ctx.dmgToSelf -= Math.max(0, (ctx.mover.maxHp || 0) - ctx.mover.hp)
       return null
     case "MOD_DICE_ENEMY":
-      ctx.opp.diceMod = (ctx.opp.diceMod || 0) + eff.value
+      plantMod(ctx.opp, { step: STEP.DICE_ROLL, kind: 'diceCount', delta: eff.value, from: ctx.mv.name })
       pushDiceModBadge(ctx.opp, ctx.mv.name, ctx.mv.type)
       return null
     case "MOD_CHARADICE_ENEMY":
-      ctx.opp.charaDiceBlocked = true
+      plantMod(ctx.opp, { step: STEP.DICE_ROLL, kind: 'charaDieBlocked', from: ctx.mv.name })
       pushDiceModBadge(ctx.opp, ctx.mv.name, ctx.mv.type)
       return null
     case "MOD_DICE-CHARADICE_ENEMY":
-      ctx.opp.charaDiceBlocked = true
-      ctx.opp.diceMod = (ctx.opp.diceMod || 0) + eff.value
+      plantMod(ctx.opp, { step: STEP.DICE_ROLL, kind: 'charaDieBlocked', from: ctx.mv.name })
+      plantMod(ctx.opp, { step: STEP.DICE_ROLL, kind: 'diceCount', delta: eff.value, from: ctx.mv.name })
       pushDiceModBadge(ctx.opp, ctx.mv.name, ctx.mv.type)
       return null
     case "SPECIAL_REPEAT":
       ctx.repeatValue = eff.value
       return null
     case "MOD_DICE_SELF":
-      ctx.mover.diceMod = (ctx.mover.diceMod || 0) + eff.value
+      plantMod(ctx.mover, { step: STEP.DICE_ROLL, kind: 'diceCount', delta: eff.value, from: ctx.mv.name })
       pushDiceModBadge(ctx.mover, ctx.mv.name, ctx.mv.type)
       return null
     case "DAMAGE_MULTIPLY":
@@ -348,29 +338,19 @@ function applyOneEffect(eff, ctx, answer) {
       // Value is how many rerolls, not a damage figure: チャンスタックル grants one on its
       // own and upgrades to two when the character die cooperates, so they do not stack —
       // the larger wins.
-      ctx.mover.pendingNotices = withNotice(ctx.mover.pendingNotices, {
-        kind: 'rerollCharaSelf', n: eff.value, from: ctx.mv.name
-      })
+      plantMod(ctx.mover, { step: STEP.DICE_ROLL, kind: 'rerollCharaDie', n: eff.value, from: ctx.mv.name, notice: 'rerollCharaSelf' })
       return null
     case "REROLL_DICE_ENEMY":
       // Both: the flag drives the real picker when the app owns the dice, and the notice is
       // what tells two people sharing one device that it is about to ask.
-      ctx.opp.pendingDiceReroll = { n: eff.value, from: ctx.mv.name }
-      ctx.opp.pendingNotices = withNotice(ctx.opp.pendingNotices, {
-        kind: 'rerollDiceEnemy', n: eff.value, from: ctx.mv.name
-      })
+      plantMod(ctx.opp, { step: STEP.DICE_ROLL, kind: 'forcedReroll', n: eff.value, from: ctx.mv.name, notice: 'rerollDiceEnemy' })
       return null
     case "SPECIAL_PICK_ENEMY_WAZA":
       // The one of the four the app can actually enforce: it owns the move-select screen.
-      plantMod(ctx.opp, { step: STEP.MOVE_SELECT, kind: 'pickedByOpponent', from: ctx.mv.name })
-      ctx.opp.pendingNotices = withNotice(ctx.opp.pendingNotices, {
-        kind: 'pickEnemyWaza', n: 1, from: ctx.mv.name
-      })
+      plantMod(ctx.opp, { step: STEP.MOVE_SELECT, kind: 'pickedByOpponent', from: ctx.mv.name, notice: 'pickEnemyWaza' })
       return null
     case "SPECIAL_SWAP_CHIP":
-      ctx.mover.pendingNotices = withNotice(ctx.mover.pendingNotices, {
-        kind: 'swapChip', n: eff.value, from: ctx.mv.name
-      })
+      plantMod(ctx.mover, { step: STEP.DICE_ROLL, kind: 'swapChip', n: eff.value, from: ctx.mv.name, notice: 'swapChip' })
       return null
     case "SPECIAL_BIND_WAZA":
       if (answer === undefined) return { kind: 'bindWaza', targetKey: ctx.oppKey, count: eff.value }
@@ -383,9 +363,9 @@ function applyOneEffect(eff, ctx, answer) {
       ctx.dmgToOpp += answer * eff.value
       return null
     case "MOD_DICE_STEAL":
-      ctx.opp.diceMod = (ctx.opp.diceMod || 0) - eff.value
+      plantMod(ctx.opp, { step: STEP.DICE_ROLL, kind: 'diceCount', delta: -eff.value, from: ctx.mv.name })
       pushDiceModBadge(ctx.opp, ctx.mv.name, ctx.mv.type)
-      ctx.mover.diceMod = (ctx.mover.diceMod || 0) + eff.value
+      plantMod(ctx.mover, { step: STEP.DICE_ROLL, kind: 'diceCount', delta: eff.value, from: ctx.mv.name })
       pushDiceModBadge(ctx.mover, ctx.mv.name, ctx.mv.type)
       return null
     case "DAMAGE_EXTRA_DICE_MISS_ENEMY":

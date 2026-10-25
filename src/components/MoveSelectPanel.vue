@@ -49,9 +49,9 @@ const panelStyle = computed(() => ({
 // `pickEnemyWaza` is listed alongside the others even though the app enforces that one: the
 // enforcement is "the person holding the device picks", and at a table that only works if
 // somebody says so.
-const notices = computed(() => (p.value.pendingNotices || []).map(n => ({
-  key: n.kind,
-  text: t(`moveSelect.notice.${n.kind}`, { n: n.n, from: n.from })
+const notices = computed(() => (p.value.mods || []).filter(m => m.notice).map(m => ({
+  key: m.notice,
+  text: t(`moveSelect.notice.${m.notice}`, { n: m.n, from: m.from })
 })))
 
 function onPick(mid) {
