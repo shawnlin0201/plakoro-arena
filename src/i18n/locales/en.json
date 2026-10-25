@@ -57,7 +57,8 @@
   "charSelect": {
     "title": "Choose a Pokémon",
     "empty": "No Pokémon available to choose. Please check that characters are registered in the database.",
-    "weaknessPrefix": "(Weak:"
+    "weaknessPrefix": "(Weak:",
+    "comingSoon": "Coming soon"
   },
   "energyDice": {
     "title": "Set up your energy dice",

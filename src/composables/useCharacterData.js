@@ -125,7 +125,14 @@ const CHARACTERS_BASE = charaRaw.map(c => {
     weaknesses: buildWeaknesses(c),
     hp: parseInt(c.HP, 10) || 100,
     imageUrl: asset(`image/CHARA/${name}.jpg`),
-    moves: charaMoves
+    moves: charaMoves,
+    // Whether this one can be taken into a battle yet. Opt-out, so a card is playable unless
+    // localCards.json says otherwise and `npm run fetch-data` can never silently bench one.
+    //
+    // Only the two battle pickers read it. Everything else — the odds sheet, the tier maker,
+    // the type chart — shows the full roster on purpose: a card you cannot play yet is still
+    // a card people want to look up.
+    battleReady: c.battle_ready !== false
   }
 })
 

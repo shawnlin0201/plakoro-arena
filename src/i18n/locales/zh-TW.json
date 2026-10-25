@@ -57,7 +57,8 @@
   "charSelect": {
     "title": "選擇寶可夢",
     "empty": "沒有可選擇的寶可夢，請確認資料庫中已登錄角色資料。",
-    "weaknessPrefix": "（弱點："
+    "weaknessPrefix": "（弱點：",
+    "comingSoon": "即將推出"
   },
   "energyDice": {
     "title": "設定你的能量骰",

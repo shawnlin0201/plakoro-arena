@@ -57,7 +57,8 @@
   "charSelect": {
     "title": "ポケモンを選択",
     "empty": "選択できるポケモンがありません。データベースにキャラクターが登録されているかご確認ください。",
-    "weaknessPrefix": "(弱点:"
+    "weaknessPrefix": "(弱点:",
+    "comingSoon": "近日公開"
   },
   "energyDice": {
     "title": "エネコロを設定しよう",
