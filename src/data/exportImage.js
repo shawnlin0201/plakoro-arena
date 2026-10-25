@@ -79,6 +79,28 @@ const QR_PATH = 'image/line-invite-qrcode.png'
 // into on any screen. Nothing legible was bought by the third multiple.
 const DEFAULT_SCALE = 2
 
+// The stage the picture is always drawn at, whatever stage the exporter happens to be on.
+//
+// Everything in the app is sized in `rem`, and the root font-size tracks the stage's short
+// edge (useStageLayout). That is right for a screen and wrong for a file: capture the same
+// sheet on a phone and on a desktop and you got two different pictures, because the element
+// being photographed was literally a different number of CSS pixels tall.
+//
+// So the capture is scaled by however far the live root sits from this reference. The element
+// is N rem across either way, and N rem at the reference root is a fixed pixel count — so the
+// PNG comes out the same size on every device, and the only thing the window still decides is
+// how much of the scaling html2canvas does versus how much the layout already did.
+const EXPORT_STAGE_HEIGHT = 720
+const EXPORT_ROOT_PX = 16 * EXPORT_STAGE_HEIGHT / 375
+
+function normalisedScale(density) {
+  const live = parseFloat(getComputedStyle(document.documentElement).fontSize)
+  // A root font-size this should never be means the stage has not laid out yet; capturing at
+  // the plain density is wrong-sized but still a picture, which beats dividing by zero.
+  if (!(live > 0)) return density
+  return density * EXPORT_ROOT_PX / live
+}
+
 // Appended inside the clone, so nothing about the live screen moves while the picture is
 // taken. Sized in `rem` like the rest of the project: the root font-size is what the stage
 // scales, so rem is what keeps the credit the same size *relative to the sheet it sits under*
@@ -136,7 +158,7 @@ export async function exportElementAsPng(el, filename, opts = {}) {
   const qrSrc = await dataUrl(QR_PATH)
   const canvas = await html2canvas(el, {
     backgroundColor: background,
-    scale,
+    scale: normalisedScale(scale),
     useCORS: true,
     // NOT foreignObjectRendering. It draws the text correctly — the browser's own engine, so
     // 851Gkktt and the multi-value text-shadow outlines both survive — but everything inside
