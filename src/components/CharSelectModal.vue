@@ -3,6 +3,7 @@ import { inject } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { typeBgColor } from '../data/constants'
 import { asset } from '../data/assetPath'
+import { isBeta } from '../data/betaMode'
 
 const props = defineProps({
   playerKey: { type: String, required: true }
@@ -12,7 +13,14 @@ const battle = inject('battle')
 const { characters } = inject('characterData')
 const { t } = useI18n()
 
+// Unreleased cards are pickable once the version-number egg is on (data/betaMode.js).
+function playable(c) {
+  return c.battleReady || isBeta.value
+}
+
 function pick(c) {
+  // Guarded here as well as in the markup: the class alone is a look, not a rule.
+  if (!playable(c)) return
   battle.openMoveSelect(props.playerKey, c)
 }
 </script>
@@ -23,7 +31,14 @@ function pick(c) {
     {{ t('charSelect.empty') }}
   </div>
   <div v-else class="grid-2">
-    <div v-for="c in characters" :key="c.id" class="pick-card" @click="pick(c)">
+    <div
+      v-for="c in characters"
+      :key="c.id"
+      class="pick-card"
+      :class="{ 'coming-soon': !playable(c) }"
+      @click="pick(c)"
+    >
+      <div v-if="!playable(c)" class="pick-soon">{{ t('charSelect.comingSoon') }}</div>
       <div class="pick-top" :style="{ background: typeBgColor(c.type) }">
         <div class="pick-type-icon"><img :src="asset(`image/ICON/${c.type}.png`)" class="img-icon" :alt="c.type"></div>
         <div class="ic"><img :src="c.imageUrl || asset(`image/CHARA/${c.name}.png`)" class="img-icon" :alt="c.name"></div>

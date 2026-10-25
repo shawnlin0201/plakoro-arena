@@ -1,4 +1,5 @@
 <script setup>
+import { modOf, STEP } from '../../game/turnMods'
 import { computed, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { typeBgColor } from '../../data/constants'
@@ -25,16 +26,24 @@ const rows = computed(() => player.value.moveIds.map(mid => {
   // Show as "XX(+YY)" so the player can see their attack bonus is applied on top of
   // the move's own number, matching how resolveTurn actually adds atkBonus at cast time.
   const dmgInfo = atk > 0 ? { ...baseDmgInfo, display: `${baseDmgInfo.display}(+${atk})` } : baseDmgInfo
-  const isBanned = (player.value.committedBannedMoveIds || []).includes(mid)
+  const ban = modOf(player.value, STEP.MOVE_SELECT, 'banMoves')
+  const isBanned = !!(ban && ban.ids.includes(mid))
   // Same labels as duel mode's MovesGrid — a disabled card has to say why it's disabled,
   // otherwise it reads as the app being broken.
   const disableBadge = disabled
     ? (isBanned
-      ? { kind: 'bind', label: player.value.committedBannedMoveSourceName || t('moveCard.unusable') }
+      ? { kind: 'bind', label: (ban && ban.from) || t('moveCard.unusable') }
       : { kind: 'lastused', label: t('moveCard.usedLastTurn') })
     : null
   return { mid, mv, disabled, dmgInfo, disableBadge }
 }))
+
+// Same reminders duel mode shows — see MoveSelectPanel. Solo has no second player to be
+// told by, so if the app does not say it nobody will.
+const notices = computed(() => (player.value.mods || []).filter(m => m.notice).map(m => ({
+  key: m.notice,
+  text: t(`moveSelect.notice.${m.notice}`, { n: m.n, from: m.from })
+})))
 
 function pick(mid) {
   solo.pickMove(mid)
@@ -46,6 +55,9 @@ function pick(mid) {
     <div v-if="noMoveAvailable" style="display:flex; align-items:center; justify-content:space-between; gap:0.625rem; flex-shrink:0; padding:0.375rem 0.5rem 0.125rem;">
       <div style="font-size:0.6875rem; font-weight:800; color:var(--ink); line-height:1.4; min-width:0;">{{ t('solo.playerSkip.notice') }}</div>
       <button class="btn" style="flex-shrink:0; padding:0.4375rem 0.75rem; font-size:0.8125rem;" @click="solo.skipPlayerTurn()">{{ t('solo.playerSkip.button') }}</button>
+    </div>
+    <div v-if="notices.length" class="ms-notices">
+      <div v-for="n in notices" :key="n.key" class="ms-notice">{{ n.text }}</div>
     </div>
     <div class="ms-grid">
       <div v-for="row in rows" :key="row.mid" style="position:relative; display:flex; min-height:0; min-width:0;">
@@ -63,3 +75,17 @@ function pick(mid) {
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Matches MoveSelectPanel's, for the same reason it exists there. */
+.ms-notices { flex-shrink: 0; display: flex; flex-direction: column; gap: 0.1875rem; padding: 0 0.375rem 0.3125rem; }
+.ms-notice {
+  padding: 0.1875rem 0.4375rem;
+  border-radius: 0.25rem;
+  background: rgba(0, 0, 0, 0.55);
+  font-size: 0.5625rem;
+  font-weight: 800;
+  line-height: 1.35;
+  color: #fff;
+}
+</style>

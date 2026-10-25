@@ -8,7 +8,7 @@ import DicePartsPlanView from './DicePartsPlanView.vue'
 import ChipIcon from './ChipIcon.vue'
 import { pureDie } from '../../game/suggestedDice'
 import { loadSavedSets, saveSets } from '../../data/diceBuilderMemory'
-import html2canvas from 'html2canvas'
+import { exportElementAsPng } from '../../data/exportImage'
 
 // Three.js + cannon-es (pulled in by DiceRoll3DCanvas and diceTextures) add roughly 600kB to
 // the bundle — code-split so only players who actually open the dice builder and roll pay
@@ -602,19 +602,7 @@ async function exportDiceImage() {
   if (!diceGridRef.value || exportingDiceImage.value) return
   exportingDiceImage.value = true
   try {
-    const canvas = await html2canvas(diceGridRef.value, {
-      backgroundColor: '#ffffff',
-      scale: 2,
-      useCORS: true
-    })
-    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'))
-    if (!blob) return
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'plakoro-dice-build.png'
-    a.click()
-    URL.revokeObjectURL(url)
+    await exportElementAsPng(diceGridRef.value, 'plakoro-dice-build')
   } finally {
     exportingDiceImage.value = false
   }

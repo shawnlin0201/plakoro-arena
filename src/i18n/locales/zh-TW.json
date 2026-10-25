@@ -57,7 +57,8 @@
   "charSelect": {
     "title": "選擇寶可夢",
     "empty": "沒有可選擇的寶可夢，請確認資料庫中已登錄角色資料。",
-    "weaknessPrefix": "（弱點："
+    "weaknessPrefix": "（弱點：",
+    "comingSoon": "即將推出"
   },
   "energyDice": {
     "title": "設定你的能量骰",
@@ -67,7 +68,14 @@
   "moveSelect": {
     "title": "為{name}選擇4個招式",
     "confirm": "以所選招式確定",
-    "opponentThinking": "對方選擇招式中…"
+    "opponentThinking": "對方選擇招式中…",
+    "notice": {
+      "rerollCharaSelf": "「{from}」：這回合你的角色骰可以重擲 {n} 次。",
+      "rerollDiceEnemy": "「{from}」：對手指定你擲出的 {n} 顆能量骰，那幾顆要重擲。",
+      "pickEnemyWaza": "「{from}」：這回合你要用哪個招式，由對手決定。",
+      "swapChip": "「{from}」：你可以選 1 顆能量骰，任意更換上面的客製晶片。"
+    },
+    "opponentPickingYours": "對手正在替你選招…"
   },
   "moveCard": {
     "usedLastTurn": "上回合已使用",
@@ -83,14 +91,20 @@
     "moveFail": "招式失敗",
     "throwCharaDie": "丟擲骰子",
     "opponentResolving": "對方判定招式中…",
-    "opponentRolled": "對方的擲骰結果"
+    "opponentRolled": "對方的擲骰結果",
+    "rerollCharaDie": "重擲角色骰（剩 {n} 次）",
+    "rerollPickTitle": "「{from}」：選 {n} 顆對手的能量骰重擲",
+    "rerollThrowing": "重擲中…",
+    "rerollWaiting": "等待對手選擇要重擲的骰子…",
+    "rerollThrowTitle": "對手指定你重擲這 {n} 顆能量骰",
+    "dropPickTitle": "這回合少擲 {n} 顆，選擇不擲哪幾顆",
+    "dropMark": "不擲"
   },
   "effectPrompt": {
     "diceRollLabel": "{n}個",
     "enemyRollTitle": "對手要擲{label}能量骰",
     "diceSubSingle": "請選擇擲出的能量數量。",
     "diceSubMulti": "請選擇擲出最多的能量類型的數量。",
-    "charaDiceCountTitle": "共擲{n}次角色骰，選擇成功的次數。",
     "charaDiceRepeatTitle": "選擇角色骰連續成功的次數。",
     "bindWazaTitle": "請選擇下回合無法使用的招式",
     "bindWazaRemaining": "還要選{remaining}個",
@@ -100,7 +114,15 @@
     "charaDiceComboPrefix": "讓對手擲{n}次角色骰，每次出現",
     "charaDiceComboSuffix": "就追加{dmg}傷害。選擇成功的次數。",
     "charaDiceSelectSelfTitle": "選擇這次角色骰擲出的向，下回合你的角色骰將固定為此向。",
-    "charaDiceSelectEnemyTitle": "選擇這次角色骰擲出的向，下回合對手的角色骰將固定為此向。"
+    "charaDiceSelectEnemyTitle": "選擇這次角色骰擲出的向，下回合對手的角色骰將固定為此向。",
+    "charaShieldPrefix": "對手上回合使用了「{from}」。你這回合的角色骰是否擲出了 ",
+    "charaShieldSuffix": "？擲出的話，這招的傷害無效（傷害以外的效果照常）。",
+    "charaShieldYes": "有，傷害無效",
+    "charaShieldNo": "沒有，照常結算",
+    "charaDiceStepTitle": "第 {index} / {total} 次擲角色骰",
+    "charaDiceStepOpen": "第 {index} 次擲角色骰（失手為止）",
+    "charaDiceStepHint": "擲到 ",
+    "charaDiceStepHits": " 算成功　目前 {hits} 次"
   },
   "turnResult": {
     "title": "本回合結果",
@@ -110,11 +132,11 @@
     "charaYourTurn": "輪到你擲角色骰",
     "charaWaiting": "對方正在擲角色骰…",
     "charaOrientationHint": "擲出以下方向則成功：",
-    "charaProgressCount": "已成功{count}次，還需再擲{remaining}次",
     "charaProgressRepeat": "已連續成功{count}次，繼續擲到失手為止",
     "throwAgain": "再擲一次",
     "energyYourTurn": "輪到你擲{n}顆能量骰",
-    "energyWaiting": "對方正在擲{n}顆能量骰…"
+    "energyWaiting": "對方正在擲{n}顆能量骰…",
+    "charaProgressStep": "第 {index} / {total} 擲，目前成功 {hits} 次"
   },
   "win": {
     "victorySuffix": "獲勝！",
@@ -301,22 +323,25 @@
       "settings": "計算前提",
       "exportImage": "匯出圖片",
       "exportingImage": "匯出中…",
-      "sortByEv": "依期望效益排序",
+      "sortByNumber": "依編號排序",
       "countDefensive": "減傷折算為回血",
       "selfHpLabel": "剩餘 HP",
       "selfHpAny": "不指定",
       "prevEnemyFailed": "上一個對手回合，對手能量骰失敗",
       "prevSelfFailed": "上一個自己回合，自己能量骰失敗",
       "prevPrereqSucceeded": "上一個自己回合，指定招式成功",
+      "prevSelfUnhurt": "上回合自己沒受傷",
       "evHint": "期望效益＝（對手扣血 − 自己扣血）的平均，再乘上成功率；回血算加分。不計弱點加成。下方的組成相加就是期望效益（傷害總共為小計，不另外相加）",
       "noteNeedsHp": "填入剩餘 HP 後才會計入",
       "noteNeedsPrev": "依上方前提條件計算",
       "noteMirrorDice": "假設對手骰組與本組相同",
       "noteUnsupported": "有未支援的效果，未計入",
+      "noteHeal": "回復量受限於已損失的 HP",
       "evPartBase": "白板",
       "evPartChara": "角色骰",
       "evPartDamageTotal": "傷害總共",
       "evPartSelf": "自身 HP",
+      "evPartHeal": "回復",
       "evPartDefensive": "減傷",
       "countTempo": "把干擾對手折算成傷害",
       "tempoCalculating": "（計算中…）",
@@ -787,5 +812,15 @@
     },
     "comingSoon": "線上對戰即將上線",
     "notRankedOnline": "你還沒有線上對戰紀錄"
+  },
+  "stepper": {
+    "step": {
+      "moveSelect": "選招",
+      "diceRoll": "擲骰",
+      "resolve": "結算",
+      "damage": "傷害"
+    },
+    "yourTurn": "輪到你",
+    "theirTurn": "等待對手"
   }
 }

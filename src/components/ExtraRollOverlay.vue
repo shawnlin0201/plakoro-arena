@@ -104,8 +104,14 @@ watch(() => energyTask.value?.transforms, transforms => {
         {{ t('diceTask.charaOrientationHint') }}
         <span v-for="(ori, i) in charaTask.orientations" :key="i" class="dr-inline-icon half" style="display:inline-block; vertical-align:-0.3em; margin:0 0.0625rem;"><img :src="asset(`image/ICON/${ori}.png`)" class="img-icon" :alt="ori"></span>
       </div>
-      <div v-if="charaTask.mode === 'count'" class="overlay-sub">{{ t('diceTask.charaProgressCount', { count: charaTask.successCount, remaining: charaTask.targetN }) }}</div>
-      <div v-else-if="charaTask.mode === 'repeat'" class="overlay-sub">{{ t('diceTask.charaProgressRepeat', { count: charaTask.successCount }) }}</div>
+      <!-- A fixed-length run says which throw this is; an open-ended one (サンダーチェイン)
+           has no total to count towards, so it only reports hits so far. -->
+      <div v-if="charaTask.progress && charaTask.progress.total" class="overlay-sub">
+        {{ t('diceTask.charaProgressStep', { index: charaTask.progress.index, total: charaTask.progress.total, hits: charaTask.progress.hits }) }}
+      </div>
+      <div v-else-if="charaTask.progress" class="overlay-sub">
+        {{ t('diceTask.charaProgressRepeat', { count: charaTask.progress.hits }) }}
+      </div>
       <div class="dr-throw-gate">
         <div class="dr-throw-canvas"><DiceRoll3DCanvas ref="canvasRef" @rolled="onCharaRolled" /></div>
         <button v-if="isRoller" class="btn wide" :disabled="rolling" :style="rolling ? 'opacity:.6;' : ''" @click="throwChara">{{ t('diceTask.throwAgain') }}</button>

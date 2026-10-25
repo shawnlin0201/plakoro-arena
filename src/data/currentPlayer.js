@@ -7,6 +7,7 @@
 // The shape deliberately matches a nameplate's identity fields, because that is what a signed-in
 // player will be: a row in the same records the badges are drawn from.
 import { ref, computed } from 'vue'
+import { onSessionRejected } from './session'
 import { clearGifts } from './gifts'
 import { clearPoints } from './points'
 
@@ -65,3 +66,8 @@ export function signOut() {
   clearGifts()
   clearPoints()
 }
+
+// A token the server refuses is a session that has ended, whatever ended it — so it goes
+// through exactly the same teardown as pressing the sign-out button, rather than a second,
+// slightly different idea of what being signed out means.
+onSessionRejected(signOut)

@@ -19,6 +19,8 @@ import ExtraRollOverlay from './components/ExtraRollOverlay.vue'
 import WinScreen from './components/WinScreen.vue'
 import Modal from './components/Modal.vue'
 import TurnCutIn from './components/TurnCutIn.vue'
+import TurnStepper from './components/TurnStepper.vue'
+import { DICE_PHASES, IN_TURN_PHASES, RESOLVING_PHASES } from './game/turnSteps'
 import GlobalTopBar from './components/GlobalTopBar.vue'
 import MusicPlayer from './components/MusicPlayer.vue'
 import { showMusicPlayer } from './data/musicPlayerUi'
@@ -30,6 +32,7 @@ import LoginApp from './components/auth/LoginApp.vue'
 import AdminSwitchApp from './components/admin/AdminSwitchApp.vue'
 import AdminRewardsApp from './components/admin/AdminRewardsApp.vue'
 import { isSignedIn } from './data/currentPlayer'
+import { tapVersion } from './data/betaMode'
 import ModeSelect from './components/ModeSelect.vue'
 import SoloApp from './components/solo/SoloApp.vue'
 import DiceBuilderApp from './components/dice/DiceBuilderApp.vue'
@@ -56,6 +59,11 @@ const { isLoading, loadError } = characterData
 
 const mode = ref(null)
 const appVersion = __APP_VERSION__
+
+// Held back from release: the bar breaks its own layout mid-turn and has not been looked at
+// yet. One line to put back — the component stays, and so does game/turnSteps.js, which is
+// now what routes every phase to its screen whether or not this is rendered.
+const SHOW_TURN_STEPPER = false
 
 // A mode can be entered carrying a request from the mode that opened it — the tier list hands
 // the dice builder a character and the build its figure assumed. `from` is where "back" goes,
@@ -94,7 +102,7 @@ function exitToHome() {
 const stageRef = ref(null)
 useStageLayout(stageRef)
 
-const inBattleBoard = computed(() => ['moveSelect', 'diceRoll', 'resolve', 'effectPrompt', 'charaThrowTask', 'energyThrowTask', 'turnResultConfirm'].includes(state.phase))
+const inBattleBoard = computed(() => IN_TURN_PHASES.includes(state.phase))
 
 // Each side has their own modal slot (state.modals.A / .B) so opening one never closes the
 // other's — this picks out whichever slot this client should actually render: your own seat
@@ -129,8 +137,11 @@ onBeforeUnmount(uninstallButtonSfx)
         :aria-label="t('app.backToHome')"
         @click="showExitConfirm = true"
       >←</button>
+      <!-- Six taps here turn the unreleased cards on; see data/betaMode.js. Deliberately
+           still looks like a label — no pointer cursor, no hover state. -->
       <div
-        style="position:absolute; right:0.375rem; bottom:0.1875rem; z-index:300; font-size:0.5rem; font-weight:700; color:rgba(58,58,58,.5); cursor:default;"
+        style="position:absolute; right:0.375rem; bottom:0.1875rem; z-index:300; font-size:0.5rem; font-weight:700; color:rgba(58,58,58,.5); cursor:default; user-select:none;"
+        @click="tapVersion()"
       >v{{ appVersion }}</div>
 
       <div v-if="isLoading" style="display:flex; height:100%; align-items:center; justify-content:center; font-weight:800; font-size:1rem; color:var(--sub);">{{ t('app.loading') }}</div>
@@ -150,9 +161,9 @@ onBeforeUnmount(uninstallButtonSfx)
         <Board v-else :turn-mode="inBattleBoard" />
 
         <MoveSelectPanel v-if="state.phase === 'moveSelect'" />
-        <DiceOverlay v-if="state.phase === 'diceRoll'" />
+        <DiceOverlay v-if="DICE_PHASES.includes(state.phase)" />
         <MoveSelectPanel
-          v-if="['resolve', 'effectPrompt', 'charaThrowTask', 'energyThrowTask', 'turnResultConfirm'].includes(state.phase)"
+          v-if="RESOLVING_PHASES.includes(state.phase)"
           resolve-phase
         />
         <EffectPromptOverlay v-if="state.phase === 'effectPrompt'" />
@@ -161,6 +172,7 @@ onBeforeUnmount(uninstallButtonSfx)
         <WinScreen v-if="state.phase === 'win'" />
         <Modal v-if="activeModalKey" :player-key="activeModalKey" />
         <TurnCutIn v-if="state.turnCutIn" />
+        <TurnStepper v-if="SHOW_TURN_STEPPER" />
       </template>
 
       <DiceBuilderApp v-else-if="mode === 'diceBuilder'" :open-odds="modeRequest" @back="leaveMode()" />

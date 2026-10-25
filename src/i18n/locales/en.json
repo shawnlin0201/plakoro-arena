@@ -57,7 +57,8 @@
   "charSelect": {
     "title": "Choose a Pokémon",
     "empty": "No Pokémon available to choose. Please check that characters are registered in the database.",
-    "weaknessPrefix": "(Weak:"
+    "weaknessPrefix": "(Weak:",
+    "comingSoon": "Coming soon"
   },
   "energyDice": {
     "title": "Set up your energy dice",
@@ -67,7 +68,14 @@
   "moveSelect": {
     "title": "Choose 4 moves for {name}",
     "confirm": "Confirm selected moves",
-    "opponentThinking": "Opponent is choosing a move…"
+    "opponentThinking": "Opponent is choosing a move…",
+    "notice": {
+      "rerollCharaSelf": "{from}: you may reroll your character die {n} time(s) this turn.",
+      "rerollDiceEnemy": "{from}: your opponent names {n} of your energy dice — reroll those.",
+      "pickEnemyWaza": "{from}: your opponent chooses which move you use this turn.",
+      "swapChip": "{from}: you may pick one energy die and swap its custom chips freely."
+    },
+    "opponentPickingYours": "Your opponent is choosing your move…"
   },
   "moveCard": {
     "usedLastTurn": "Used last turn",
@@ -83,14 +91,20 @@
     "moveFail": "Move Fails",
     "throwCharaDie": "Throw Dice",
     "opponentResolving": "Opponent is resolving their move…",
-    "opponentRolled": "Opponent's roll result"
+    "opponentRolled": "Opponent's roll result",
+    "rerollCharaDie": "Reroll character die ({n} left)",
+    "rerollPickTitle": "{from}: choose {n} of their energy dice to reroll",
+    "rerollThrowing": "Rerolling…",
+    "rerollWaiting": "Waiting for your opponent to choose…",
+    "rerollThrowTitle": "Your opponent made you reroll these {n} energy dice",
+    "dropPickTitle": "Throw {n} fewer this turn — choose which to leave out",
+    "dropMark": "out"
   },
   "effectPrompt": {
     "diceRollLabel": "{n}",
     "enemyRollTitle": "Opponent rolls {label} energy dice",
     "diceSubSingle": "Choose the number of energy shown.",
     "diceSubMulti": "Choose the count of the most-rolled energy type.",
-    "charaDiceCountTitle": "Roll the character die {n} times total, then choose the number of successes.",
     "charaDiceRepeatTitle": "Choose how many times in a row the character die succeeded.",
     "bindWazaTitle": "Choose the move(s) that can't be used next turn",
     "bindWazaRemaining": "Choose {remaining} more",
@@ -100,7 +114,15 @@
     "charaDiceComboPrefix": "Roll the opponent's character die {n} times; each landing on",
     "charaDiceComboSuffix": " adds {dmg} damage. Choose the number of successes.",
     "charaDiceSelectSelfTitle": "Choose the orientation the character die landed on — yours is fixed to it next turn.",
-    "charaDiceSelectEnemyTitle": "Choose the orientation the character die landed on — the opponent's is fixed to it next turn."
+    "charaDiceSelectEnemyTitle": "Choose the orientation the character die landed on — the opponent's is fixed to it next turn.",
+    "charaShieldPrefix": "Your opponent used {from} last turn. Did your character die land on ",
+    "charaShieldSuffix": "? If it did, this move deals no damage (other effects still apply).",
+    "charaShieldYes": "Yes — no damage",
+    "charaShieldNo": "No — damage lands",
+    "charaDiceStepTitle": "Character die, throw {index} of {total}",
+    "charaDiceStepOpen": "Character die, throw {index} — keep going until it misses",
+    "charaDiceStepHint": "Counts as a hit on ",
+    "charaDiceStepHits": " — {hits} so far"
   },
   "turnResult": {
     "title": "Turn Result",
@@ -110,11 +132,11 @@
     "charaYourTurn": "Your turn to throw the character die",
     "charaWaiting": "Opponent is throwing the character die…",
     "charaOrientationHint": "Success if it lands on:",
-    "charaProgressCount": "{count} success(es) so far, {remaining} more throw(s) to go",
     "charaProgressRepeat": "{count} success(es) in a row — keep going until it misses",
     "throwAgain": "Throw Again",
     "energyYourTurn": "Your turn to throw {n} energy dice",
-    "energyWaiting": "Opponent is throwing {n} energy dice…"
+    "energyWaiting": "Opponent is throwing {n} energy dice…",
+    "charaProgressStep": "Throw {index} of {total} — {hits} hit(s) so far"
   },
   "win": {
     "victorySuffix": " Wins!",
@@ -301,22 +323,25 @@
       "settings": "Assumptions",
       "exportImage": "Export image",
       "exportingImage": "Exporting…",
-      "sortByEv": "Sort by expected value",
+      "sortByNumber": "Sort by card number",
       "countDefensive": "Count damage reduction as healing",
       "selfHpLabel": "Remaining HP",
       "selfHpAny": "Unset",
       "prevEnemyFailed": "Opponent's energy dice failed last turn",
       "prevSelfFailed": "Your energy dice failed last turn",
       "prevPrereqSucceeded": "The prerequisite move landed last turn",
+      "prevSelfUnhurt": "Took no damage last turn",
       "evHint": "Expected value = average of (damage dealt − damage taken by yourself), multiplied by the success rate. Healing counts as a gain. Weakness is left out. The parts underneath add up to the figure (Dmg is a subtotal, not another part).",
       "noteNeedsHp": "Counted once you enter remaining HP",
       "noteNeedsPrev": "Based on the assumptions above",
       "noteMirrorDice": "Assumes the opponent rolls this same build",
       "noteUnsupported": "Has an unsupported effect, left out",
+      "noteHeal": "Healing is capped by HP actually missing",
       "evPartBase": "Base",
       "evPartChara": "Char. die",
       "evPartDamageTotal": "Dmg",
       "evPartSelf": "Own HP",
+      "evPartHeal": "Heal",
       "evPartDefensive": "Reduction",
       "countTempo": "Count what it denies the opponent",
       "tempoCalculating": "(working…)",
@@ -788,5 +813,15 @@
     },
     "comingSoon": "Online battle is coming soon",
     "notRankedOnline": "You have no online battles yet"
+  },
+  "stepper": {
+    "step": {
+      "moveSelect": "Move",
+      "diceRoll": "Dice",
+      "resolve": "Effects",
+      "damage": "Damage"
+    },
+    "yourTurn": "Your turn",
+    "theirTurn": "Opponent"
   }
 }

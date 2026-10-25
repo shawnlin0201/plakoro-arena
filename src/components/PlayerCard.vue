@@ -1,4 +1,5 @@
 <script setup>
+import { modSum, STEP } from '../game/turnMods'
 import { computed, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { typeBgColor, CARD_BOTTOM_DARK } from '../data/constants'
@@ -33,9 +34,10 @@ const charPicSrc = computed(() => {
 })
 
 const incomingDamageText = computed(() => {
-  if (!showAsSelected.value || !p.value.incomingDamageMod) return ''
-  const sign = p.value.incomingDamageMod > 0 ? '+' : ''
-  return t('player.incomingDamageEffect', { sign, value: p.value.incomingDamageMod })
+  const delta = modSum(p.value, STEP.DAMAGE, 'damageDelta')
+  if (!showAsSelected.value || !delta) return ''
+  const sign = delta > 0 ? '+' : ''
+  return t('player.incomingDamageEffect', { sign, value: delta })
 })
 
 function onTap() {

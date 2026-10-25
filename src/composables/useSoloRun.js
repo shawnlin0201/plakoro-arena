@@ -1,6 +1,7 @@
+import { clearMods, modOf, modSum, STEP } from '../game/turnMods'
 import { reactive } from 'vue'
 import { computeDisplayDamage as computeDisplayDamagePure, isCharaColorConditionMet } from '../game/damage'
-import { runEffectQueue as runEffectQueueShared } from '../game/effectQueue'
+import { advanceEffectQueue } from '../game/effectQueue'
 import { buildAiOpponentForTier, scaleMoveForFloor, maxAffordableCostForTier } from '../game/aiOpponent'
 import { generateActMap, reachableNodeIds as mapReachableNodeIds } from '../game/mapGen'
 import { drawRandomEvent } from '../game/eventPool'
@@ -33,17 +34,15 @@ function newCombatant() {
     lastMoveFailed: false,
     committedLastMoveId: null,
     committedLastMoveFailed: false,
-    incomingDamageMod: 0,
-    incomingDamageNullify: null,
-    diceMod: 0,
+    // Everything an effect planted on this player for their next turn, tagged with the
+    // step it changes — see game/turnMods.js. One list, one lifecycle, in place of a
+    // field per effect each with its own clearing.
+    mods: [],
+    // Whether this side took move damage on the turn that just finished. `committed` is the
+    // settled value a later turn reads, mirroring committedLastMoveFailed.
+    tookDamage: false,
+    committedTookDamage: false,
     diceModBadges: [],
-    bannedMoveIds: [],
-    bannedMoveSourceName: "",
-    committedBannedMoveIds: [],
-    committedBannedMoveSourceName: "",
-    charaDiceBlocked: false,
-    // See useBattleState: set by FIX_CHARADICE_*, consumed on this player's next turn.
-    fixCharaDice: null,
     attackAnim: null,
     hitBlink: false,
     dmgOverlay: null,
@@ -64,6 +63,9 @@ function freshRunState() {
     ai: newCombatant(),
     selectedMove: null,
     effectPrompt: null,
+    // The effect queue's position while one is running — see useBattleState's field of the
+    // same name. Plain data so the turn can be resumed rather than held in a closure.
+    effectCtx: null,
     repeatActive: false,
     upgradeChoices: null,
     learnMoveChoices: null,
@@ -161,16 +163,10 @@ export function useSoloRun(charactersRef, movesRef) {
     c.lastMoveFailed = false
     c.committedLastMoveId = null
     c.committedLastMoveFailed = false
-    c.incomingDamageMod = 0
-    c.incomingDamageNullify = null
-    c.diceMod = 0
+    clearMods(c, [STEP.DAMAGE])
+    c.tookDamage = false
+    c.committedTookDamage = false
     c.diceModBadges = []
-    c.bannedMoveIds = []
-    c.bannedMoveSourceName = ""
-    c.committedBannedMoveIds = []
-    c.committedBannedMoveSourceName = ""
-    c.charaDiceBlocked = false
-    c.fixCharaDice = null
     c.attackAnim = null
     c.hitBlink = false
     c.dmgOverlay = null
@@ -247,7 +243,8 @@ export function useSoloRun(charactersRef, movesRef) {
   // every option, but a tower run starts at 2 moves, where they can.
   function availableMoveIds(who) {
     const c = state[who]
-    return c.moveIds.filter(mid => mid !== c.committedLastMoveId && !(c.committedBannedMoveIds || []).includes(mid))
+    const ban = modOf(c, STEP.MOVE_SELECT, 'banMoves')
+    return c.moveIds.filter(mid => mid !== c.committedLastMoveId && !(ban && ban.ids.includes(mid)))
   }
 
   function pickMove(mid) {
@@ -259,7 +256,8 @@ export function useSoloRun(charactersRef, movesRef) {
 
   function aiTakeTurn() {
     const ai = state.ai
-    const notSealed = ai.moveIds.filter(mid => !(ai.committedBannedMoveIds || []).includes(mid))
+    const aiBan = modOf(ai, STEP.MOVE_SELECT, 'banMoves')
+    const notSealed = ai.moveIds.filter(mid => !(aiBan && aiBan.ids.includes(mid)))
     if (notSealed.length === 0) {
       // Every move the AI knows is actually sealed — it truly has nothing it can do.
       state.phase = "aiSkip"
@@ -280,14 +278,11 @@ export function useSoloRun(charactersRef, movesRef) {
     const ai = state.ai
     ai.committedLastMoveId = null
     ai.committedLastMoveFailed = false
-    ai.committedBannedMoveIds = []
-    ai.committedBannedMoveSourceName = ""
-    // A skipped turn never runs resolveTurn for the AI, so its live bannedMoveIds (only ever
-    // cleared at the top of resolveTurn for whoever's turn it is) would otherwise still hold
-    // the seal — and get re-committed onto the AI after every later player turn, making the
-    // seal outlast its intended one-turn duration.
-    ai.bannedMoveIds = []
-    ai.bannedMoveSourceName = ""
+
+    // resolveTurn never runs for a skipped turn, so the modifiers planted for it have to be
+    // spent here or they would carry into the next one. (The old two-field version was worse
+    // than that: the live seal got re-committed after every later turn, so it never expired.)
+    clearMods(ai, [STEP.MOVE_SELECT])
     state.turn = "player"
     state.selectedMove = null
     state.phase = "moveSelect"
@@ -300,12 +295,9 @@ export function useSoloRun(charactersRef, movesRef) {
     const p = state.player
     p.committedLastMoveId = null
     p.committedLastMoveFailed = false
-    p.committedBannedMoveIds = []
-    p.committedBannedMoveSourceName = ""
-    // Same reasoning as skipAiTurn: resolveTurn never runs for a skipped turn, so the live
-    // seal fields have to be cleared here or they'd be re-committed on every later turn.
-    p.bannedMoveIds = []
-    p.bannedMoveSourceName = ""
+
+    // Same reasoning as skipAiTurn.
+    clearMods(p, [STEP.MOVE_SELECT])
     state.turn = "ai"
     state.selectedMove = null
     state.phase = "moveSelect"
@@ -328,17 +320,6 @@ export function useSoloRun(charactersRef, movesRef) {
 
   // --- resolution (shared effect-queue engine) ---
 
-  const effectQueueHooks = {
-    showDicePrompt,
-    showCharaDiceCountPrompt,
-    showCharaDiceRepeatPrompt,
-    showBindWazaPrompt,
-    showEneCountPrompt,
-    showCharaDiceEnemyManualPrompt,
-    showCharaDiceComboEnemyPrompt,
-    showCharaDiceSelectPrompt
-  }
-
   function resolveTurn(result) {
     const moverKey = state.turn
     const mover = state[moverKey]
@@ -347,17 +328,15 @@ export function useSoloRun(charactersRef, movesRef) {
     const mv = moveForTurn()
     mover.lastMoveId = state.selectedMove
     mover.lastMoveFailed = result.kind === "fail"
-    mover.bannedMoveIds = []
-    mover.bannedMoveSourceName = ""
-    mover.diceMod = 0
     mover.diceModBadges = []
-    mover.charaDiceBlocked = false
-    mover.fixCharaDice = null
+    // Consumed by the turn they applied to, alongside every other next-turn modifier.
+    // The mover has now picked and acted, so whatever was planted for their moveSelect is
+    // spent. Their damage mods are not — those are tested when the other side attacks.
+    clearMods(mover, [STEP.MOVE_SELECT, STEP.DICE_ROLL])
     state.phase = "resolve"
 
     if (result.kind === "fail") {
-      opp.incomingDamageMod = 0
-      opp.incomingDamageNullify = null
+      clearMods(opp, [STEP.DAMAGE])
       proceedToAnimateWithCtx({ moverKey, mover, oppKey, opp, mv, dmgToOpp: 0, dmgToSelf: 0, isMiss: true })
       return
     }
@@ -368,64 +347,101 @@ export function useSoloRun(charactersRef, movesRef) {
       queue.push({ type: result.ce.type, value: result.ce.value })
     }
     const dmgInfo = result.dmgInfo || computeDisplayDamage(mv, mover, opp)
-    const ctx = { moverKey, mover, oppKey, opp, mv, dmgToOpp: dmgInfo.raw + (mover.atkBonus || 0), dmgToSelf: 0 }
-    runEffectQueueShared(queue, 0, ctx, effectQueueHooks, () => proceedToAnimateWithCtx(ctx))
+    const ceIndex = result.kind === "chara" && result.ce ? (mv.chara || []).indexOf(result.ce) : null
+    state.effectCtx = {
+      moverKey, oppKey, moveId: mv.id, ceIndex,
+      queue, cursor: 0,
+      dmgToOpp: dmgInfo.raw + (mover.atkBonus || 0), dmgToSelf: 0,
+      charaShieldAsked: false
+    }
+    runEffects()
+  }
+
+  // Same shape as duel mode's — see useBattleState for why none of this is held in closures.
+  function hydrateEffectCtx() {
+    const c = state.effectCtx
+    if (!c) return null
+    const mv = movesRef.value[c.moveId]
+    const chara = (mv && mv.chara) || []
+    return {
+      ...c,
+      mover: state.players[c.moverKey],
+      opp: state.players[c.oppKey],
+      mv,
+      ce: c.ceIndex === null || c.ceIndex < 0 ? null : chara[c.ceIndex]
+    }
+  }
+
+  function runEffects(answer) {
+    const ctx = hydrateEffectCtx()
+    if (!ctx) return
+    const ask = advanceEffectQueue(ctx, answer)
+    Object.assign(state.effectCtx, {
+      cursor: ctx.cursor, dmgToOpp: ctx.dmgToOpp, dmgToSelf: ctx.dmgToSelf,
+      // Multi-throw effects keep a tally here between throws; plain data, so it survives.
+      multi: ctx.multi || null
+    })
+    if (ask) {
+      presentAsk(ask, ctx)
+      return
+    }
+    proceedToAnimateWithCtx(ctx)
+  }
+
+  // Solo has no online paths and no second device, so every request is a question for the one
+  // player at the table.
+  function presentAsk(ask, ctx) {
+    if (ask.kind === 'charaDiceSelect' && ask.target === 'self' && state.charaDieFace
+        && ask.orientations.includes(state.charaDieFace)) {
+      submitEffectPrompt(state.charaDieFace)
+      return
+    }
+    const display = ask.kind === 'bindWaza'
+      ? { picked: [] }
+      : { mv: ctx.mv, dmgInfo: computeDisplayDamage(ctx.mv, ctx.mover, ctx.opp), mover: ctx.mover, opp: ctx.opp }
+    state.effectPrompt = { ...ask, ...display }
+    state.phase = "effectPrompt"
   }
 
   // --- effect prompts (same shapes as duel mode) ---
 
-  function showDicePrompt(n, multiplier, ctx, onPick) {
-    state.effectPrompt = { kind: "diceNumber", max: n * 2, multiplier, onPick }
-    state.phase = "effectPrompt"
-  }
-  function showCharaDiceCountPrompt(n, effectValue, ctx, onPick) {
-    const dmgInfo = computeDisplayDamage(ctx.mv, ctx.mover, ctx.opp)
-    state.effectPrompt = { kind: "charaDiceCount", n, effectValue, mv: ctx.mv, dmgInfo, mover: ctx.mover, opp: ctx.opp, onPick }
-    state.phase = "effectPrompt"
-  }
-  function showCharaDiceRepeatPrompt(effectValue, ctx, onPick) {
-    const dmgInfo = computeDisplayDamage(ctx.mv, ctx.mover, ctx.opp)
-    state.effectPrompt = { kind: "charaDiceRepeat", effectValue, mv: ctx.mv, dmgInfo, mover: ctx.mover, opp: ctx.opp, onPick }
-    state.phase = "effectPrompt"
-  }
-  function showBindWazaPrompt(targetKey, count, onDone) {
-    state.effectPrompt = { kind: "bindWaza", targetKey, count, picked: [], onDone }
-    state.phase = "effectPrompt"
-  }
-  function showEneCountPrompt(effectValue, ctx, onPick) {
-    const dmgInfo = computeDisplayDamage(ctx.mv, ctx.mover, ctx.opp)
-    state.effectPrompt = { kind: "eneCount", effectValue, mv: ctx.mv, dmgInfo, mover: ctx.mover, opp: ctx.opp, onPick }
-    state.phase = "effectPrompt"
-  }
-  function showCharaDiceEnemyManualPrompt(orientations, effectValue, ctx, onPick) {
-    const dmgInfo = computeDisplayDamage(ctx.mv, ctx.mover, ctx.opp)
-    state.effectPrompt = { kind: "charaDiceEnemyManual", orientations, effectValue, mv: ctx.mv, dmgInfo, mover: ctx.mover, opp: ctx.opp, onPick }
-    state.phase = "effectPrompt"
-  }
-
-  // The opponent rolls their character die n times; the player reports how many landed on one
-  // of `orientations`. A count, not a yes/no — that's what separates it from the prompt above.
-  function showCharaDiceComboEnemyPrompt(n, orientations, effectValue, ctx, onPick) {
-    const dmgInfo = computeDisplayDamage(ctx.mv, ctx.mover, ctx.opp)
-    state.effectPrompt = { kind: "charaDiceComboEnemy", n, orientations, effectValue, mv: ctx.mv, dmgInfo, mover: ctx.mover, opp: ctx.opp, onPick }
-    state.phase = "effectPrompt"
-  }
-
-  // The player reports which orientation their character die actually showed, and that becomes
-  // the orientation their (or the opponent's) die is pinned to next turn.
-  function showCharaDiceSelectPrompt(orientations, effectValue, ctx, target, onPick) {
-    const dmgInfo = computeDisplayDamage(ctx.mv, ctx.mover, ctx.opp)
-    state.effectPrompt = { kind: "charaDiceSelect", orientations, effectValue, target, mv: ctx.mv, dmgInfo, mover: ctx.mover, opp: ctx.opp, onPick }
+  // A yes/no about the die the attacker just physically threw. Same self-report shape as
+  // showCharaDiceEnemyManualPrompt below, but about the *mover's* die and asked on behalf of
+  // the defender's standing shield rather than the move being cast.
+  function showCharaShieldPrompt(shield, ctx) {
+    // When the app threw the die itself, the answer is already on screen — asking the player
+    // to retype it would be asking them to confirm something the app knows better. Only the
+    // physical-dice modes have a question to ask.
+    if (state.charaDieFace) {
+      submitEffectPrompt(shield.orientations.includes(state.charaDieFace))
+      return
+    }
+    state.effectPrompt = {
+      kind: "charaShield",
+      orientations: shield.orientations,
+      sourceName: shield.from,
+      mv: ctx.mv,
+      mover: ctx.mover,
+      opp: ctx.opp
+    }
     state.phase = "effectPrompt"
   }
 
   function submitEffectPrompt(value) {
-    const ep = state.effectPrompt
-    if (!ep) return
-    const cb = ep.onPick
+    const wasShield = state.effectPrompt && state.effectPrompt.kind === "charaShield"
     state.effectPrompt = null
     state.phase = "resolve"
-    cb(value)
+    if (wasShield) {
+      const ctx = hydrateEffectCtx()
+      if (!ctx) return
+      if (value) {
+        ctx.dmgToOpp = 0
+        state.effectCtx.dmgToOpp = 0
+      }
+      proceedToAnimateWithCtx(ctx)
+      return
+    }
+    runEffects(value)
   }
 
   function pickBindWazaMove(mid) {
@@ -434,11 +450,10 @@ export function useSoloRun(charactersRef, movesRef) {
     if (ep.picked.includes(mid)) return
     ep.picked.push(mid)
     if (ep.picked.length >= ep.count) {
-      const cb = ep.onDone
       const picked = ep.picked.slice()
       state.effectPrompt = null
       state.phase = "resolve"
-      cb(picked)
+      runEffects(picked)
     }
   }
 
@@ -499,16 +514,32 @@ export function useSoloRun(charactersRef, movesRef) {
     setTimeout(cb, 1000)
   }
 
+  // Asked only when ふわふわひこう is actually shielding the defender, and only when this
+  // turn's damage would otherwise land — a 0-damage turn has nothing to cancel, and asking
+  // anyway would be a prompt for no reason. Answering yes zeroes the damage and nothing else:
+  // the card is explicit that other effects still apply, which is why this runs after the
+  // effect queue rather than instead of it.
   function proceedToAnimateWithCtx(ctx) {
+    const shield = modOf(ctx.opp, STEP.DAMAGE, 'nullifyIfCharaDice')
+    if (shield && !ctx.charaShieldAsked && Math.max(ctx.dmgToOpp, 0) > 0) {
+      if (state.effectCtx) state.effectCtx.charaShieldAsked = true
+      showCharaShieldPrompt(shield, ctx)
+      return
+    }
+    state.effectCtx = null
     const { moverKey, mover, oppKey, opp, mv } = ctx
-    let dmgToOpp = (opp.incomingDamageNullify !== null && opp.incomingDamageNullify !== undefined)
-      ? Math.max(opp.incomingDamageNullify, 0)
+    let nullifyMod = modOf(opp, STEP.DAMAGE, 'damageSetTo')
+    let dmgToOpp = nullifyMod
+      ? Math.max(nullifyMod.value, 0)
       : Math.max(ctx.dmgToOpp, 0)
     dmgToOpp = Math.max(dmgToOpp - (opp.defBonus || 0), 0)
     const dmgToSelf = ctx.dmgToSelf
 
     playEffectOn(oppKey, dmgToOpp, () => {
       opp.hp = Math.max(opp.hp - dmgToOpp, 0)
+      // Recorded here rather than from dmgToOpp alone, because a shield can reduce it to
+      // zero — "took no damage" has to mean what actually reached them.
+      if (dmgToOpp > 0) opp.tookDamage = true
 
       const finishSelf = () => {
         if (opp.hp <= 0 || mover.hp <= 0) {
@@ -531,14 +562,15 @@ export function useSoloRun(charactersRef, movesRef) {
           return
         }
         state.repeatActive = false
-        opp.incomingDamageMod = 0
-        opp.incomingDamageNullify = null
+        clearMods(opp, [STEP.DAMAGE])
+        // Settle it for both sides: the attacker took nothing this turn unless their own
+        // move hurt them, and the defender's flag was set when the damage landed.
+        mover.committedTookDamage = mover.tookDamage
+        opp.committedTookDamage = opp.tookDamage
+        mover.tookDamage = false
+        opp.tookDamage = false
         mover.committedLastMoveId = mover.lastMoveId
         mover.committedLastMoveFailed = mover.lastMoveFailed
-        mover.committedBannedMoveIds = mover.bannedMoveIds
-        mover.committedBannedMoveSourceName = mover.bannedMoveSourceName
-        opp.committedBannedMoveIds = opp.bannedMoveIds
-        opp.committedBannedMoveSourceName = opp.bannedMoveSourceName
         state.turn = oppKey
         state.selectedMove = null
         state.phase = "moveSelect"

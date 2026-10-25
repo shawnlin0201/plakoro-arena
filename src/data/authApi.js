@@ -1,17 +1,7 @@
 // Thin wrapper around the login/registration endpoints in server/index.mjs. Every function
 // resolves with the parsed JSON body or throws an Error whose message is the server's own
 // `error` string — the UI just needs something to show, not a status code to branch on.
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8787'
-
-async function request(path, options = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) }
-  })
-  const data = await res.json().catch(() => null)
-  if (!res.ok) throw new Error(data?.error || `request failed (${res.status})`)
-  return data
-}
+import { request } from './apiRequest'
 
 // A brand new player — no history to protect, so no claim code needed. `account` is the login
 // handle (unique, picked here); `name` is just the display nickname (not unique, shown on

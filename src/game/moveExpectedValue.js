@@ -33,11 +33,15 @@ export const NOTE_NEEDS_PREV = 'needsPrev'    // conditional on what happened la
 export const NOTE_MIRROR_DICE = 'mirrorDice'  // valued by assuming the opponent's dice match ours
 export const NOTE_UNKNOWN = 'unknown'         // depends on the opponent's card; unknowable here
 export const NOTE_UNSUPPORTED = 'unsupported' // no handler — data has outgrown this module
+export const NOTE_HEAL = 'heal'               // HP regained, capped by how much is missing
 
 // Effects that replace the single character-die roll with several of their own ("このワザは
 // キャラコロを合計2回振る"). The die isn't rolled once to decide whether the effect fires; the
 // effect *is* the rolls, so its branch is unconditional and no "die missed" branch exists.
 const MULTI_ROLL_CHARA = /^DAMAGE_EXTRA_(\d+)CHARADICE$/
+
+// `DAMAGE_EXTRA_ENE_<energy>` — counts a named energy rather than the move's own type.
+const ENE_TYPED = /^DAMAGE_EXTRA_ENE_(.+)$/
 
 function faceCountOf(orientationList) {
   return String(orientationList).split(',').map(s => s.trim()).filter(s => s !== '').length
@@ -68,6 +72,21 @@ export function tempoWorth(type, value, table) {
       return table.nullifyDamage
     case 'SPECIAL_BIND_WAZA':
       return table.bindMove
+    // Choosing the opponent's move outright is bindMove's stronger sibling: banning their
+    // best leaves them their second, picking for them leaves them their worst. Priced at the
+    // same measured gap for now rather than inventing a multiplier — it is an understatement,
+    // and an understatement with a tempo marker beside it beats a guess.
+    case 'SPECIAL_PICK_ENEMY_WAZA':
+      return table.bindMove
+    // A reroll is not the same as denying a die, but it is measured against the same thing:
+    // the swing between rolling n dice and n-1. Forcing the opponent to rethrow their best
+    // result is worth a share of that, and two rerolls more than one.
+    case 'REROLL_DICE_ENEMY':
+      return value >= 2 ? table.denyDice2 : table.denyDice1
+    // The mirror: a second look at your own character die. Worth a share of having the die at
+    // all, which is what denyCharaDie measures.
+    case 'REROLL_CHARADICE_SELF':
+      return value >= 2 ? table.denyCharaDie : table.denyCharaDie / 2
     case 'MOD_DICE_STEAL':
       return table.denyDice1 + table.gainDice1
     // The only one that can come out negative: a few moves cost the caster their own dice.
@@ -96,6 +115,23 @@ function addDefensive(state, value, env, type) {
   if (!env.countDefensiveValue) return
   addNote(state, type, NOTE_DEFENSIVE)
   state.defensive += Math.abs(value)
+}
+
+// Healing is HP in the same currency as `defensive` — 20 HP back is worth as much as 20 not
+// taken — but with a ceiling the other effects do not have: you cannot heal past full, so a
+// move that heals 50 is worth 50 to someone at 70/120 and nothing at all to someone untouched.
+//
+// `selfHp` is what the premises panel already collects. When it is set the cap is real
+// arithmetic; when it is not, the figure is the printed number and the note says so, which is
+// the same bargain MOD_REDUCE_TAKEN strikes. Either way it is flagged, because "worth 50" is
+// only true of a player who is actually 50 down.
+function addHeal(state, amount, env, type) {
+  addNote(state, type, NOTE_HEAL)
+  if (env.selfHp === null || env.maxHp === null) {
+    state.heal += amount
+    return
+  }
+  state.heal += Math.max(0, Math.min(amount, env.maxHp - env.selfHp))
 }
 
 function applyEffect(eff, state, env) {
@@ -140,8 +176,32 @@ function applyEffect(eff, state, env) {
     return
   }
 
+  // チルタリス's shield: the damage is cancelled only if the attacker's character die happens
+  // to land on one of these faces. That probability is knowable — it is faces/6 — but what it
+  // saves is not: the calculator has no opponent, so it cannot know what they would have hit
+  // for. Same unknowable shape as MOD_NULLIFY_TAKEN, which is also left to the tempo table.
+  if (/^MOD_NULLIFY_TAKEN_IF_ENEMY_CHARADICE_/.test(type)) {
+    addTempo(state, type, value, env)
+    return
+  }
+
+  // A shield with a ceiling: worth the hit it blocks, but only against a hit small enough to
+  // be blocked. The calculator has no opponent to ask, so it credits the ceiling — the most
+  // it can ever be worth — under the same opt-in as any other damage reduction, and the
+  // `defensive` marker says the figure includes it.
+  if (type === 'NULLIFY_TAKEN_LE') {
+    addDefensive(state, value, env, type)
+    return
+  }
+
   // Conditions on the previous turn. The premise is the caller's to set, but the figure is
   // only true under it either way, so it's always flagged.
+  if (type === 'DAMAGE_EXTRA_IF_UNHURT') {
+    addNote(state, type, NOTE_NEEDS_PREV)
+    if (env.prev.selfUnhurt) state.damage += value
+    return
+  }
+
   if (type === 'DAMAGE_EXTRA_DICE_MISS_ENEMY') {
     addNote(state, type, NOTE_NEEDS_PREV)
     if (env.prev.enemyMoveFailed) state.damage += value
@@ -162,8 +222,25 @@ function applyEffect(eff, state, env) {
     return
   }
 
+  // Counts a named energy rather than the move's own type — see the DAMAGE_EXTRA_ENE case.
+  const eneTyped = ENE_TYPED.exec(type)
+  if (eneTyped) {
+    state.damage += env.payingTypeMean(eneTyped[1]) * value
+    return
+  }
+
   // Pinning a character die to a chosen face isn't in the table, so it stays a known zero.
   if (/^FIX_CHARADICE/.test(type)) {
+    addTempo(state, type, value, env)
+    return
+  }
+
+  // Effects that change what the players can do rather than anyone's HP. Priced from the
+  // tempo table when the caller supplies one, and a declared zero with a marker when not —
+  // see NOTE_TEMPO. Swapping chips is in the list because it changes a future roll, even
+  // though no table entry measures it: the marker is the honest answer there.
+  if (type === 'SPECIAL_PICK_ENEMY_WAZA' || type === 'REROLL_DICE_ENEMY' ||
+      type === 'REROLL_CHARADICE_SELF' || type === 'SPECIAL_SWAP_CHIP') {
     addTempo(state, type, value, env)
     return
   }
@@ -183,13 +260,29 @@ function applyEffect(eff, state, env) {
     case 'DAMAGE_SELF':
       state.self += value
       break
+    case 'HEAL_SELF':
+      addHeal(state, value, env, type)
+      break
+    // "Heal fully" — worth exactly the damage already taken, so it is the one heal whose
+    // value is zero at full HP and large at death's door. Unknowable without selfHp, and
+    // guessing a number there would be worse than saying so.
+    case 'HEAL_SELF_FULL':
+      if (env.selfHp === null || env.maxHp === null) addNote(state, type, NOTE_NEEDS_HP)
+      else addHeal(state, env.maxHp - env.selfHp, env, type)
+      break
     case 'DAMAGE_MULTIPLY':
       state.damage *= value
       break
-    // The energy that paid for the move is the same energy this counts, so the figure is the
-    // mean over the rolls that could pay — not over all rolls.
+    // The mean is taken over the rolls that could pay for the move, not over all rolls: a roll
+    // that cannot cast it contributes nothing either way.
+    //
+    // Which energy gets counted is NOT the move's own type. It was on every card until
+    // EBW02-049 ドラゴンバースト, a Fire-cost Dragon move that counts Lightning — so the type
+    // is named in the effect (`DAMAGE_EXTRA_ENE_かみなり`) and read from there. The bare form
+    // still means "the move's own type", which is what the upstream rows in generated/ carry
+    // and what fetch-data will keep writing.
     case 'DAMAGE_EXTRA_ENE':
-      state.damage += env.payingTypeMean() * value
+      state.damage += env.payingTypeMean(env.moveType) * value
       break
     case 'DAMAGE_BY_ENEMY_3DICE': {
       const mean = env.enemyDiceMean()
@@ -240,7 +333,7 @@ function applyEffect(eff, state, env) {
 // One outcome of the character die: the move's own effect plus whichever character-die entry
 // (if any) that face belongs to, resolved in the order resolveTurn queues them.
 function resolveBranch(mv, ce, env) {
-  const state = { damage: mv.baseDamage, self: 0, defensive: 0, tempo: 0, repeats: false, notes: new Map() }
+  const state = { damage: mv.baseDamage, self: 0, defensive: 0, heal: 0, tempo: 0, repeats: false, notes: new Map() }
   if (mv.effectType) applyEffect({ type: mv.effectType, value: mv.effectValue }, state, env)
   if (ce && ce.type) applyEffect({ type: ce.type, value: ce.value }, state, env)
   return state
@@ -317,6 +410,9 @@ export function largestTypePileMean(dice) {
  *                                      that makes them roll; omitted means "don't guess"
  * @param {boolean} [options.charaDiceInPlay]  false when the character die is blocked
  * @param {number|null} [options.selfHp]  remaining HP, or null to leave HP conditions unmet
+ * @param {number|null} [options.maxHp]   full HP, so healing can be capped at what is
+ *                                        actually missing; null values a heal at its
+ *                                        printed figure and flags it
  * @param {number|null} [options.enemyLastDamage]  printed damage of the opponent's last
  *                                                  move, for the one move that copies it;
  *                                                  null leaves it uncounted
@@ -329,6 +425,7 @@ export function moveExpectedValue(mv, options) {
     enemyDice = null,
     charaDiceInPlay = true,
     selfHp = null,
+    maxHp = null,
     enemyLastDamage = null,
     prev = {},
     countDefensiveValue = false,
@@ -340,11 +437,12 @@ export function moveExpectedValue(mv, options) {
 
   // Both of these cost a pass of their own and only one printed move each needs them, so
   // they stay lazy and memoised rather than being computed for every move in the list.
-  let payingTypeMeanCache = null
+  const payingTypeMeanCache = new Map()
   let enemyDiceMeanCache = null
   const env = {
     charaHits: CHARA_DIE_FACE_COUNT,
     selfHp,
+    maxHp,
     enemyLastDamage,
     countDefensiveValue,
     tempoValues,
@@ -354,11 +452,13 @@ export function moveExpectedValue(mv, options) {
       prereqMoveSucceeded: false,
       ...prev
     },
-    payingTypeMean: () => {
-      if (payingTypeMeanCache === null) {
-        payingTypeMeanCache = conditionalTypeMean(rolls, mv.cost, mv.type)
+    // The move's own type, for the bare DAMAGE_EXTRA_ENE that means "count my own energy".
+    moveType: mv.type,
+    payingTypeMean: countedType => {
+      if (!payingTypeMeanCache.has(countedType)) {
+        payingTypeMeanCache.set(countedType, conditionalTypeMean(rolls, mv.cost, countedType))
       }
-      return payingTypeMeanCache
+      return payingTypeMeanCache.get(countedType)
     },
     enemyDiceMean: () => {
       if (!enemyDice || enemyDice.length === 0) return null
@@ -372,6 +472,7 @@ export function moveExpectedValue(mv, options) {
   let damageOnHit = 0
   let selfOnHit = 0
   let defensiveOnHit = 0
+  let healOnHit = 0
   let tempoOnHit = 0
 
   const branches = buildBranches(mv, charaDiceInPlay).map(branch => {
@@ -381,6 +482,7 @@ export function moveExpectedValue(mv, options) {
     damageOnHit += branch.weight * damage
     selfOnHit += branch.weight * state.self
     defensiveOnHit += branch.weight * state.defensive
+    healOnHit += branch.weight * state.heal
     tempoOnHit += branch.weight * state.tempo
     if (state.repeats) repeatFaces += branch.hits
     state.notes.forEach((kind, type) => addNote({ notes }, type, kind))
@@ -389,13 +491,14 @@ export function moveExpectedValue(mv, options) {
       probability: branch.weight,
       damage,
       self: state.self,
-      net: damage - state.self + state.defensive + state.tempo
+      net: damage - state.self + state.defensive + state.heal + state.tempo
     }
   })
 
   let evDamage = pSuccess * damageOnHit
   let evSelf = pSuccess * selfOnHit
   let evDefensive = pSuccess * defensiveOnHit
+  let evHeal = pSuccess * healOnHit
   let evTempo = pSuccess * tempoOnHit
 
   // What a successful cast deals before the character die contributes anything: the printed
@@ -414,11 +517,12 @@ export function moveExpectedValue(mv, options) {
       evDamage *= casts
       evSelf *= casts
       evDefensive *= casts
+      evHeal *= casts
       evTempo *= casts
     }
   }
 
-  // The five figures add up to `ev` exactly (evSelf counts against it), so a caller can lay
+  // The six figures add up to `ev` exactly (evSelf counts against it), so a caller can lay
   // them out as a decomposition of the headline rather than as unrelated statistics. Extra
   // casts won by a repeat effect land in the character-die share, which is where they came
   // from — the baseline is deliberately left unscaled by the repeat factor.
@@ -430,8 +534,9 @@ export function moveExpectedValue(mv, options) {
     evDamageChara: evDamage - evDamageBase,
     evSelf,
     evDefensive,
+    evHeal,
     evTempo,
-    ev: evDamage - evSelf + evDefensive + evTempo,
+    ev: evDamage - evSelf + evDefensive + evHeal + evTempo,
     branches,
     notes: [...notes].map(([type, kind]) => ({ type, kind }))
   }

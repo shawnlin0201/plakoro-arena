@@ -105,18 +105,52 @@ const pickerTitleKey = computed(() => {
 // belongs to that type's own pool) become that type in one go — same shortcut the dice
 // assembly simulator offers, just without its two-set compare step (there's only ever one set
 // of 3 dice here).
+// Two steps, same as the assembly simulator's. A die's convex face only holds
+// くさ/ほのお/みず/かみなり/はがね and its concave face only あく/かくとう/ちょう/ひこう, so one
+// pick can never fill both. This used to take a single pick, apply it to whichever face it
+// fitted, and leave the other alone — which contradicted the hint right above it ("pick the
+// main energy, then the secondary") and left half the die at whatever it happened to be.
 const showQuickApply = ref(false)
-function applyPureType(type) {
-  const isConvexType = CONVEX_TYPES.includes(type)
+const quickApplyMain = ref(null)
+
+function openQuickApply() {
+  quickApplyMain.value = null
+  showQuickApply.value = true
+}
+
+// The second step always draws from the pool the first pick didn't come from.
+const quickApplyOppositeIsConcave = computed(() =>
+  !!quickApplyMain.value && CONVEX_TYPES.includes(quickApplyMain.value))
+const quickApplyOppositeOptions = computed(() =>
+  quickApplyOppositeIsConcave.value ? CONCAVE_TYPES : CONVEX_TYPES)
+
+function pickQuickApplyMain(type) {
+  quickApplyMain.value = type
+}
+
+// `type` is null when the player opts to leave the opposite face as it is.
+function pickQuickApplyOpposite(type) {
+  applyPureType(quickApplyMain.value, type)
+}
+
+function applyPureType(mainType, oppositeType) {
+  const mainIsConvex = CONVEX_TYPES.includes(mainType)
   dice.value.forEach(die => {
-    if (isConvexType) die.convexType = type
-    else die.concaveType = type
-    die.singleSlots[0] = { kind: 'single', type }
-    die.singleSlots[1] = { kind: 'single', type }
-    die.dualSlots[0] = { kind: 'dual', types: [type, type] }
-    die.dualSlots[1] = { kind: 'dual', types: [type, type] }
+    if (mainIsConvex) {
+      die.convexType = mainType
+      if (oppositeType) die.concaveType = oppositeType
+    } else {
+      die.concaveType = mainType
+      if (oppositeType) die.convexType = oppositeType
+    }
+    // Every chip takes the main type: that is what "pure" means here.
+    die.singleSlots[0] = { kind: 'single', type: mainType }
+    die.singleSlots[1] = { kind: 'single', type: mainType }
+    die.dualSlots[0] = { kind: 'dual', types: [mainType, mainType] }
+    die.dualSlots[1] = { kind: 'dual', types: [mainType, mainType] }
   })
   showQuickApply.value = false
+  quickApplyMain.value = null
 }
 
 function confirm() {
@@ -145,7 +179,7 @@ function confirm() {
       </div>
 
       <div style="display:flex; gap:0.625rem; justify-content:center; flex-wrap:wrap; padding:0.875rem 0 0.25rem;">
-        <button class="btn secondary" @click="showQuickApply = true">{{ t('diceBuilder.quickApplyButton') }}</button>
+        <button class="btn secondary" @click="openQuickApply">{{ t('diceBuilder.quickApplyButton') }}</button>
         <button class="btn wide" style="max-width:16rem;" @click="confirm">{{ t('energyDice.confirm') }}</button>
       </div>
     </div>
@@ -204,16 +238,39 @@ function confirm() {
         >✕</button>
         <div class="modal-title">{{ t('diceBuilder.quickApplyTitle') }}</div>
         <div style="font-size:0.75rem; color:var(--sub); text-align:center; margin:-0.25rem 0 0.625rem;">{{ t('diceBuilder.quickApplyHint') }}</div>
-        <div style="display:flex; flex-wrap:wrap; gap:0.625rem; justify-content:center;">
-          <div
-            v-for="ty in CHIP_TYPES"
-            :key="ty"
-            @click="applyPureType(ty)"
-            style="width:2.75rem; height:2.75rem; border-radius:0.5rem; overflow:hidden; background:#fff; cursor:pointer; border:0.125rem solid var(--line);"
-          >
-            <img :src="asset(`image/ICON/${ty}.png`)" class="img-icon" :alt="ty">
+        <template v-if="!quickApplyMain">
+          <div style="font-size:0.8125rem; font-weight:800; color:var(--sub); text-align:center; padding-bottom:0.375rem;">{{ t('diceBuilder.quickApplyStepMain') }}</div>
+          <div style="display:flex; flex-wrap:wrap; gap:0.625rem; justify-content:center;">
+            <div
+              v-for="ty in CHIP_TYPES"
+              :key="ty"
+              @click="pickQuickApplyMain(ty)"
+              style="width:2.75rem; height:2.75rem; border-radius:0.5rem; overflow:hidden; background:#fff; cursor:pointer; border:0.125rem solid var(--line);"
+            >
+              <img :src="asset(`image/ICON/${ty}.png`)" class="img-icon" :alt="ty">
+            </div>
           </div>
-        </div>
+        </template>
+
+        <!-- the fixed face the first pick couldn't reach -->
+        <template v-else>
+          <div style="font-size:0.8125rem; font-weight:800; color:var(--sub); text-align:center; padding-bottom:0.375rem;">
+            {{ t('diceBuilder.quickApplyStepOpposite', { face: t('diceBuilder.face.' + (quickApplyOppositeIsConcave ? 'concave' : 'convex')) }) }}
+          </div>
+          <div style="display:flex; flex-wrap:wrap; gap:0.625rem; justify-content:center;">
+            <div
+              v-for="ty in quickApplyOppositeOptions"
+              :key="ty"
+              @click="pickQuickApplyOpposite(ty)"
+              style="width:2.75rem; height:2.75rem; border-radius:0.5rem; overflow:hidden; background:#fff; cursor:pointer; border:0.125rem solid var(--line);"
+            >
+              <img :src="asset(`image/ICON/${ty}.png`)" class="img-icon" :alt="ty">
+            </div>
+          </div>
+          <div style="display:flex; justify-content:center; padding-top:0.75rem;">
+            <button class="btn secondary" @click="pickQuickApplyOpposite(null)">{{ t('diceBuilder.quickApplyKeepOpposite') }}</button>
+          </div>
+        </template>
       </div>
     </div>
   </div>

@@ -58,13 +58,27 @@ function pickBindMove(mid) {
       </div>
     </template>
 
-    <template v-else-if="ep.kind === 'charaDiceCount'">
-      <div class="overlay-title">{{ t('effectPrompt.charaDiceCountTitle', { n: ep.n }) }}</div>
+    <!-- One throw at a time. The card says "throw the character die N times in total", and
+         that is how it is played at a table: throw, look, throw again. Asking for the whole
+         tally in one go made the player do the counting, and hid the fact that the throw
+         which selected this effect already counted as the first. -->
+    <template v-else-if="ep.kind === 'charaDiceStep'">
+      <div class="overlay-title">
+        {{ ep.total
+          ? t('effectPrompt.charaDiceStepTitle', { index: ep.index, total: ep.total })
+          : t('effectPrompt.charaDiceStepOpen', { index: ep.index }) }}
+      </div>
+      <div class="overlay-sub">
+        {{ t('effectPrompt.charaDiceStepHint') }}
+        <img v-for="(ori, i) in ep.orientations" :key="i" :src="asset(`image/ICON/${ori}.png`)" :alt="ori" style="height:1em; width:1em; object-fit:contain; vertical-align:-0.15em; margin:0 0.0625rem;">
+        <span class="hl">{{ t('effectPrompt.charaDiceStepHits', { hits: ep.hits }) }}</span>
+      </div>
       <div style="width:100%; max-width:18.75rem; margin:0.625rem auto 0;">
         <MoveCard :mv="ep.mv" :dmg-info="ep.dmgInfo" :owner="ep.mover" :opponent="ep.opp" :clickable="false" style="min-height:10.75rem;" />
       </div>
-      <div style="display:flex; gap:0.625rem; flex-wrap:wrap; justify-content:center; margin-top:0.875rem;">
-        <button v-for="n in ep.n + 1" :key="n" class="btn" @click="submit(n - 1)">{{ n - 1 }}</button>
+      <div style="display:flex; gap:0.75rem; justify-content:center; margin-top:0.875rem;">
+        <button class="btn" @click="submit(true)">{{ t('common.success') }}</button>
+        <button class="btn fail" @click="submit(false)">{{ t('common.fail') }}</button>
       </div>
     </template>
 
@@ -100,7 +114,17 @@ function pickBindMove(mid) {
     </template>
 
     <template v-else-if="ep.kind === 'eneCount'">
-      <div class="overlay-title">{{ t('effectPrompt.eneCountTitle') }}</div>
+      <!-- Names the energy, because it is not always the move's own type: EBW02-049 is a
+           Fire-cost Dragon move that counts Lightning, and "target energy" alone would leave
+           the player guessing which pile to count. -->
+      <div class="overlay-title">
+        <img
+          v-if="ep.countedType"
+          :src="asset(`image/ICON/${ep.countedType}.png`)"
+          :alt="ep.countedType"
+          style="height:1em; width:1em; object-fit:contain; vertical-align:-0.15em; margin-right:0.25rem;"
+        >{{ t('effectPrompt.eneCountTitle') }}
+      </div>
       <div style="width:100%; max-width:18.75rem; margin:0.625rem auto 0;">
         <MoveCard :mv="ep.mv" :dmg-info="ep.dmgInfo" :owner="ep.mover" :opponent="ep.opp" :clickable="false" style="min-height:10.75rem;" />
       </div>
@@ -109,6 +133,20 @@ function pickBindMove(mid) {
           <option v-for="n in 13" :key="n" :value="n - 1">{{ n - 1 }}</option>
         </select>
         <button class="btn" @click="submit(eneCountValue)">{{ t('common.confirm') }}</button>
+      </div>
+    </template>
+
+    <!-- The defender cast ふわふわひこう last turn; this asks the attacker what their own
+         character die just did. Yes cancels the damage and nothing else, which is why the
+         buttons say blocked / landed rather than success / fail. No move card: the question
+         is about the die, not about the move being cast. -->
+    <template v-else-if="ep.kind === 'charaShield'">
+      <div class="overlay-title">
+        {{ t('effectPrompt.charaShieldPrefix', { from: ep.sourceName }) }}<img v-for="(ori, i) in ep.orientations" :key="i" :src="asset(`image/ICON/${ori}.png`)" :alt="ori" style="height:1em; width:1em; object-fit:contain; vertical-align:-0.15em; margin:0 0.0625rem;">{{ t('effectPrompt.charaShieldSuffix') }}
+      </div>
+      <div style="display:flex; gap:0.75rem; justify-content:center; margin-top:0.875rem;">
+        <button class="btn" @click="submit(true)">{{ t('effectPrompt.charaShieldYes') }}</button>
+        <button class="btn fail" @click="submit(false)">{{ t('effectPrompt.charaShieldNo') }}</button>
       </div>
     </template>
 
@@ -125,19 +163,6 @@ function pickBindMove(mid) {
       </div>
     </template>
 
-    <!-- Opponent rolls their character die n times; the player reports the hit count. Buttons
-         0..n rather than a stepper, so a 3-roll answer is one tap like the other count prompt. -->
-    <template v-else-if="ep.kind === 'charaDiceComboEnemy'">
-      <div class="overlay-title">
-        {{ t('effectPrompt.charaDiceComboPrefix', { n: ep.n }) }}<img v-for="(ori, i) in ep.orientations" :key="i" :src="asset(`image/ICON/${ori}.png`)" :alt="ori" style="height:1em; width:1em; object-fit:contain; vertical-align:-0.15em; margin:0 0.0625rem;">{{ t('effectPrompt.charaDiceComboSuffix', { dmg: ep.effectValue }) }}
-      </div>
-      <div style="width:100%; max-width:18.75rem; margin:0.625rem auto 0;">
-        <MoveCard :mv="ep.mv" :dmg-info="ep.dmgInfo" :owner="ep.mover" :opponent="ep.opp" :clickable="false" style="min-height:10.75rem;" />
-      </div>
-      <div style="display:flex; gap:0.625rem; flex-wrap:wrap; justify-content:center; margin-top:0.875rem;">
-        <button v-for="n in ep.n + 1" :key="n" class="btn" @click="submit(n - 1)">{{ n - 1 }}</button>
-      </div>
-    </template>
 
     <!-- Which orientation the die actually landed on — only the player at the table can see it,
          so it's reported rather than rolled. Each choice is its own icon button. -->

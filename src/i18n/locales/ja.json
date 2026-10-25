@@ -57,7 +57,8 @@
   "charSelect": {
     "title": "ポケモンを選択",
     "empty": "選択できるポケモンがありません。データベースにキャラクターが登録されているかご確認ください。",
-    "weaknessPrefix": "(弱点:"
+    "weaknessPrefix": "(弱点:",
+    "comingSoon": "近日公開"
   },
   "energyDice": {
     "title": "エネコロを設定しよう",
@@ -67,7 +68,14 @@
   "moveSelect": {
     "title": "{name} のワザを4つ選択",
     "confirm": "選択したワザで確定",
-    "opponentThinking": "相手がワザを選択中…"
+    "opponentThinking": "相手がワザを選択中…",
+    "notice": {
+      "rerollCharaSelf": "「{from}」：この番、キャラコロを {n} 回振りなおせる。",
+      "rerollDiceEnemy": "「{from}」：相手が選んだエネコロ {n} 個を振りなおす。",
+      "pickEnemyWaza": "「{from}」：この番に使うワザは相手が選ぶ。",
+      "swapChip": "「{from}」：エネコロを 1 個選び、カスタムチップを好きなだけつけ替えられる。"
+    },
+    "opponentPickingYours": "相手があなたのワザを選んでいます…"
   },
   "moveCard": {
     "usedLastTurn": "前ターン使用",
@@ -83,14 +91,20 @@
     "moveFail": "ワザ失敗",
     "throwCharaDie": "サイコロを振る",
     "opponentResolving": "相手がワザを判定中…",
-    "opponentRolled": "相手のロール結果"
+    "opponentRolled": "相手のロール結果",
+    "rerollCharaDie": "キャラコロを振りなおす（残り {n} 回）",
+    "rerollPickTitle": "「{from}」：相手のエネコロを {n} 個選んで振りなおさせる",
+    "rerollThrowing": "振りなおし中…",
+    "rerollWaiting": "相手が振りなおすエネコロを選んでいます…",
+    "rerollThrowTitle": "相手に指定された {n} 個のエネコロを振りなおす",
+    "dropPickTitle": "この番は {n} 個少ない — 振らないエネコロを選ぶ",
+    "dropMark": "振らない"
   },
   "effectPrompt": {
     "diceRollLabel": "{n}個",
     "enemyRollTitle": "相手はエネコロを{label}振る",
     "diceSubSingle": "出たエネルギーの数を選んで下さい。",
     "diceSubMulti": "一番多く出たタイプのエネルギーの数を選んで下さい。",
-    "charaDiceCountTitle": "合計{n}回キャラコロを振り、成功した数を選択。",
     "charaDiceRepeatTitle": "キャラコロが連続で成功した数を選択。",
     "bindWazaTitle": "次のターン使用できなくするワザを選択して下さい",
     "bindWazaRemaining": "あと{remaining}個選んで下さい",
@@ -100,7 +114,15 @@
     "charaDiceComboPrefix": "相手のキャラコロを{n}回振り、",
     "charaDiceComboSuffix": "が出るたびに{dmg}ダメージ追加。成功した数を選択。",
     "charaDiceSelectSelfTitle": "出たキャラコロの向きを選択。次の自分の番、自分のキャラコロはその向きになります。",
-    "charaDiceSelectEnemyTitle": "出たキャラコロの向きを選択。次の相手の番、相手のキャラコロはその向きになります。"
+    "charaDiceSelectEnemyTitle": "出たキャラコロの向きを選択。次の相手の番、相手のキャラコロはその向きになります。",
+    "charaShieldPrefix": "相手は前の番に「{from}」を使った。この番のキャラコロは ",
+    "charaShieldSuffix": " が出た？出ていれば、このワザのダメージは受けない（ダメージ以外の効果は受ける）。",
+    "charaShieldYes": "出た（ダメージ無効）",
+    "charaShieldNo": "出ていない",
+    "charaDiceStepTitle": "キャラコロ {total} 回中 {index} 回目",
+    "charaDiceStepOpen": "キャラコロ {index} 回目（失敗するまで）",
+    "charaDiceStepHint": "成功は ",
+    "charaDiceStepHits": "　ここまで {hits} 回"
   },
   "turnResult": {
     "title": "このターンの結果",
@@ -110,11 +132,11 @@
     "charaYourTurn": "あなたの番です。キャラコロを振ってください",
     "charaWaiting": "相手がキャラコロを振っています…",
     "charaOrientationHint": "出たら成功：",
-    "charaProgressCount": "成功{count}回、残り{remaining}回",
     "charaProgressRepeat": "連続成功{count}回、失敗するまで続けます",
     "throwAgain": "もう一度振る",
     "energyYourTurn": "あなたの番です。エネコロを{n}個振ってください",
-    "energyWaiting": "相手がエネコロを{n}個振っています…"
+    "energyWaiting": "相手がエネコロを{n}個振っています…",
+    "charaProgressStep": "{total} 回中 {index} 回目 — ここまで {hits} 回成功"
   },
   "win": {
     "victorySuffix": "勝利！",
@@ -301,22 +323,25 @@
       "settings": "計算の前提",
       "exportImage": "画像を書き出す",
       "exportingImage": "書き出し中…",
-      "sortByEv": "期待値順に並べる",
+      "sortByNumber": "カード番号順に並べる",
       "countDefensive": "ダメージ軽減を回復として計算",
       "selfHpLabel": "残りHP",
       "selfHpAny": "指定なし",
       "prevEnemyFailed": "前の相手の番、相手のエネコロが失敗した",
       "prevSelfFailed": "前の自分の番、自分のエネコロが失敗した",
       "prevPrereqSucceeded": "前の自分の番、指定のワザが成功した",
+      "prevSelfUnhurt": "前の相手の番にダメージを受けていない",
       "evHint": "期待値＝（相手に与えるダメージ − 自分が受けるダメージ）の平均に成功率を掛けた値。回復はプラスとして数えます。弱点は計算に入れません。下段の内訳は足すと期待値になります（与ダメ計は小計です）",
       "noteNeedsHp": "残りHPを入れると計算されます",
       "noteNeedsPrev": "上の前提条件に基づく数値",
       "noteMirrorDice": "相手のダイスもこの構成と同じと仮定",
       "noteUnsupported": "未対応の効果があり、計算に含めていません",
+      "noteHeal": "回復量は失ったHPが上限",
       "evPartBase": "ワザ",
       "evPartChara": "キャラコロ",
       "evPartDamageTotal": "与ダメ計",
       "evPartSelf": "自分のHP",
+      "evPartHeal": "回復",
       "evPartDefensive": "軽減",
       "countTempo": "相手の妨害も価値として計算",
       "tempoCalculating": "（計算中…）",
@@ -788,5 +813,15 @@
     },
     "comingSoon": "オンライン対戦は近日公開",
     "notRankedOnline": "オンライン対戦の記録がまだありません"
+  },
+  "stepper": {
+    "step": {
+      "moveSelect": "ワザ選択",
+      "diceRoll": "コロ振り",
+      "resolve": "効果",
+      "damage": "ダメージ"
+    },
+    "yourTurn": "あなたの番",
+    "theirTurn": "相手の番"
   }
 }

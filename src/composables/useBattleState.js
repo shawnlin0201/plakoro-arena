@@ -1,7 +1,8 @@
+import { clearMods, modOf, modSum, STEP } from '../game/turnMods'
 import { reactive } from 'vue'
 import { loadMoveHistory, saveMoveHistoryForChar } from '../data/moveHistory'
 import { computeDisplayDamage as computeDisplayDamagePure, isCharaColorConditionMet } from '../game/damage'
-import { runEffectQueue as runEffectQueueShared } from '../game/effectQueue'
+import { advanceEffectQueue } from '../game/effectQueue'
 
 // Set by useOnlineRoom on host()/join()/leave(). Lets the handful of effect hooks below tell
 // "real synced dice are available" (online) from "nothing to read but a self-report" (hotseat/
@@ -11,12 +12,14 @@ export function setOnlineMode(v) {
   onlineModeActive = v
 }
 
-// Pending completions for the two online-only "extra real dice roll" tasks below. Functions
-// can't survive the host->guest state broadcast (see stripFns in useOnlineRoom.js), so — like
-// state.effectPrompt.onPick — these live outside reactive state and only ever run on the host,
-// which is the only client that actually executes resolveTurn()/the effect queue.
-let pendingCharaThrowDone = null
-let pendingEnergyThrowDone = null
+// There are deliberately no stored callbacks in this module any more.
+//
+// Everything a turn is waiting on lives in reactive state — `effectCtx` (the queue and its
+// position), `effectPrompt`, `charaThrowTask`, `energyThrowTask` — and every answer comes back
+// through submitEffectPrompt, which resumes from that state. Functions could never survive the
+// host->guest broadcast anyway (see stripFns in useOnlineRoom.js), but the real reason is
+// resumability: a continuation held on the heap is lost when the page reloads, and the battle
+// then stalls with no way to tell it what happens next.
 
 function newPlayer() {
   return {
@@ -26,24 +29,21 @@ function newPlayer() {
     hp: 0,
     maxHp: 0,
     lastMoveId: null,
-    incomingDamageMod: 0,
-    incomingDamageNullify: null,
-    diceMod: 0,
+    // Everything an effect planted on this player for their next turn, tagged with the
+    // step it changes — see game/turnMods.js. One list, one lifecycle, in place of a
+    // field per effect each with its own clearing.
+    mods: [],
+    // Whether this side took move damage on the turn that just finished. `committed` is the
+    // settled value a later turn reads, mirroring committedLastMoveFailed.
+    tookDamage: false,
+    committedTookDamage: false,
     diceModBadges: [],
-    bannedMoveIds: [],
-    bannedMoveSourceName: "",
-    committedBannedMoveIds: [],
-    committedBannedMoveSourceName: "",
-    charaDiceBlocked: false,
     // Online-only: this side has tapped "ready" and is waiting for the opponent, so the first
     // player can be drawn instead of either side just picking themselves. Unused in hotseat.
     readyForFirst: false,
     // Online-only: this side's fixed set of 3 energy dice (same shape as the dice assembly
     // simulator's), thrown every turn for the rest of the match once configured.
     energyDice: null,
-    // { value, orientations } while another move has pinned this player's character die for
-    // their next turn; null the rest of the time. Same lifecycle as charaDiceBlocked above.
-    fixCharaDice: null,
     lastMoveFailed: false,
     committedLastMoveId: null,
     committedLastMoveFailed: false,
@@ -58,6 +58,9 @@ function newPlayer() {
 function freshState() {
   return {
     phase: "select",
+    // Who the current step is waiting on. Usually `turnPlayer`, but an effect can hand the
+    // decision to the other side — see enterPhase. null while nobody in particular is acting.
+    actorKey: null,
     players: { A: newPlayer(), B: newPlayer() },
     // Online-only: the side the first-pick wheel has landed on, set before `firstPlayer` while
     // phase is "drawingFirst" so both clients animate toward the same result.
@@ -77,8 +80,20 @@ function freshState() {
     // reset whenever a fresh dice-roll phase begins.
     charaDieFace: null,
     energyRolledTypes: null,
+    // The same roll, kept per die instead of flattened: [['みず'], ['みず','あく'], []]. The
+    // flat list above cannot be unpicked, because a dual-chip face contributes two types from
+    // one die — and ほりかえす / ジュエルフラッシュ need "which DIE" to make anyone reroll one.
+    energyDieTypes: null,
     energySuccess: null,
     diceTransforms: null,
+    // The effect queue's own position, while one is running. Everything here is plain data on
+    // purpose: `hydrateEffectCtx` turns it back into a working context by looking the players
+    // and the move up again, so a reload can resume instead of stalling on a half-run queue.
+    // (The old design kept all of this in closures — see advanceEffectQueue's comment.)
+    effectCtx: null,
+    // { targetKey, byKey, n, from, indices } while somebody is naming which of the target's
+    // energy dice must be rerolled; null otherwise. `indices` stays null until they choose.
+    diceRerollRequest: null,
     // Online only: gates the handoff to the next turn behind the receiving side actually
     // acknowledging the damage + dice result — see showTurnResultConfirm()/confirmTurnResult().
     turnResult: null,
@@ -195,15 +210,39 @@ export function useBattleState(movesRef) {
     state.turnPlayer = firstKey
     state.turnCount = 0
     state.revealed = true
-    state.phase = "moveSelect"
+    enterPhase("moveSelect", moveActorKey(firstKey))
     showTurnCutIn(firstKey)
   }
 
   // --- move / dice / effect resolution (phases: moveSelect, diceRoll, resolve, effectPrompt) ---
 
+  /**
+   * Move the battle to a new step, saying who is expected to act.
+   *
+   * The actor is the point. It used to be inferred — every screen read `turnPlayer` and
+   * assumed that was whoever should be looking at it — which is wrong whenever an effect
+   * hands the decision to the other side (そそのかす picks your move for you; ほりかえす has
+   * one player choose dice and the other throw them). Each of those shipped as a bug where
+   * the wrong client saw the controls, because there was nowhere to say otherwise.
+   *
+   * `actorKey` null means nobody in particular: a result everyone is just watching.
+   */
+  // Whose decision the move for `turnKey` is. そそのかす is the only thing that moves it.
+  function moveActorKey(turnKey) {
+    return modOf(state.players[turnKey], STEP.MOVE_SELECT, 'pickedByOpponent')
+      ? opponentKey(turnKey)
+      : turnKey
+  }
+
+  function enterPhase(kind, actorKey = state.turnPlayer) {
+    state.phase = kind
+    state.actorKey = actorKey
+  }
+
   function clearDiceRoll() {
     state.charaDieFace = null
     state.energyRolledTypes = null
+    state.energyDieTypes = null
     state.energySuccess = null
     state.diceTransforms = null
   }
@@ -211,14 +250,14 @@ export function useBattleState(movesRef) {
   function pickMove(mid) {
     state.selectedMove = mid
     clearDiceRoll()
-    state.phase = "diceRoll"
+    enterPhase("diceRoll")
   }
 
   function backToMoveSelect() {
     if (state.repeatActive) return
     state.selectedMove = null
     clearDiceRoll()
-    state.phase = "moveSelect"
+    enterPhase("moveSelect", moveActorKey(state.turnPlayer))
   }
 
   // Online only: called once the active side's 3D throw (energy dice + character die) settles
@@ -227,22 +266,51 @@ export function useBattleState(movesRef) {
   // is the real cost check (canPayCost against those types); `transforms` is each die's exact
   // final position/quaternion from that physics run, broadcast so the opponent's canvas can
   // replay the identical result instead of guessing.
-  function setDiceRollResult(charaDieFace, energyRolledTypes, energySuccess, transforms) {
+  function setDiceRollResult(charaDieFace, energyRolledTypes, energySuccess, transforms, energyDieTypes = null) {
     state.charaDieFace = charaDieFace
     state.energyRolledTypes = energyRolledTypes
     state.energySuccess = energySuccess
     state.diceTransforms = transforms
+    if (energyDieTypes) state.energyDieTypes = energyDieTypes
+
+    // Somebody made this player's dice rerollable (ほりかえす / ジュエルフラッシュ). Hand the
+    // choice of which ones to the player who cast it, before this roll is allowed to settle.
+    const mover = state.players[state.turnPlayer]
+    const forced = modOf(mover, STEP.DICE_ROLL, 'forcedReroll')
+    if (forced && !state.diceRerollRequest) {
+      state.diceRerollRequest = {
+        targetKey: state.turnPlayer,
+        byKey: opponentKey(state.turnPlayer),
+        n: forced.n,
+        from: forced.from,
+        indices: null
+      }
+      // Spent the moment it becomes a request; the request itself is the live state now.
+      mover.mods = mover.mods.filter(m => m !== forced)
+      // A step of its own, and the one place in the game where the actor changes midway: the
+      // player who cast it names the dice, the player who owns them throws. Saying so here
+      // means no screen has to infer it, and the reroll panel wins by being the current phase
+      // rather than by sitting earlier in a v-if chain.
+      enterPhase("rerollPick", state.diceRerollRequest.byKey)
+    }
   }
 
-  const effectQueueHooks = {
-    showDicePrompt,
-    showCharaDiceCountPrompt,
-    showCharaDiceRepeatPrompt,
-    showBindWazaPrompt,
-    showEneCountPrompt,
-    showCharaDiceEnemyManualPrompt,
-    showCharaDiceComboEnemyPrompt,
-    showCharaDiceSelectPrompt
+  /**
+   * The caster names which of the opponent's dice have to go again.
+   *
+   * Only records the choice: the actual throw belongs to the client holding that player's
+   * dice canvas, which watches for `indices` and rerolls exactly those (see DiceOverlay).
+   */
+  function submitDiceReroll(indices) {
+    if (!state.diceRerollRequest || state.diceRerollRequest.indices) return
+    state.diceRerollRequest = { ...state.diceRerollRequest, indices: [...indices] }
+    enterPhase("rerollThrow", state.diceRerollRequest.targetKey)
+  }
+
+  function clearDiceRerollRequest() {
+    state.diceRerollRequest = null
+    // Back to the roll that was held up while this was resolved.
+    enterPhase("diceRoll", state.turnPlayer)
   }
 
   function resolveTurn(result) {
@@ -254,17 +322,16 @@ export function useBattleState(movesRef) {
     const mv = MOVES[state.selectedMove]
     mover.lastMoveId = state.selectedMove
     mover.lastMoveFailed = result.kind === "fail"
-    mover.bannedMoveIds = []
-    mover.bannedMoveSourceName = ""
-    mover.diceMod = 0
     mover.diceModBadges = []
-    mover.charaDiceBlocked = false
-    mover.fixCharaDice = null
-    state.phase = "resolve"
+    // Consumed by the turn they applied to, alongside every other next-turn modifier.
+    // The mover has now picked and acted, so whatever was planted for their moveSelect is
+    // spent. Their damage mods are not — those are tested when the other side attacks.
+    clearMods(mover, [STEP.MOVE_SELECT, STEP.DICE_ROLL])
+    state.diceRerollRequest = null
+    enterPhase("resolve")
 
     if (result.kind === "fail") {
-      opp.incomingDamageMod = 0
-      opp.incomingDamageNullify = null
+      clearMods(opp, [STEP.DAMAGE])
       proceedToAnimateWithCtx({ moverKey, mover, oppKey, opp, mv, dmgToOpp: 0, dmgToSelf: 0, isMiss: true })
       return
     }
@@ -278,9 +345,60 @@ export function useBattleState(movesRef) {
     // along on ctx so hooks below can tell which orientations to keep re-checking on any further
     // real throws of that same die — only meaningful when this turn's effect came from a chara
     // pick, null otherwise.
-    const ce = result.kind === "chara" ? result.ce : null
-    const ctx = { moverKey, mover, oppKey, opp, mv, ce, dmgToOpp: result.dmgInfo.raw, dmgToSelf: 0 }
-    runEffectQueueShared(queue, 0, ctx, effectQueueHooks, () => proceedToAnimateWithCtx(ctx))
+    const ceIndex = result.kind === "chara" && result.ce
+      ? (mv.chara || []).indexOf(result.ce)
+      : null
+    state.effectCtx = {
+      moverKey, oppKey, moveId: mv.id, ceIndex,
+      queue, cursor: 0,
+      dmgToOpp: result.dmgInfo.raw, dmgToSelf: 0,
+      charaShieldAsked: false
+    }
+    runEffects()
+  }
+
+  // Rebuild a working context from the plain data in state. The players are reactive objects
+  // already living in state.players, so effects mutate the real thing; only the accumulators
+  // need writing back (see runEffects).
+  function hydrateEffectCtx() {
+    const c = state.effectCtx
+    if (!c) return null
+    const mv = movesRef.value[c.moveId]
+    const chara = (mv && mv.chara) || []
+    return {
+      ...c,
+      mover: state.players[c.moverKey],
+      opp: state.players[c.oppKey],
+      mv,
+      ce: c.ceIndex === null || c.ceIndex < 0 ? null : chara[c.ceIndex]
+    }
+  }
+
+  /**
+   * Push the effect queue forward until it either finishes or needs a player to answer.
+   *
+   * The one place the queue is driven, called the same way whether this is the first step of a
+   * turn or the resumption of one that stopped for a prompt — `answer` is the only difference.
+   */
+  function runEffects(answer) {
+    const ctx = hydrateEffectCtx()
+    if (!ctx) return
+    const ask = advanceEffectQueue(ctx, answer)
+    // Position and running totals are the only things the queue mutates on the context itself;
+    // everything else it touches is a player object, which is already shared state.
+    Object.assign(state.effectCtx, {
+      cursor: ctx.cursor, dmgToOpp: ctx.dmgToOpp, dmgToSelf: ctx.dmgToSelf,
+      // Multi-throw effects keep a tally here between throws; plain data, so it survives.
+      multi: ctx.multi || null
+    })
+    if (ask) {
+      presentAsk(ask, ctx)
+      return
+    }
+    // Not cleared yet: the damage step can still stop to ask about チルタリス's shield, and
+    // that question has to be resumable too. proceedToAnimateWithCtx clears it once the
+    // damage is actually going in.
+    proceedToAnimateWithCtx(ctx)
   }
 
   // --- effect prompts (state.effectPrompt / phase: "effectPrompt") ---
@@ -292,116 +410,88 @@ export function useBattleState(movesRef) {
   // overlay (state.effectPrompt) unconditionally; solo mode's own useSoloRun.js mirrors these
   // functions rather than sharing them (no online concept there at all).
 
-  function showDicePrompt(n, multiplier, ctx, onPick) {
-    // ミュウ「サイコキネシス」: opponent throws n of their own configured energy dice; damage is
-    // the count of whichever type came up most (each die can contribute up to 2 hits via a dual
-    // chip face, hence up to 2n instances of one type — matches the original n*2 button range).
+  /**
+   * Put a request from the effect queue to whoever can answer it.
+   *
+   * One function instead of the eight `showXPrompt`s it replaces, because they only ever
+   * differed in two ways: which online path (if any) can answer it without asking a human,
+   * and what the overlay needs on screen. Both are now decided from `ask.kind` in one place.
+   *
+   * Answering never calls back into anything. It goes through `submitEffectPrompt`, which
+   * resumes the queue from the cursor in state — that is what makes a reload survivable.
+   */
+  function presentAsk(ask, ctx) {
+    // Online: some of these are real synced throws rather than self-reported numbers, and one
+    // is already answered by the roll that just happened.
     if (onlineModeActive) {
-      beginEnergyThrowTask(ctx.oppKey, n, onPick)
+      if (ask.kind === 'diceNumber') {
+        beginEnergyThrowTask(ctx.oppKey, ask.max / 2)
+        return
+      }
+      // Every multi-throw effect now asks one throw at a time (see effectQueue), so the
+      // online side only ever needs a single synced throw answered yes/no. The task's own
+      // 'count' and 'repeat' modes are gone with them — the loop lives in the effect.
+      if (ask.kind === 'charaDiceStep') {
+        const roller = ask.enemy ? ctx.oppKey : ctx.moverKey
+        beginCharaThrowTask(roller, ask.orientations, 'bool',
+          { index: ask.index, total: ask.total, hits: ask.hits })
+        return
+      }
+      if (ask.kind === 'charaDiceEnemyManual') {
+        beginCharaThrowTask(ctx.oppKey, ask.orientations)
+        return
+      }
+      if (ask.kind === 'charaDiceSelect' && ask.target === 'enemy') {
+        beginCharaThrowTask(ctx.oppKey, ask.orientations, 'face')
+        return
+      }
+    }
+    // ヒトカゲ「フレアストーム」 and friends count energy that is already on the table — the
+    // roll this move was paid with. Asking the player to recount it by hand would be asking
+    // them to confirm something the app can see.
+    if (ask.kind === 'eneCount' && state.energyRolledTypes) {
+      submitEffectPrompt(state.energyRolledTypes.filter(ty => ty === ask.countedType).length)
       return
     }
-    state.effectPrompt = { kind: "diceNumber", max: n * 2, multiplier, onPick }
-    state.phase = "effectPrompt"
+    // Same shortcut for the character die the app threw itself.
+    if (ask.kind === 'charaDiceSelect' && ask.target === 'self' && state.charaDieFace
+        && ask.orientations.includes(state.charaDieFace)) {
+      submitEffectPrompt(state.charaDieFace)
+      return
+    }
+
+    // Everything else is a question for a person. The overlay wants the move and the two
+    // players alongside the question itself; those are display data, re-derived here rather
+    // than stored, so the saved context stays plain.
+    const display = ask.kind === 'bindWaza'
+      ? { picked: [] }
+      : { mv: ctx.mv, dmgInfo: computeDisplayDamage(ctx.mv, ctx.mover, ctx.opp), mover: ctx.mover, opp: ctx.opp }
+    state.effectPrompt = { ...ask, ...display }
+    enterPhase("effectPrompt")
   }
 
-  // サンダー「ダブルサンダー/ボルトラッシュ」: this move throws the character die n times total;
-  // the one that already landed for real this turn (and matched ctx.ce.orientations — that's
-  // exactly why this chara option was selectable, see charaAvailable() in DiceOverlay.vue)
-  // counts as the first, so only n-1 more real throws are needed.
-  function showCharaDiceCountPrompt(n, effectValue, ctx, onPick) {
-    if (onlineModeActive && ctx.ce && ctx.ce.orientations) {
-      beginCharaThrowTask(ctx.moverKey, ctx.ce.orientations, 'count', n - 1, 1, onPick)
+  // A yes/no about the die the attacker just physically threw. Same self-report shape as
+  // showCharaDiceEnemyManualPrompt below, but about the *mover's* die and asked on behalf of
+  // the defender's standing shield rather than the move being cast.
+  function showCharaShieldPrompt(shield, ctx) {
+    // When the app threw the die itself, the answer is already on screen — asking the player
+    // to retype it would be asking them to confirm something the app knows better. Only the
+    // physical-dice modes have a question to ask.
+    if (state.charaDieFace) {
+      submitEffectPrompt(shield.orientations.includes(state.charaDieFace))
       return
     }
-    const dmgInfo = computeDisplayDamage(ctx.mv, ctx.mover, ctx.opp)
-    state.effectPrompt = { kind: "charaDiceCount", n, effectValue, mv: ctx.mv, dmgInfo, mover: ctx.mover, opp: ctx.opp, onPick }
-    state.phase = "effectPrompt"
+    state.effectPrompt = {
+      kind: "charaShield",
+      orientations: shield.orientations,
+      sourceName: shield.from,
+      mv: ctx.mv,
+      mover: ctx.mover,
+      opp: ctx.opp
+    }
+    enterPhase("effectPrompt")
   }
 
-  // サンダー「サンダーチェイン」: same die, but repeats for real until a throw finally misses
-  // ctx.ce.orientations, rather than a fixed count.
-  function showCharaDiceRepeatPrompt(effectValue, ctx, onPick) {
-    if (onlineModeActive && ctx.ce && ctx.ce.orientations) {
-      beginCharaThrowTask(ctx.moverKey, ctx.ce.orientations, 'repeat', null, 1, onPick)
-      return
-    }
-    const dmgInfo = computeDisplayDamage(ctx.mv, ctx.mover, ctx.opp)
-    state.effectPrompt = { kind: "charaDiceRepeat", effectValue, mv: ctx.mv, dmgInfo, mover: ctx.mover, opp: ctx.opp, onPick }
-    state.phase = "effectPrompt"
-  }
-
-  // Not a dice read at all — a genuine strategic pick (which of the opponent's own moves to
-  // ban), so it stays a menu in every mode. Answerable only by ep.targetKey (see
-  // EffectPromptOverlay.vue's read-only gating).
-  function showBindWazaPrompt(targetKey, count, onDone) {
-    state.effectPrompt = { kind: "bindWaza", targetKey, count, picked: [], onDone }
-    state.phase = "effectPrompt"
-  }
-
-  // ヒトカゲ「フレアストーム」: "the count of [move-type] energy that came up" refers to THIS
-  // turn's own energy roll (state.energyRolledTypes) — the one already thrown for the move's
-  // own cost check — not a new roll. Same shape as the charaDiceSelect 'self' fix: read it
-  // straight from the real result instead of asking the player to recount it by hand.
-  function showEneCountPrompt(effectValue, ctx, onPick) {
-    if (onlineModeActive && state.energyRolledTypes) {
-      const count = state.energyRolledTypes.filter(ty => ty === ctx.mv.type).length
-      onPick(count)
-      return
-    }
-    const dmgInfo = computeDisplayDamage(ctx.mv, ctx.mover, ctx.opp)
-    state.effectPrompt = { kind: "eneCount", effectValue, mv: ctx.mv, dmgInfo, mover: ctx.mover, opp: ctx.opp, onPick }
-    state.phase = "effectPrompt"
-  }
-
-  // ベトベター「ベノムスリップ」/ イワーク「ジャイロボール」: a single real throw of the
-  // opponent's own character die, checked against `orientations`.
-  function showCharaDiceEnemyManualPrompt(orientations, effectValue, ctx, onPick) {
-    if (onlineModeActive) {
-      beginCharaThrowTask(ctx.oppKey, orientations, 'single', null, 0, onPick, 'bool')
-      return
-    }
-    const dmgInfo = computeDisplayDamage(ctx.mv, ctx.mover, ctx.opp)
-    state.effectPrompt = { kind: "charaDiceEnemyManual", orientations, effectValue, mv: ctx.mv, dmgInfo, mover: ctx.mover, opp: ctx.opp, onPick }
-    state.phase = "effectPrompt"
-  }
-
-  // ゲンガー「ファントムトリック」: the opponent rolls their character die n times for real;
-  // each one that matches `orientations` counts (a running count, not a single yes/no — that's
-  // what separates it from the prompt above).
-  function showCharaDiceComboEnemyPrompt(n, orientations, effectValue, ctx, onPick) {
-    if (onlineModeActive) {
-      beginCharaThrowTask(ctx.oppKey, orientations, 'count', n, 0, onPick)
-      return
-    }
-    const dmgInfo = computeDisplayDamage(ctx.mv, ctx.mover, ctx.opp)
-    state.effectPrompt = { kind: "charaDiceComboEnemy", n, orientations, effectValue, mv: ctx.mv, dmgInfo, mover: ctx.mover, opp: ctx.opp, onPick }
-    state.phase = "effectPrompt"
-  }
-
-  // The player reports which orientation their character die actually showed, and that becomes
-  // the orientation their (or the opponent's) die is pinned to next turn.
-  //
-  // Online only: for the 'self' target this is asking about the mover's OWN character die —
-  // the same one already thrown for real this turn (state.charaDieFace). This effect only ever
-  // fires once that real roll already matched one of `orientations` (see charaAvailable() in
-  // DiceOverlay.vue), so asking the player to self-report which one it was would just be asking
-  // them to repeat back a result the app already has, and would let them pick a different (wrong)
-  // one. Resolve straight from the real roll instead of prompting. The 'enemy' target is a real
-  // single throw of the opponent's own die (unused by the current roster, but kept real for
-  // whenever a future move needs it, same as the pair in effectQueue.js).
-  function showCharaDiceSelectPrompt(orientations, effectValue, ctx, target, onPick) {
-    if (target === 'self' && state.charaDieFace && orientations.includes(state.charaDieFace)) {
-      onPick(state.charaDieFace)
-      return
-    }
-    if (onlineModeActive && target === 'enemy') {
-      beginCharaThrowTask(ctx.oppKey, orientations, 'single', null, 0, onPick, 'face')
-      return
-    }
-    const dmgInfo = computeDisplayDamage(ctx.mv, ctx.mover, ctx.opp)
-    state.effectPrompt = { kind: "charaDiceSelect", orientations, effectValue, target, mv: ctx.mv, dmgInfo, mover: ctx.mover, opp: ctx.opp, onPick }
-    state.phase = "effectPrompt"
-  }
 
   // --- online-only real "extra dice throw" tasks (state.charaThrowTask / state.energyThrowTask) ---
   //
@@ -410,52 +500,40 @@ export function useBattleState(movesRef) {
   // side just replays the same transforms (see ExtraRollOverlay.vue). Only the host ever holds
   // a live `pendingXDone` callback — the guest's UI drives entirely off the synced task object.
 
-  // `mode`: 'single' (one throw, resolves immediately) | 'count' (exactly `targetN` more throws,
-  // hit or miss) | 'repeat' (keep throwing until one misses). `resultKind` (single mode only):
-  // 'bool' (did it match) | 'face' (which orientation it landed on).
-  function beginCharaThrowTask(rollerKey, orientations, mode, targetN, startCount, onDone, resultKind = 'count') {
-    if (mode === 'count' && targetN <= 0) {
-      onDone(startCount)
-      return
-    }
-    state.charaThrowTask = { rollerKey, orientations, mode, targetN, successCount: startCount, resultKind, lastFace: null, transforms: null }
-    state.phase = "charaThrowTask"
-    pendingCharaThrowDone = onDone
+  // One throw, answered and done. The task used to also carry 'count' and 'repeat' modes that
+  // looped internally — those loops now live in the effect itself (see effectQueue's
+  // charaDiceStep), which is what lets the position survive a reload instead of sitting in a
+  // counter only this object knows about.
+  //
+  // `resultKind`: 'bool' (did it match) | 'face' (which orientation it landed on).
+  function beginCharaThrowTask(rollerKey, orientations, resultKind = 'bool', progress = null) {
+    // `progress` is only for the overlay to say "throw 2 of 3, 1 hit so far" — the count that
+    // decides anything lives in the effect, not here.
+    state.charaThrowTask = { rollerKey, orientations, resultKind, progress, lastFace: null, transforms: null }
+    enterPhase("charaThrowTask")
   }
 
+  // Every throw task exists to answer the effect queue, so it resolves the same way a typed
+  // answer does — through submitEffectPrompt, which resumes from the cursor in state. There is
+  // no stored callback to lose any more.
   function finishCharaThrowTask(result) {
-    const cb = pendingCharaThrowDone
     state.charaThrowTask = null
-    pendingCharaThrowDone = null
-    state.phase = "resolve"
-    cb(result)
+    enterPhase("resolve")
+    submitEffectPrompt(result)
   }
 
   // Called (via dispatch, if the roller is the guest) once that client's own throw settles.
   function submitCharaThrowResult(face, transforms) {
     const t = state.charaThrowTask
     if (!t) return
-    const success = t.orientations.includes(face)
     t.lastFace = face
     t.transforms = transforms
-    if (t.mode === 'single') {
-      finishCharaThrowTask(t.resultKind === 'face' ? face : success)
-      return
-    }
-    if (success) t.successCount++
-    if (t.mode === 'count') {
-      t.targetN--
-      if (t.targetN <= 0) finishCharaThrowTask(t.successCount)
-      return
-    }
-    // 'repeat': stop the moment one misses; otherwise stay in phase for another throw.
-    if (!success) finishCharaThrowTask(t.successCount)
+    finishCharaThrowTask(t.resultKind === 'face' ? face : t.orientations.includes(face))
   }
 
-  function beginEnergyThrowTask(rollerKey, n, onDone) {
+  function beginEnergyThrowTask(rollerKey, n) {
     state.energyThrowTask = { rollerKey, n, rolledTypes: null, transforms: null }
-    state.phase = "energyThrowTask"
-    pendingEnergyThrowDone = onDone
+    enterPhase("energyThrowTask")
   }
 
   function submitEnergyThrowResult(rolledTypes, transforms) {
@@ -464,20 +542,30 @@ export function useBattleState(movesRef) {
     const counts = {}
     rolledTypes.forEach(ty => { counts[ty] = (counts[ty] || 0) + 1 })
     const maxCount = Object.values(counts).reduce((m, c) => Math.max(m, c), 0)
-    const cb = pendingEnergyThrowDone
     state.energyThrowTask = null
-    pendingEnergyThrowDone = null
-    state.phase = "resolve"
-    cb(maxCount)
+    enterPhase("resolve")
+    submitEffectPrompt(maxCount)
   }
 
+  // The answer goes back into the queue, which picks up from the cursor in state. No callback
+  // is involved, which is exactly why a reload mid-prompt is recoverable.
   function submitEffectPrompt(value) {
-    const ep = state.effectPrompt
-    if (!ep) return
-    const cb = ep.onPick
+    const wasShield = state.effectPrompt && state.effectPrompt.kind === "charaShield"
     state.effectPrompt = null
-    state.phase = "resolve"
-    cb(value)
+    enterPhase("resolve")
+    if (wasShield) {
+      // Not a queue answer — the queue is already finished. It decides whether the damage
+      // lands, then the damage step runs again from the stored context.
+      const ctx = hydrateEffectCtx()
+      if (!ctx) return
+      if (value) {
+        ctx.dmgToOpp = 0
+        state.effectCtx.dmgToOpp = 0
+      }
+      proceedToAnimateWithCtx(ctx)
+      return
+    }
+    runEffects(value)
   }
 
   function pickBindWazaMove(mid) {
@@ -486,11 +574,10 @@ export function useBattleState(movesRef) {
     if (ep.picked.includes(mid)) return
     ep.picked.push(mid)
     if (ep.picked.length >= ep.count) {
-      const cb = ep.onDone
       const picked = ep.picked.slice()
       state.effectPrompt = null
-      state.phase = "resolve"
-      cb(picked)
+      enterPhase("resolve")
+      runEffects(picked)
     }
   }
 
@@ -530,7 +617,7 @@ export function useBattleState(movesRef) {
     state.turnPlayer = oppKey
     state.turnCount++
     state.selectedMove = null
-    state.phase = "moveSelect"
+    enterPhase("moveSelect", moveActorKey(oppKey))
     showTurnCutIn(oppKey)
   }
 
@@ -540,7 +627,7 @@ export function useBattleState(movesRef) {
   // touches those until clearDiceRoll() runs for the next pick).
   function showTurnResultConfirm(oppKey, mv, dmgToOpp) {
     state.turnResult = { oppKey, mvName: mv.name, mvType: mv.type, dmgToOpp }
-    state.phase = "turnResultConfirm"
+    enterPhase("turnResultConfirm")
   }
 
   function confirmTurnResult() {
@@ -553,23 +640,41 @@ export function useBattleState(movesRef) {
   function showTurnCutIn(key) {
     const p = state.players[key]
     const isFirstTurn = state.turnCount === 0
-    const energyCount = Math.max(0, (isFirstTurn ? 2 : 3) + (p.diceMod || 0))
-    const hasChara = !p.charaDiceBlocked
+    const energyCount = Math.max(0, (isFirstTurn ? 2 : 3) + modSum(p, STEP.DICE_ROLL, 'diceCount'))
+    const hasChara = !modOf(p, STEP.DICE_ROLL, 'charaDieBlocked')
     state.turnCutIn = { key, hasChara, energyCount }
     setTimeout(() => {
       state.turnCutIn = null
     }, 1970)
   }
 
+  // Asked only when ふわふわひこう is actually shielding the defender, and only when this
+  // turn's damage would otherwise land — a 0-damage turn has nothing to cancel, and asking
+  // anyway would be a prompt for no reason. Answering yes zeroes the damage and nothing else:
+  // the card is explicit that other effects still apply, which is why this runs after the
+  // effect queue rather than instead of it.
   function proceedToAnimateWithCtx(ctx) {
+    const shield = modOf(ctx.opp, STEP.DAMAGE, 'nullifyIfCharaDice')
+    if (shield && !ctx.charaShieldAsked && Math.max(ctx.dmgToOpp, 0) > 0) {
+      // Recorded in state, not captured in a closure: the answer comes back through
+      // submitEffectPrompt, which re-enters this function from the stored context.
+      if (state.effectCtx) state.effectCtx.charaShieldAsked = true
+      showCharaShieldPrompt(shield, ctx)
+      return
+    }
+    state.effectCtx = null
     const { moverKey, mover, oppKey, opp, mv } = ctx
-    const dmgToOpp = (opp.incomingDamageNullify !== null && opp.incomingDamageNullify !== undefined)
-      ? Math.max(opp.incomingDamageNullify, 0)
+    const nullifyMod = modOf(opp, STEP.DAMAGE, 'damageSetTo')
+    const dmgToOpp = nullifyMod
+      ? Math.max(nullifyMod.value, 0)
       : Math.max(ctx.dmgToOpp, 0)
     const dmgToSelf = ctx.dmgToSelf
 
     playEffectOn(oppKey, mv.type, dmgToOpp, () => {
       opp.hp = Math.max(opp.hp - dmgToOpp, 0)
+      // Recorded here rather than from dmgToOpp alone, because a shield can reduce it to
+      // zero — "took no damage" has to mean what actually reached them.
+      if (dmgToOpp > 0) opp.tookDamage = true
 
       const finishSelf = () => {
         if (opp.hp <= 0 || mover.hp <= 0) {
@@ -582,25 +687,26 @@ export function useBattleState(movesRef) {
           if (mover.hp <= 0) deadKeys.push(moverKey)
           Promise.all(deadKeys.map(k => new Promise(res => frameOutDeadMon(k, res)))).then(() => {
             state.winner = winnerKey
-            state.phase = "win"
+            enterPhase("win")
           })
           return
         }
         if (ctx.repeatValue) {
           state.repeatActive = true
           clearDiceRoll()
-          state.phase = "diceRoll"
+          enterPhase("diceRoll")
           return
         }
         state.repeatActive = false
-        opp.incomingDamageMod = 0
-        opp.incomingDamageNullify = null
+        clearMods(opp, [STEP.DAMAGE])
+        // Settle it for both sides: the attacker took nothing this turn unless their own
+        // move hurt them, and the defender's flag was set when the damage landed.
+        mover.committedTookDamage = mover.tookDamage
+        opp.committedTookDamage = opp.tookDamage
+        mover.tookDamage = false
+        opp.tookDamage = false
         mover.committedLastMoveId = mover.lastMoveId
         mover.committedLastMoveFailed = mover.lastMoveFailed
-        mover.committedBannedMoveIds = mover.bannedMoveIds
-        mover.committedBannedMoveSourceName = mover.bannedMoveSourceName
-        opp.committedBannedMoveIds = opp.bannedMoveIds
-        opp.committedBannedMoveSourceName = opp.bannedMoveSourceName
         // Online only: the turn doesn't actually hand off until the side that just got hit taps
         // through a summary of the damage + dice result — otherwise the screen can flip to their
         // move-select before they've had a chance to see what happened (see
@@ -649,6 +755,8 @@ export function useBattleState(movesRef) {
     pickMove,
     backToMoveSelect,
     setDiceRollResult,
+    submitDiceReroll,
+    clearDiceRerollRequest,
     resolveTurn,
     submitEffectPrompt,
     pickBindWazaMove,
