@@ -1,17 +1,7 @@
 // Thin wrapper around the admin-mode endpoints in server/index.mjs, the same shape as
 // authApi.js — every function resolves with the parsed JSON body or throws an Error whose
 // message is the server's own `error` string.
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8787'
-
-async function request(path, options = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) }
-  })
-  const data = await res.json().catch(() => null)
-  if (!res.ok) throw new Error(data?.error || `request failed (${res.status})`)
-  return data
-}
+import { request } from './apiRequest'
 
 function authHeader(token) {
   return { Authorization: `Bearer ${token}` }
