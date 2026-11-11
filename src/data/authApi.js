@@ -77,6 +77,39 @@ export function claimGift(token, id) {
   })
 }
 
+/**
+ * 用 Google 登入或註冊。`credential` 是 Google 給的 ID token，由後端驗章。
+ *
+ * `createNew` 把兩種意圖分開：登入頁按下去是「我應該已經有帳號」，查不到就回 409
+ * （'google account not linked'），不會順手開一個新的；註冊頁才帶 true。
+ *
+ * 差別很要緊：既有玩家的信箱幾乎都是 NULL，所以「信箱對得上」那道防線對他們無效 ——
+ * 登入順手註冊的話，他們會拿到一個空的新帳號而且當下看不出來。
+ */
+export function googleSignIn(credential, createNew = false) {
+  return request('/api/auth/google', {
+    method: 'POST',
+    body: JSON.stringify({ credential, createNew })
+  })
+}
+
+/** 把 Google 帳號綁到現在登入的這個玩家身上。要帶 token —— 那就是「本人」的證明。 */
+export function linkGoogle(token, credential) {
+  return request('/api/auth/google/link', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ credential })
+  })
+}
+
+/** 解除綁定。後端只在他還留著帳號 + PIN 的時候才准。 */
+export function unlinkGoogle(token) {
+  return request('/api/auth/google/link', {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` }
+  })
+}
+
 /** 自己改 PIN。要先給現在這組。 */
 export function changePin(token, current, pin) {
   return request('/api/auth/pin', {
