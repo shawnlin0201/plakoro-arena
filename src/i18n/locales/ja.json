@@ -213,6 +213,10 @@
     "claimHint": "本人に渡し、ログイン画面の「既存記録の引き継ぎ」で入力。14日で失効。",
     "pinReset": "PIN を再設定",
     "accountName": "ログイン ID",
+    "loginMethod": "ログイン方法",
+    "loginGoogle": "Google",
+    "loginPin": "アカウント + PIN",
+    "loginBoth": "アカウント + PIN、Google",
     "accountReveal": "表示",
     "pinResetting": "再設定中…",
     "pinResetPlaceholder": "新しい PIN（8 文字以上）",
@@ -905,7 +909,6 @@
     "errorGoogleFailed": "Google ログインに失敗しました。もう一度お試しください。",
     "errorGoogleOff": "現在 Google ログインはご利用いただけません。",
     "errorGoogleLinkedElsewhere": "この Google アカウントは別のプレイヤーに連携されています。",
-    "errorGoogleOnlyWayIn": "解除するとログイン手段がなくなります。先に PIN を設定してください。",
     "errorPlayerUsesGoogle": "このプレイヤーは Google ログインのため、リセットする PIN がありません。",
     "errorNameRequired": "ニックネームを入力してください",
     "errorPinTooShort": "PINは8桁以上にしてください",
@@ -952,8 +955,7 @@
     "googleNote": "連携すると次回から Google でログインできます。PIN を覚える必要はありません。",
     "googleState": "状態",
     "googleLinked": "連携済み",
-    "googleUnlink": "連携を解除",
-    "googleNeedPin": "現在 Google のみがログイン手段です。解除する前に PIN を設定してください。"
+    "googleOnward": "今後は Google でログインできます。"
   },
   "notice": {},
   "mailbox": {
