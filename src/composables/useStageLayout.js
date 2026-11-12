@@ -16,19 +16,19 @@ const ROOT_FONT_SIZE = 16
 export const isStagePortrait = ref(false)
 
 /**
- * 轉向之後要盯多久，以及「不再變動」要安靜多久才算數。
+ * 轉向之後隔多久才去修。
  *
- * 不用固定的時間點去猜，是因為實測回報的症狀是「轉成橫向後壞掉，過 1~5 秒自己好」——
- * 那個「自己好」就是 iOS 終於把視窗尺寸報對的時刻，而它什麼時候來無法預測（排到
- * 600ms 就停的版本沒有用）。改成每一幀去看尺寸有沒有變，變了就立刻重排。
+ * 要等 iOS 的旋轉動畫跑完 —— 太早做的話，量到的還是轉之前的狀態，等於白做。
  *
- * 上限 6 秒：比回報的最長 5 秒再多一點。真的超過就放手，總比留一個永遠在跑的迴圈好。
+ * 這裡的歷史值得留著：先前試過「排在 0/120/300/600ms 各做一次」，以及「用 rAF 每一幀
+ * 盯尺寸有沒有變」，兩種都實測無效。真機診斷量到的是，轉成橫向之後
+ * visualViewport.offsetTop = -62、`#stage`（inset:0）被畫在 y=62，而且那時候尺寸早就
+ * 不再變動了 —— 問題從來不是「量得不夠勤」。
  */
-const WATCH_MS = 6000
-const QUIET_MS = 500
+const SETTLE_MS = 300
 
-export function useStageLayout(stageEl) {
-  let watching = 0
+export function useStageLayout() {
+  let timer = 0
 
   function layoutStage() {
     // 舞台就是視窗（見 style.css 的 #stage），所以這裡只剩一件事：決定 1rem 有多大。
@@ -50,93 +50,37 @@ export function useStageLayout(stageEl) {
   }
 
   /**
-   * 逼 Safari 重新算一次 #stage 的位置。
+   * 捲一格再捲回來，逼 WebKit 重新對齊座標。
    *
-   * 整個 App 都裝在 `#stage { position: fixed; inset: 0 }` 裡面，而 iOS 有個長年的問題：
-   * 旋轉之後 fixed 元素會用新的版面繪製，但**點擊的命中區域留在舊的座標系**，結果就是
-   * 東西看得到、點不到，或是點到旁邊那一個。加到主畫面（standalone）的時候特別明顯。
+   * 針對的是真機量到的那 62px：橫向時版面視窗比視覺視窗矮一截（那正好是 Safari 工具列
+   * 的高度），而 `position: fixed` 是釘在**版面視窗**上的，所以整個 #stage 跟著被推下去，
+   * 要好幾秒才會自己對齊。
    *
-   * 把 position 暫時換成 absolute 再換回來，Safari 就會重新建立那個元素的位置。只動這
-   * 一個元素是刻意的 —— 常見的做法是把整個 body `display:none` 再打開，那會連帶重載
-   * Google 登入的 iframe、讓 3D 骰子的 canvas 收到一次 0×0，並且把手冊閱讀器的捲動位置
-   * 清回頂端。
-   *
-   * body 的高度是 100%，所以 absolute 跟 fixed 蓋到的是同一塊，畫面不會跳。
-   *
-   * 沒效的話整支拿掉就好，不會留下任何依賴。
+   * html/body 是 overflow:hidden，看起來沒有東西可以捲 —— 但被錯開的正是版面視窗，而
+   * scrollTo 動的就是它。先到 1 再回 0，是因為捲到同一個位置不會觸發任何重算。
    */
-  function nudgeStage() {
-    const el = stageEl?.value
-    if (!el) return
-    el.style.position = 'absolute'
-    // 讀一次版面屬性，強迫瀏覽器在這裡就重排，而不是等到這個函式跑完才一次算完 ——
-    // 不讀的話兩次賦值會被合併，等於什麼都沒做。
-    void el.offsetHeight
-    el.style.position = ''
-  }
-
-  /**
-   * 這一刻量到的尺寸長什麼樣。
-   *
-   * 四個來源都放進去是刻意的：旋轉過程中它們會彼此不一致（innerWidth 已經換了、
-   * visualViewport 還沒，或者反過來），而那個不一致本身就是「還沒定下來」的訊號。
-   */
-  function signature() {
-    const vp = window.visualViewport
-    return [
-      window.innerWidth, window.innerHeight,
-      Math.round(vp?.width || 0), Math.round(vp?.height || 0),
-      document.documentElement.clientWidth, document.documentElement.clientHeight
-    ].join('x')
-  }
-
-  /**
-   * 轉向之後盯著尺寸，變一次就重排一次，安靜夠久就收工。
-   *
-   * 關鍵在「變了就立刻做」而不是「時間到了才做」：iOS 把尺寸報對的那一刻，就是畫面
-   * 真正該重算的那一刻，早一幀晚一幀都是玩家點不到東西的時間。
-   */
-  function settle() {
-    cancelAnimationFrame(watching)
-    const started = performance.now()
-    let last = signature()
-    let lastChange = started
-
-    // 先做一次。事件剛來的時候尺寸可能已經是對的（Android 多半如此），那就不必等。
+  function realign() {
+    window.scrollTo(0, 1)
+    window.scrollTo(0, 0)
     layoutStage()
-    nudgeStage()
+  }
 
-    const tick = now => {
-      const sig = signature()
-      if (sig !== last) {
-        last = sig
-        lastChange = now
-        layoutStage()
-        nudgeStage()
-      }
-      // 安靜夠久、或盯太久了就停。停之前再做最後一次，確保收工時的狀態是對的。
-      if (now - lastChange > QUIET_MS || now - started > WATCH_MS) {
-        layoutStage()
-        nudgeStage()
-        return
-      }
-      watching = requestAnimationFrame(tick)
-    }
-    watching = requestAnimationFrame(tick)
+  function onOrientation() {
+    clearTimeout(timer)
+    layoutStage()
+    timer = setTimeout(realign, SETTLE_MS)
   }
 
   onMounted(() => {
     layoutStage()
-    // 三個都走 settle：iOS 上哪一個會先來、會不會來，三者都不保證。settle 自己會判斷
-    // 尺寸有沒有真的變，所以重複觸發不會多做事。
-    window.addEventListener('resize', settle)
-    window.addEventListener('orientationchange', settle)
-    window.visualViewport?.addEventListener('resize', settle)
+    window.addEventListener('resize', layoutStage)
+    window.addEventListener('orientationchange', onOrientation)
+    window.visualViewport?.addEventListener('resize', layoutStage)
   })
   onUnmounted(() => {
-    cancelAnimationFrame(watching)
-    window.removeEventListener('resize', settle)
-    window.removeEventListener('orientationchange', settle)
-    window.visualViewport?.removeEventListener('resize', settle)
+    clearTimeout(timer)
+    window.removeEventListener('resize', layoutStage)
+    window.removeEventListener('orientationchange', onOrientation)
+    window.visualViewport?.removeEventListener('resize', layoutStage)
   })
 }
