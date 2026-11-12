@@ -58,6 +58,8 @@ export function useStageLayout() {
    *
    * html/body 是 overflow:hidden，看起來沒有東西可以捲 —— 但被錯開的正是版面視窗，而
    * scrollTo 動的就是它。先到 1 再回 0，是因為捲到同一個位置不會觸發任何重算。
+   *
+   * 完整的排查過程、以及三條試過但無效的路，見 design/ios-rotation.md。
    */
   function realign() {
     window.scrollTo(0, 1)
