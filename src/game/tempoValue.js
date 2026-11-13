@@ -26,7 +26,7 @@
 //     Three passes reach a fixed point.
 //
 // One more thing it does NOT do: average over everybody. See REFERENCE_COUNT.
-import { enumerateRolls } from './energyPayment'
+import { enumerateRolls, forcedRerollRolls } from './energyPayment'
 import { ASSUMED_ENEMY_LAST_DAMAGE, suggestedBuild } from './suggestedDice'
 import { sustainableValue, DECK_SIZE, NORMAL_DICE } from './turnValue'
 import { moveExpectedValue } from './moveExpectedValue'
@@ -53,14 +53,15 @@ export const REFERENCE_COUNT = 5
 
 // What the owner can sustain, under whatever restriction is being priced. The no-repeat
 // rule applies to them as much as to anyone, so this is their best two alternating.
-function bestCommittable(deck, dice, table, { dieCount = NORMAL_DICE, charaDiceInPlay = true, charaDieRerolls = 0, nullifyDamage = false, bannedId = null, countDefensiveValue = true } = {}) {
+function bestCommittable(deck, dice, table, { dieCount = NORMAL_DICE, charaDiceInPlay = true, charaDieRerolls = 0, forcedRerolls = 0, rerollCache = null, nullifyDamage = false, bannedId = null, countDefensiveValue = true } = {}) {
   if (dieCount <= 0) return 0
   const rolls = enumerateRolls(dice.slice(0, dieCount))
   const scores = []
   deck.forEach(mv => {
     if (bannedId !== null && mv.id === bannedId) return
+    // A forced reroll is aimed at the move they picked, so its odds are per move.
     const result = moveExpectedValue(mv, {
-      rolls,
+      rolls: forcedRerolls > 0 ? rerolledFor(mv, dice.slice(0, dieCount), forcedRerolls, rerollCache) : rolls,
       enemyDice: dice.slice(0, NORMAL_DICE),
       charaDiceInPlay,
       charaDieRerolls,
@@ -73,6 +74,19 @@ function bestCommittable(deck, dice, table, { dieCount = NORMAL_DICE, charaDiceI
     scores.push(nullifyDamage ? result.ev - result.evDamage : result.ev)
   })
   return sustainableValue(scores)
+}
+
+// 重擲分布只看骰子與費用、跟表無關，三輪迭代共用一份快取。
+function rerolledFor(mv, dice, n, cache) {
+  const counted = [mv.effectType, ...(mv.chara || []).map(ce => ce.type)]
+    .map(type => /^DAMAGE_EXTRA_ENE_(.+)$/.exec(type || ''))
+    .find(Boolean)
+  const ownType = counted ? counted[1] : mv.type
+  const key = `${dice.length}|${n}|${(mv.cost || []).join(',')}|${ownType}`
+  if (cache && cache.has(key)) return cache.get(key)
+  const rolls = forcedRerollRolls(dice, mv.cost, n, ownType)
+  if (cache) cache.set(key, rolls)
+  return rolls
 }
 
 // What one restriction costs the strongest few opponents, which is what the caster is
@@ -105,7 +119,7 @@ function referenceMean(rows, key) {
 
 function tableFromPass(roster, previous, countDefensiveValue) {
   const rows = []
-  roster.forEach(({ dice, moveList }) => {
+  roster.forEach(({ dice, moveList, rerollCache }) => {
     const rolls = enumerateRolls(dice.slice(0, NORMAL_DICE))
     const scored = moveList
       .map(mv => ({
@@ -118,7 +132,7 @@ function tableFromPass(roster, previous, countDefensiveValue) {
     const deck = scored.slice(0, DECK_SIZE).map(entry => entry.mv)
     const topId = scored.length > 0 ? scored[0].mv.id : null
 
-    const at = opts => bestCommittable(deck, dice, previous, { ...opts, countDefensiveValue })
+    const at = opts => bestCommittable(deck, dice, previous, { ...opts, rerollCache, countDefensiveValue })
     const base = at({})
     rows.push({
       base,
@@ -129,7 +143,9 @@ function tableFromPass(roster, previous, countDefensiveValue) {
       nullifyDamage: base - at({ nullifyDamage: true }),
       bindMove: base - at({ bannedId: topId }),
       gainDice1: at({ dieCount: NORMAL_DICE + 1 }) - base,
-      gainDice2: at({ dieCount: MAX_DICE }) - base
+      gainDice2: at({ dieCount: MAX_DICE }) - base,
+      forcedReroll1: base - at({ forcedRerolls: 1 }),
+      forcedReroll2: base - at({ forcedRerolls: 2 })
     })
   })
 
@@ -144,7 +160,7 @@ function tableFromPass(roster, previous, countDefensiveValue) {
  * 同一個問題，但問的是自己：少一顆骰、少兩顆骰、多一顆骰，對「這一副牌組、這一組骰子」
  * 值多少 HP。
  *
- * 跟 buildTempoTable 的差別不在算法，在對象。那張表要回答的是「拿走對手的骰子值多少」，
+ * 跟 buildTempoTable 的差別不在算法，在對象。那張表要回答的是「扣掉對手的骰子值多少」，
  * 而對手是誰不知道，只能對最強的幾隻取平均再用那個平均去代；自己少骰子沒有這個未知數
  * —— 牌組是哪一副、骰子長什麼樣，畫面上都擺著，直接算就有確切的數字，不必借別人的平均。
  *
@@ -206,7 +222,7 @@ export function selfDiceValues(character, movesById, dice, table, options = {}) 
  *
  * The result is a property of the card pool, not of the player's own build, so it doesn't
  * move when they edit their dice — and it only needs computing once per data set. Roughly
- * 200ms for the printed roster, so callers should hold on to it.
+ * 1s for the printed roster (the forced-reroll rows are about half), so callers should hold on to it.
  *
  * @param {Array}  characters  roster entries, each with a `moves` array of move ids
  * @param {object} movesById   every move, keyed by id
@@ -223,6 +239,7 @@ export function buildTempoTable(characters, movesById, options = {}) {
   const roster = characters
     .map(character => suggestedBuild(character, movesById, MAX_DICE))
     .filter(Boolean)
+    .map(entry => ({ ...entry, rerollCache: new Map() }))
 
   if (roster.length === 0) return null
 

@@ -153,7 +153,7 @@ const charaDieFaceDown = ref(false)
 const CHARA_DIE_DOWN = '下'
 
 // Pricing what a move denies the opponent means running the whole roster against itself
-// several times over — a few hundred milliseconds, enough to drop a frame. It's held outside
+// several times over — about a second, enough to drop frames. It's held outside
 // the reactive graph and built once after the first paint, so the list appears immediately
 // and the tempo terms join it a moment later rather than delaying everything.
 const tempoTable = shallowRef(null)
@@ -188,7 +188,9 @@ const TEMPO_ROWS = [
   { key: 'nullifyDamage', label: 'tempoNullifyDamage', self: false },
   { key: 'bindMove', label: 'tempoBindMove', self: false },
   { key: 'gainDice1', label: 'tempoGainDice1', self: true },
-  { key: 'gainDice2', label: 'tempoGainDice2', self: true }
+  { key: 'gainDice2', label: 'tempoGainDice2', self: true },
+  { key: 'forcedReroll1', label: 'tempoForcedReroll1', self: false },
+  { key: 'forcedReroll2', label: 'tempoForcedReroll2', self: false }
 ]
 const tempoPriceRows = computed(() => {
   const table = tempoTable.value
