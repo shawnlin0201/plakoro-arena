@@ -497,6 +497,8 @@
       "tempoDenyDice2AndChara": "Two dice fewer + no chara die",
       "tempoNullifyDamage": "Damage nullified",
       "tempoBindMove": "One move banned",
+      "tempoForcedReroll1": "Opponent rerolls 1 energy die",
+      "tempoForcedReroll2": "Opponent rerolls 2 energy dice",
       "tempoGainDice1": "One die more",
       "tempoGainDice2": "Two dice more",
       "noteNeedsHp": "Counted once you enter remaining HP",

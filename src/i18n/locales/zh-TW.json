@@ -497,6 +497,8 @@
       "tempoDenyDice2AndChara": "少 2 顆骰＋擋角色骰",
       "tempoNullifyDamage": "傷害歸零",
       "tempoBindMove": "封住 1 個招式",
+      "tempoForcedReroll1": "對手重擲 1 顆能量骰",
+      "tempoForcedReroll2": "對手重擲 2 顆能量骰",
       "tempoGainDice1": "多 1 顆能量骰",
       "tempoGainDice2": "多 2 顆能量骰",
       "noteNeedsHp": "填入剩餘 HP 後才會計入",

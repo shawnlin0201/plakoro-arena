@@ -497,6 +497,8 @@
       "tempoDenyDice2AndChara": "ダイス −2 ＋キャラダイス無効",
       "tempoNullifyDamage": "ダメージ無効",
       "tempoBindMove": "技を 1 つ封じる",
+      "tempoForcedReroll1": "相手がエネルギーダイス 1 個を振り直し",
+      "tempoForcedReroll2": "相手がエネルギーダイス 2 個を振り直し",
       "tempoGainDice1": "エネルギーダイス +1",
       "tempoGainDice2": "エネルギーダイス +2",
       "noteNeedsHp": "残りHPを入れると計算されます",

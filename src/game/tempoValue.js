@@ -26,7 +26,7 @@
 //     Three passes reach a fixed point.
 //
 // One more thing it does NOT do: average over everybody. See REFERENCE_COUNT.
-import { enumerateRolls } from './energyPayment'
+import { enumerateRolls, forcedRerollRolls } from './energyPayment'
 import { ASSUMED_ENEMY_LAST_DAMAGE, suggestedBuild } from './suggestedDice'
 import { sustainableValue, DECK_SIZE, NORMAL_DICE } from './turnValue'
 import { moveExpectedValue } from './moveExpectedValue'
@@ -53,14 +53,16 @@ export const REFERENCE_COUNT = 5
 
 // What the owner can sustain, under whatever restriction is being priced. The no-repeat
 // rule applies to them as much as to anyone, so this is their best two alternating.
-function bestCommittable(deck, dice, table, { dieCount = NORMAL_DICE, charaDiceInPlay = true, charaDieRerolls = 0, nullifyDamage = false, bannedId = null, countDefensiveValue = true } = {}) {
+function bestCommittable(deck, dice, table, { dieCount = NORMAL_DICE, charaDiceInPlay = true, charaDieRerolls = 0, forcedRerolls = 0, rerollCache = null, nullifyDamage = false, bannedId = null, countDefensiveValue = true } = {}) {
   if (dieCount <= 0) return 0
   const rolls = enumerateRolls(dice.slice(0, dieCount))
   const scores = []
   deck.forEach(mv => {
     if (bannedId !== null && mv.id === bannedId) return
+    // 逼對手重擲是針對他「選好的那一招」下的，所以每一招的骰面分布都不一樣，不能共用
+    // 上面那份 rolls。
     const result = moveExpectedValue(mv, {
-      rolls,
+      rolls: forcedRerolls > 0 ? rerolledFor(mv, dice.slice(0, dieCount), forcedRerolls, rerollCache) : rolls,
       enemyDice: dice.slice(0, NORMAL_DICE),
       charaDiceInPlay,
       charaDieRerolls,
@@ -73,6 +75,27 @@ function bestCommittable(deck, dice, table, { dieCount = NORMAL_DICE, charaDiceI
     scores.push(nullifyDamage ? result.ev - result.evDamage : result.ev)
   })
   return sustainableValue(scores)
+}
+
+/**
+ * 這一招被逼著重擲 n 顆之後的骰面分布。
+ *
+ * 平手規則要知道「哪個屬性算錢」—— DAMAGE_EXTRA_ENE_* 那類招式的傷害按該屬性的數量算，
+ * 所以逼人重擲的一方會優先把那個屬性洗掉。沒有那種效果的招就用招式本身的屬性。
+ *
+ * 分布只跟骰子、費用、顆數有關，跟估值表無關，所以三輪迭代可以共用同一份快取。
+ */
+function rerolledFor(mv, dice, n, cache) {
+  const perEnergy = [mv.effectType, ...(mv.chara || []).map(ce => ce.type)]
+    .map(type => /^DAMAGE_EXTRA_ENE_(.+)$/.exec(type || ''))
+    .find(Boolean)
+  const countedType = perEnergy ? perEnergy[1] : mv.type
+  // 骰子在同一個角色裡是固定的，所以顆數就足以辨識是哪一段。
+  const key = `${dice.length}|${n}|${(mv.cost || []).join(',')}|${countedType}`
+  if (cache && cache.has(key)) return cache.get(key)
+  const rolls = forcedRerollRolls(dice, mv.cost, n, countedType)
+  if (cache) cache.set(key, rolls)
+  return rolls
 }
 
 // What one restriction costs the strongest few opponents, which is what the caster is
@@ -105,7 +128,7 @@ function referenceMean(rows, key) {
 
 function tableFromPass(roster, previous, countDefensiveValue) {
   const rows = []
-  roster.forEach(({ dice, moveList }) => {
+  roster.forEach(({ dice, moveList, rerollCache }) => {
     const rolls = enumerateRolls(dice.slice(0, NORMAL_DICE))
     const scored = moveList
       .map(mv => ({
@@ -118,7 +141,7 @@ function tableFromPass(roster, previous, countDefensiveValue) {
     const deck = scored.slice(0, DECK_SIZE).map(entry => entry.mv)
     const topId = scored.length > 0 ? scored[0].mv.id : null
 
-    const at = opts => bestCommittable(deck, dice, previous, { ...opts, countDefensiveValue })
+    const at = opts => bestCommittable(deck, dice, previous, { ...opts, rerollCache, countDefensiveValue })
     const base = at({})
     rows.push({
       base,
@@ -129,7 +152,9 @@ function tableFromPass(roster, previous, countDefensiveValue) {
       nullifyDamage: base - at({ nullifyDamage: true }),
       bindMove: base - at({ bannedId: topId }),
       gainDice1: at({ dieCount: NORMAL_DICE + 1 }) - base,
-      gainDice2: at({ dieCount: MAX_DICE }) - base
+      gainDice2: at({ dieCount: MAX_DICE }) - base,
+      forcedReroll1: base - at({ forcedRerolls: 1 }),
+      forcedReroll2: base - at({ forcedRerolls: 2 })
     })
   })
 
@@ -205,8 +230,10 @@ export function selfDiceValues(character, movesById, dice, table, options = {}) 
  * Prices every "deny the opponent something" effect against the strongest few of the roster.
  *
  * The result is a property of the card pool, not of the player's own build, so it doesn't
- * move when they edit their dice — and it only needs computing once per data set. Roughly
- * 200ms for the printed roster, so callers should hold on to it.
+ * move when they edit their dice — and it only needs computing once per data set.
+ *
+ * 印出來的全角色大約 1 秒，其中約一半是重擲那兩列 —— 它要把每一種原始骰面乘上每一種重擲
+ * 結果。所以呼叫端務必把結果留著，不要每次都重算。
  *
  * @param {Array}  characters  roster entries, each with a `moves` array of move ids
  * @param {object} movesById   every move, keyed by id
@@ -223,6 +250,8 @@ export function buildTempoTable(characters, movesById, options = {}) {
   const roster = characters
     .map(character => suggestedBuild(character, movesById, MAX_DICE))
     .filter(Boolean)
+    // 重擲分布算一次就能給三輪用，快取掛在角色身上（骰子是角色的）。
+    .map(entry => ({ ...entry, rerollCache: new Map() }))
 
   if (roster.length === 0) return null
 
