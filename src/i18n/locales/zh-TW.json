@@ -150,7 +150,7 @@
     "storeInfo": "店家資訊",
     "priceLog": "交易市場",
     "tournament": "賽程編排",
-    "tierList": "強度排行",
+    "tierList": "招式期望排行",
     "typeChart": "屬性克制表",
     "tierMaker": "Tier 製作器",
     "traitChart": "角色特性分佈",
@@ -688,7 +688,9 @@
     }
   },
   "tierList": {
-    "title": "角色強度排行",
+    "title": "角色招式期望排行",
+    "exportImage": "匯出圖片",
+    "exporting": "匯出中…",
     "hint": "每隻寶可夢都套用適合自己的純屬骰 3 顆，取最強 {n} 招輪替出招的平均",
     "calculating": "計算中…",
     "fewMoves": "這隻寶可夢只有 {n} 招",

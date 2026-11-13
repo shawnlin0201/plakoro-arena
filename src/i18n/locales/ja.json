@@ -150,7 +150,7 @@
     "storeInfo": "店舗情報",
     "priceLog": "取引マーケット",
     "tournament": "トーナメント編成",
-    "tierList": "強さランキング",
+    "tierList": "技期待値ランキング",
     "typeChart": "タイプ相性表",
     "tierMaker": "Tierメーカー",
     "traitChart": "キャラ特性図",
@@ -688,7 +688,9 @@
     }
   },
   "tierList": {
-    "title": "キャラ強さランキング",
+    "title": "キャラ技期待値ランキング",
+    "exportImage": "画像を書き出す",
+    "exporting": "書き出し中…",
     "hint": "各ポケモンに合わせた単色ダイス3個で、上位{n}ワザを交互に撃ち続けたときの平均です",
     "calculating": "計算中…",
     "fewMoves": "このポケモンのワザは{n}つだけです",

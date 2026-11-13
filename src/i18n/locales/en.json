@@ -150,7 +150,7 @@
     "storeInfo": "Stores",
     "priceLog": "Market",
     "tournament": "Tournament Scheduler",
-    "tierList": "Strength ranking",
+    "tierList": "Move value ranking",
     "typeChart": "Type matchups",
     "tierMaker": "Tier Maker",
     "traitChart": "Trait chart",
@@ -688,7 +688,9 @@
     }
   },
   "tierList": {
-    "title": "Character strength ranking",
+    "title": "Character move-value ranking",
+    "exportImage": "Export image",
+    "exporting": "Exporting…",
     "hint": "Each Pokémon on three pure dice built for them, scored by alternating their {n} best moves",
     "calculating": "working…",
     "fewMoves": "this Pokémon has only {n} moves",
