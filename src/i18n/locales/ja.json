@@ -712,6 +712,8 @@
     "main": "メイン",
     "secondary": "サブ",
     "weakness": "弱点",
+    "exportImage": "画像を書き出す",
+    "exporting": "書き出し中…",
     "colorlessOnly": "無色のみ"
   },
   "tierMaker": {

@@ -712,6 +712,8 @@
     "main": "Main",
     "secondary": "Sub",
     "weakness": "Weak to",
+    "exportImage": "Export image",
+    "exporting": "Exporting…",
     "colorlessOnly": "colourless only"
   },
   "tierMaker": {

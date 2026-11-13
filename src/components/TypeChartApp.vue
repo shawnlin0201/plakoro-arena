@@ -1,8 +1,9 @@
 <script setup>
-import { computed, inject } from 'vue'
+import { computed, inject, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { typeBgColor } from '../data/constants'
 import { asset } from '../data/assetPath'
+import { exportElementAsPng } from '../data/exportImage'
 import { typeAffinity } from '../game/typeAffinity'
 
 const emit = defineEmits(['back'])
@@ -25,10 +26,29 @@ const rows = computed(() =>
     return { character, main, secondary }
   })
 )
+
+/* ── 匯出圖片 ────────────────────────────────────────────────────────────
+   截的是標題加整張表。這張表沒有任何可切換的狀態 —— 看到什麼就是什麼 —— 所以不像
+   招式期望排行那樣要把操作用的按鈕排除掉，只要把底下的返回鍵留在框外就好。
+   ──────────────────────────────────────────────────────────────────── */
+const exportTargetRef = ref(null)
+const exporting = ref(false)
+
+async function exportImage() {
+  if (!exportTargetRef.value || exporting.value) return
+  exporting.value = true
+  try {
+    await exportElementAsPng(exportTargetRef.value, 'plakoro-type-chart')
+  } finally {
+    exporting.value = false
+  }
+}
 </script>
 
 <template>
   <div class="board select-board" style="overflow-y:auto; align-items:center;">
+    <!-- 匯出的範圍：標題加整張表，底下那排按鈕留在框外。 -->
+    <div ref="exportTargetRef" style="width:100%; max-width:40rem; display:flex; flex-direction:column; align-items:center; background:var(--bg); padding-bottom:0.375rem;">
     <div class="modal-title" style="margin:0.5rem 0 1rem;">{{ t('typeChart.title') }}</div>
 
     <!-- Two per row. A row is a name and three icons, which leaves half the stage empty in a
@@ -82,8 +102,13 @@ const rows = computed(() =>
       </div>
     </div>
 
-    <div style="padding:0.625rem 0 0.75rem;">
+    </div>
+
+    <div style="padding:0.625rem 0 0.75rem; display:flex; justify-content:center; gap:0.375rem; flex-wrap:wrap;">
       <button class="btn secondary" @click="emit('back')">{{ t('common.back') }}</button>
+      <button class="btn secondary" :disabled="exporting" @click="exportImage">
+        {{ exporting ? t('typeChart.exporting') : t('typeChart.exportImage') }}
+      </button>
     </div>
   </div>
 </template>

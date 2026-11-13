@@ -712,6 +712,8 @@
     "main": "主屬性",
     "secondary": "副屬性",
     "weakness": "弱點",
+    "exportImage": "匯出圖片",
+    "exporting": "匯出中…",
     "colorlessOnly": "只吃無色"
   },
   "tierMaker": {
