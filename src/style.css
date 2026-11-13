@@ -331,12 +331,23 @@ html,body{margin:0;padding:0;width:100%;height:100%;height:100dvh;background:#1A
   display:flex; align-items:center; justify-content:center;}
 .pick-card .ic{height:4.625rem; margin:0 auto; display:flex; align-items:center; justify-content:center;}
 .pick-card .ic .img-icon{border-radius:0.625rem;}
-.pick-bottom{background:#262420; padding:0.375rem 0.25rem 0.625rem;}
-.nm-row{display:flex; align-items:baseline; justify-content:center; gap:0.1875rem; min-width:0;}
-.pick-card .nm{font-size:0.7188rem; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-  font-family:'CorporateLogoBold',var(--ui-cjk); min-width:0; flex-shrink:1;}
-.nm-wk{font-size:0.7188rem; color:#C7C4BC; white-space:nowrap; flex-shrink:0; display:inline-flex; align-items:center; gap:0.0625rem;}
-.nm-wk .nm-wk-icon{width:0.875rem; height:0.875rem;}
+/* 左右收到 0.125rem：對戰選角那張卡還要再扣掉彈窗的內距跟卡片外框，名字欄只剩 50px
+   出頭，四個字就差那麼一點點要折行。名字欄的留白讓一點，比把字再縮小划算。 */
+.pick-bottom{background:#262420; padding:0.375rem 0.125rem 0.625rem; flex:1 1 auto;}
+/* 名字一行、弱點一行。卡片只有六分之一個舞台寬，兩個擠同一行的話先被切掉的是名字 ——
+   而名字正是要找的那個東西，弱點是附帶資訊。 */
+.nm-row{display:flex; flex-direction:column; align-items:center; gap:0.0625rem; min-width:0;}
+/* 名字寧可折行也不要截掉。卡片名字欄只有 2.5rem 寬，四個字在 0.7188rem 下就滿出去 ——
+   「妙蛙種子」會變成「妙蛙…」，而那正是要讀的東西。縮到 0.6rem 之後，二到四個字（23 隻
+   裡的 22 隻）都進得了一行，只有「波士可多拉」折成兩行，但五個字一個不少。 */
+.pick-card .nm{font-size:0.6rem; font-weight:700; color:#fff; line-height:1.2; overflow-wrap:anywhere;
+  font-family:'CorporateLogoBold',var(--ui-cjk); min-width:0; max-width:100%; flex-shrink:1;}
+/* 名字下面那行弱點。標籤短到只有一個詞（弱點／弱点／Weak），因為卡片只有六分之一個
+   舞台寬（約 3.5rem）—— 「（弱點：」那種括號寫法連一行都放不下，而且換到自己一行之後
+   括號本來就沒有意義了。留著 flex-wrap 是保險：真有兩個弱點的角色時折行，不要被裁掉。 */
+.nm-wk-line{display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:0.125rem;
+  max-width:100%; font-size:0.5625rem; font-weight:700; color:#C7C4BC; line-height:1.2;}
+.nm-wk-line .nm-wk-icon{width:0.875rem; height:0.875rem;}
 
 .cost-row{display:flex; gap:0.25rem; margin-top:0.125rem;}
 .pick-count{text-align:center; font-size:0.75rem; color:var(--sub); margin:0.25rem 0 0.5rem;}

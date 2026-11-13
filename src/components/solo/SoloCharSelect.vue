@@ -52,7 +52,14 @@ function back() {
             <div class="ic"><img :src="c.imageUrl || asset(`image/CHARA/${c.name}.png`)" class="img-icon" :alt="c.name"></div>
           </div>
           <div class="pick-bottom">
-            <div class="nm-row"><span class="nm">{{ c.name }}</span></div>
+            <!-- 弱點跟對戰選角、招式成功機率同一套：三個選角清單看到的東西要一樣。 -->
+            <div class="nm-row">
+              <span class="nm">{{ c.name }}</span>
+              <span v-if="c.weaknesses.length > 0" class="nm-wk-line">
+                <span>{{ t('charSelect.weaknessShort') }}</span>
+                <img v-for="w in c.weaknesses" :key="w.type" :src="asset(`image/ICON/${w.type}.png`)" class="img-icon nm-wk-icon" :alt="w.type">
+              </span>
+            </div>
           </div>
         </div>
       </div>
