@@ -513,7 +513,6 @@ function handleSignOut() {
            本身就是「本人」的證明。 -->
       <div v-if="googleAvailable" class="pp-form">
         <div class="pp-form-title">{{ t('profile.googleTitle') }}</div>
-        <p class="pp-form-note">{{ t('profile.googleNote') }}</p>
 
         <!-- 綁好之後這裡只剩狀態。不放解除的按鈕，是因為往後希望大家都走 Google ——
              這是介面上的選擇，伺服器那支 API 還在。 -->
@@ -522,7 +521,6 @@ function handleSignOut() {
             <span class="pp-form-label">{{ t('profile.googleState') }}</span>
             <span class="pp-form-value">{{ t('profile.googleLinked') }}</span>
           </div>
-          <p class="pp-form-note">{{ t('profile.googleOnward') }}</p>
         </template>
 
         <div v-show="!googleLinked" ref="googleSlot" class="pp-google-slot"></div>

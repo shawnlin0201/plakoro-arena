@@ -958,10 +958,8 @@
     "emailField": "アドレス",
     "emailHint": "ID や PIN を忘れたときのために登録してください。",
     "googleTitle": "Google ログイン",
-    "googleNote": "連携すると次回から Google でログインできます。PIN を覚える必要はありません。",
     "googleState": "状態",
-    "googleLinked": "連携済み",
-    "googleOnward": "今後は Google でログインできます。"
+    "googleLinked": "連携済み"
   },
   "notice": {},
   "mailbox": {
