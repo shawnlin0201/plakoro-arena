@@ -156,6 +156,7 @@
     "traitChart": "角色特性分佈",
     "adminSwitch": "帳號管理",
     "adminRewards": "賽事獎品管理",
+    "adminSeason": "賽季管理",
     "adminHandbook": "手冊訂閱權限",
     "group": {
       "tools": "其他工具"
@@ -937,6 +938,7 @@
     "save": "儲存",
     "saveError": "儲存失敗，請稍後再試",
     "tabBadge": "玩家徽章",
+    "emptyPicker": "還沒有可以選的。信箱裡的禮物拆開之後就會出現在這裡。",
     "exportImage": "匯出圖片",
     "exportingImage": "匯出中…",
     "tabSettings": "設定",

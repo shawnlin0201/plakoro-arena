@@ -33,6 +33,30 @@ export function revokeUnlock(token, code, kind, asset) {
   })
 }
 
+// ── 賽季 ──────────────────────────────────────────────────────────────────
+export function getSeason(token) {
+  return request('/api/admin/season', { headers: authHeader(token) })
+}
+
+export function setSeason(token, season) {
+  return request('/api/admin/season', {
+    method: 'PUT',
+    headers: authHeader(token),
+    body: JSON.stringify({ season })
+  })
+}
+
+// 一次發給全體玩家。items 是 [{ kind, asset }]，note 是會印在禮物上的那句話。
+// 回傳 { players, granted }：收件人數，以及實際新增的筆數 —— 已經有的人不會重複收到，
+// 所以 granted 通常小於 players × items，那個差額就是「本來就有的人數」。
+export function broadcastUnlocks(token, items, note) {
+  return request('/api/admin/unlocks/broadcast', {
+    method: 'POST',
+    headers: authHeader(token),
+    body: JSON.stringify({ items, note })
+  })
+}
+
 // Hand-adjusting PTP. Resolves with the same { player, unlocks, points } shape as getPlayer,
 // so the screen re-renders from the server's balance rather than adding the delta to its own.
 //

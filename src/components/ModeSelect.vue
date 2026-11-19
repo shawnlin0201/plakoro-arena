@@ -75,6 +75,7 @@ const MODES = [
   // around the menu who hasn't passed the PIN check.
   { key: 'adminSwitch', group: 'tools', adminOnly: true },
   { key: 'adminRewards', group: 'tools', adminOnly: true },
+  { key: 'adminSeason', group: 'tools', adminOnly: true },
   { key: 'adminHandbook', group: 'tools', adminOnly: true },
   { key: 'adminSales', group: 'tools', adminOnly: true },
   // 折扣碼跟營收分開：營收那幾頁在看已經發生的事，折扣碼是在設定接下來要發生的事。

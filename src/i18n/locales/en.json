@@ -156,6 +156,7 @@
     "traitChart": "Trait chart",
     "adminSwitch": "Account Admin",
     "adminRewards": "Manage Tournament Rewards",
+    "adminSeason": "Seasons",
     "adminHandbook": "Handbook Access",
     "group": {
       "tools": "More tools"
@@ -938,6 +939,7 @@
     "save": "Save",
     "saveError": "Save failed, please try again",
     "tabBadge": "Player badge",
+    "emptyPicker": "Nothing to pick yet — open the gifts in your mailbox and they will show up here.",
     "exportImage": "Export image",
     "exportingImage": "Exporting…",
     "tabSettings": "Settings",

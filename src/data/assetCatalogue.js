@@ -33,15 +33,15 @@ export const GROUP_LABELS = {
 
 export const ASSETS = [
   // ── 頭像 ──
-  { kind: 'avatar', id: '2026-9-default',       name: 'Meetup#1 賽季頭像',  obtain: '參與 Meetup#1 線下活動' },
+  { kind: 'avatar', id: '2026-9-default',       name: 'Meetup#1 賽季頭像',  obtain: 'Meetup#1 賽季開跑' },
   { kind: 'avatar', id: '2026-9-participants',  name: 'Meetup#1 參加頭像',  obtain: '參與 Meetup#1 線下活動' },
   { kind: 'avatar', id: '2026-9-winner',        name: 'Meetup#1 入賞頭像',  obtain: 'Meetup#1 線下活動：前三名' },
   { kind: 'avatar', id: '2026-9-champion',      name: 'Meetup#1 冠軍頭像',  obtain: 'Meetup#1 線下活動：冠軍' },
-  { kind: 'avatar', id: '2026-10-default',      name: 'Meetup#2 賽季頭像',  obtain: '參與 Meetup#2 線下活動' },
+  { kind: 'avatar', id: '2026-10-default',      name: 'Meetup#2 賽季頭像',  obtain: 'Meetup#2 賽季開跑' },
   { kind: 'avatar', id: '2026-10-participants', name: 'Meetup#2 參加頭像',  obtain: '參與 Meetup#2 線下活動' },
   { kind: 'avatar', id: '2026-10-winner',       name: 'Meetup#2 入賞頭像',  obtain: 'Meetup#2 線下活動：前三名' },
   { kind: 'avatar', id: '2026-10-champion',     name: 'Meetup#2 冠軍頭像',  obtain: 'Meetup#2 線下活動：冠軍' },
-  { kind: 'avatar', id: '2026-12-default',      name: 'Meetup#3 賽季頭像',  obtain: '參與 Meetup#3 線下活動' },
+  { kind: 'avatar', id: '2026-12-default',      name: 'Meetup#3 賽季頭像',  obtain: 'Meetup#3 賽季開跑' },
   { kind: 'avatar', id: '2026-12-participants', name: 'Meetup#3 參加頭像',  obtain: '參與 Meetup#3 線下活動' },
   { kind: 'avatar', id: '2026-12-winner',       name: 'Meetup#3 入賞頭像',  obtain: 'Meetup#3 線下活動：前三名' },
   { kind: 'avatar', id: '2026-12-champion',     name: 'Meetup#3 冠軍頭像',  obtain: 'Meetup#3 線下活動：冠軍' },
@@ -55,15 +55,15 @@ export const ASSETS = [
   { kind: 'avatar', id: 'secret-mame',          name: '秘密頭像',           obtain: '秘密禮物' },
 
   // ── 旗幟 ──
-  { kind: 'background', id: '2026-9-default',       name: 'Meetup#1 基本旗幟', obtain: '參與 Meetup#1 線下活動' },
+  { kind: 'background', id: '2026-9-default',       name: 'Meetup#1 基本旗幟', obtain: 'Meetup#1 賽季開跑' },
   { kind: 'background', id: '2026-9-participants',  name: 'Meetup#1 參加旗幟', obtain: '參與 Meetup#1 線下活動' },
   { kind: 'background', id: '2026-9-winner',        name: 'Meetup#1 入賞旗幟', obtain: 'Meetup#1 線下活動：前三名' },
   { kind: 'background', id: '2026-9-champion',      name: 'Meetup#1 冠軍旗幟', obtain: 'Meetup#1 線下活動：冠軍' },
-  { kind: 'background', id: '2026-10-default',      name: 'Meetup#2 基本旗幟', obtain: '參與 Meetup#2 線下活動' },
+  { kind: 'background', id: '2026-10-default',      name: 'Meetup#2 基本旗幟', obtain: 'Meetup#2 賽季開跑' },
   { kind: 'background', id: '2026-10-participants', name: 'Meetup#2 參加旗幟', obtain: '參與 Meetup#2 線下活動' },
   { kind: 'background', id: '2026-10-winner',       name: 'Meetup#2 入賞旗幟', obtain: 'Meetup#2 線下活動：前三名' },
   { kind: 'background', id: '2026-10-champion',     name: 'Meetup#2 冠軍旗幟', obtain: 'Meetup#2 線下活動：冠軍' },
-  { kind: 'background', id: '2026-12-default',      name: 'Meetup#3 基本旗幟', obtain: '參與 Meetup#3 線下活動' },
+  { kind: 'background', id: '2026-12-default',      name: 'Meetup#3 基本旗幟', obtain: 'Meetup#3 賽季開跑' },
   { kind: 'background', id: '2026-12-participants', name: 'Meetup#3 參加旗幟', obtain: '參與 Meetup#3 線下活動' },
   { kind: 'background', id: '2026-12-winner',       name: 'Meetup#3 入賞旗幟', obtain: 'Meetup#3 線下活動：前三名' },
   { kind: 'background', id: '2026-12-champion',     name: 'Meetup#3 冠軍旗幟', obtain: 'Meetup#3 線下活動：冠軍' },
@@ -72,10 +72,6 @@ export const ASSETS = [
 
   // ── 稱號 ──
   { kind: 'title', id: 'gen-rookie',     name: '骰子新鮮人',    group: 'general',     rank: 'plain',  obtain: '我入坑骰子啦！' },
-  // Meetup#3 的第四個稱號，但放在 general 而不是 meetup3：它要給所有人，而稱號沒有頭像
-  // 和旗幟那種「-default 一律放行」的等級捷徑（見 PlayerProfileApp 的 isTitleUnlocked），
-  // 要讓每個人都拿得到，唯一的位置就是這裡。
-  { kind: 'title', id: 'gen-tourist',    name: '罪惡城觀光客',  group: 'general',     rank: 'plain',  obtain: '歡迎來到罪惡城！' },
   { kind: 'title', id: 'early-player',   name: '早鳥玩家',      group: 'limited',     rank: 'epic',   obtain: '早期註冊 PLAKORO ARENA 的玩家' },
 
   { kind: 'title', id: 'm1-champion',    name: 'Meetup#1 冠軍', group: 'meetup1',     rank: 'gold',   obtain: 'Meetup#1 線下活動：冠軍' },
@@ -95,6 +91,7 @@ export const ASSETS = [
   { kind: 'title', id: 'm3-runner-up',   name: 'Meetup#3 亞軍', group: 'meetup3',     rank: 'silver', obtain: 'Meetup#3 線下活動：亞軍' },
   { kind: 'title', id: 'm3-third',       name: 'Meetup#3 季軍', group: 'meetup3',     rank: 'bronze', obtain: 'Meetup#3 線下活動：季軍' },
   { kind: 'title', id: 'm3-attendee',    name: 'Meetup#3 會眾', group: 'meetup3',     rank: 'plain',  obtain: '參與 Meetup#3 線下活動' },
+  { kind: 'title', id: 'm3-tourist',     name: '罪惡城觀光客',  group: 'meetup3',     rank: 'plain',  obtain: 'Meetup#3 賽季開跑' },
   { kind: 'title', id: 'm3-gang',        name: '骰子幫成員',    group: 'meetup3',     rank: 'plain',  obtain: '參與 Meetup#3 線下活動' },
   { kind: 'title', id: 'm3-overlord',    name: '街頭骰子霸主',  group: 'meetup3',     rank: 'epic',   obtain: 'Meetup#3 線下活動：前三名' },
   { kind: 'title', id: 'm3-godfather',   name: '地下骰子教父',  group: 'meetup3',     rank: 'legend', obtain: 'Meetup#3 線下活動：冠軍' },

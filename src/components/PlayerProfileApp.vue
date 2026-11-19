@@ -15,7 +15,7 @@ import { sfxSettings, setSfxVolume } from '../data/sfxSettings'
 import { lowData, setLowData } from '../data/lowDataMode'
 import { currentIdentity, setCurrentPlayer, signOut } from '../data/currentPlayer'
 import { isAdminAccount, isAdminMode, setAdminMode } from '../data/adminSession'
-import { AVATAR_IDS, BACKGROUND_IDS, avatarUrl, backgroundUrl, isSecretAsset, tierOfAsset } from '../data/nameplateAssets'
+import { AVATAR_IDS, BACKGROUND_IDS, avatarUrl, backgroundUrl, isSecretAsset } from '../data/nameplateAssets'
 import { getToken } from '../data/session'
 import { translateApiError } from '../data/apiErrors'
 import { googleAvailable, renderGoogleButton } from '../data/googleSignIn'
@@ -229,8 +229,10 @@ function entryDate(e) {
 //
 // Deciding what someone gets belongs in the reward package, which is admin-editable. A rule
 // here could only ever drift from it — and did.
+// 頭像與旗幟一律看發放紀錄。`-default` 曾經在這裡直接回 true，而那正是新賽季默默發生、
+// 玩家完全不知道的原因 —— 基本款自己出現在選擇器裡，沒有禮物也沒有通知。現在它跟其他
+// 素材一樣要發，開季才有那一下。伺服器那邊是同一條規則（isAssetAllowed）。
 function isUnlocked(id, kind) {
-  if (tierOfAsset(id) === 'default') return true
   const owned = kind === 'avatar' ? ownedAvatars.value : ownedBackgrounds.value
   return owned.has(id)
 }
@@ -430,6 +432,7 @@ function handleSignOut() {
               <img :src="avatarUrl(id)" alt="" loading="lazy">
             </button>
           </div>
+          <p v-if="!visibleAvatarIds.length" class="pp-empty">{{ t('profile.emptyPicker') }}</p>
         </div>
 
         <div class="pp-field">
@@ -445,6 +448,7 @@ function handleSignOut() {
               <img :src="backgroundUrl(id)" alt="" loading="lazy">
             </button>
           </div>
+          <p v-if="!visibleBackgroundIds.length" class="pp-empty">{{ t('profile.emptyPicker') }}</p>
         </div>
 
         <div class="pp-field">
@@ -856,6 +860,7 @@ function handleSignOut() {
 
 .pp-field { width: 100%; max-width: 30rem; display: flex; flex-direction: column; gap: 0.25rem; }
 .pp-label { font-size: 0.625rem; font-weight: 800; color: var(--sub); letter-spacing: 0.04em; }
+.pp-empty { margin: 0.25rem 0 0; font-size: 0.625rem; line-height: 1.5; color: var(--sub); }
 
 .pp-input {
   width: 100%;

@@ -35,6 +35,7 @@ import NoticeSplash from './components/notice/NoticeSplash.vue'
 import { splashNotices } from './data/announcements'
 import AdminSwitchApp from './components/admin/AdminSwitchApp.vue'
 import AdminRewardsApp from './components/admin/AdminRewardsApp.vue'
+import AdminSeasonApp from './components/admin/AdminSeasonApp.vue'
 import AdminHandbookApp from './components/admin/AdminHandbookApp.vue'
 import AdminCouponsApp from './components/admin/AdminCouponsApp.vue'
 import AdminSalesApp from './components/admin/AdminSalesApp.vue'
@@ -290,6 +291,7 @@ onBeforeUnmount(uninstallButtonSfx)
       <AdminSwitchApp v-else-if="mode === 'adminSwitch'" @back="leaveMode()" />
 
       <AdminRewardsApp v-else-if="mode === 'adminRewards'" @back="leaveMode()" />
+      <AdminSeasonApp v-else-if="mode === 'adminSeason'" @back="leaveMode()" />
 
       <AdminHandbookApp v-else-if="mode === 'adminHandbook'" @back="leaveMode()" />
       <AdminSalesApp v-else-if="mode === 'adminSales'" @back="leaveMode()" />
