@@ -24,6 +24,7 @@ export const GROUP_LABELS = {
   limited: '限定',
   meetup1: 'Meetup#1',
   meetup2: 'Meetup#2',
+  meetup3: 'Meetup#3',
   achievement: '特殊成就',
   secret: '秘密'
 }
@@ -38,6 +39,10 @@ export const ASSETS = [
   { kind: 'avatar', id: '2026-10-participants', name: 'Meetup#2 參加頭像',  obtain: '參與 Meetup#2 線下活動' },
   { kind: 'avatar', id: '2026-10-winner',       name: 'Meetup#2 入賞頭像',  obtain: 'Meetup#2 線下活動：前三名' },
   { kind: 'avatar', id: '2026-10-champion',     name: 'Meetup#2 冠軍頭像',  obtain: 'Meetup#2 線下活動：冠軍' },
+  { kind: 'avatar', id: '2026-12-default',      name: 'Meetup#3 賽季頭像',  obtain: '參與 Meetup#3 線下活動' },
+  { kind: 'avatar', id: '2026-12-participants', name: 'Meetup#3 參加頭像',  obtain: '參與 Meetup#3 線下活動' },
+  { kind: 'avatar', id: '2026-12-winner',       name: 'Meetup#3 入賞頭像',  obtain: 'Meetup#3 線下活動：前三名' },
+  { kind: 'avatar', id: '2026-12-champion',     name: 'Meetup#3 冠軍頭像',  obtain: 'Meetup#3 線下活動：冠軍' },
   { kind: 'avatar', id: '2026-early-player',    name: '早鳥玩家頭像',       obtain: '早期註冊 PLAKORO ARENA 的玩家' },
   { kind: 'avatar', id: 'lucky-mascot',         name: 'LUCKY 吉祥物頭像',   obtain: '實體賽事：一擊打出 100 滴以上傷害' },
   { kind: 'avatar', id: 'perfect-mascot',       name: 'PERFECT 吉祥物頭像', obtain: '實體賽事：擊敗對手時，還保留 120 滴血量' },
@@ -56,11 +61,19 @@ export const ASSETS = [
   { kind: 'background', id: '2026-10-participants', name: 'Meetup#2 參加旗幟', obtain: '參與 Meetup#2 線下活動' },
   { kind: 'background', id: '2026-10-winner',       name: 'Meetup#2 入賞旗幟', obtain: 'Meetup#2 線下活動：前三名' },
   { kind: 'background', id: '2026-10-champion',     name: 'Meetup#2 冠軍旗幟', obtain: 'Meetup#2 線下活動：冠軍' },
+  { kind: 'background', id: '2026-12-default',      name: 'Meetup#3 基本旗幟', obtain: '參與 Meetup#3 線下活動' },
+  { kind: 'background', id: '2026-12-participants', name: 'Meetup#3 參加旗幟', obtain: '參與 Meetup#3 線下活動' },
+  { kind: 'background', id: '2026-12-winner',       name: 'Meetup#3 入賞旗幟', obtain: 'Meetup#3 線下活動：前三名' },
+  { kind: 'background', id: '2026-12-champion',     name: 'Meetup#3 冠軍旗幟', obtain: 'Meetup#3 線下活動：冠軍' },
 
   { kind: 'background', id: 'secret-tama',          name: '秘密旗幟',          obtain: '秘密禮物' },
 
   // ── 稱號 ──
   { kind: 'title', id: 'gen-rookie',     name: '骰子新鮮人',    group: 'general',     rank: 'plain',  obtain: '我入坑骰子啦！' },
+  // Meetup#3 的第四個稱號，但放在 general 而不是 meetup3：它要給所有人，而稱號沒有頭像
+  // 和旗幟那種「-default 一律放行」的等級捷徑（見 PlayerProfileApp 的 isTitleUnlocked），
+  // 要讓每個人都拿得到，唯一的位置就是這裡。
+  { kind: 'title', id: 'gen-tourist',    name: '罪惡城觀光客',  group: 'general',     rank: 'plain',  obtain: '歡迎來到罪惡城！' },
   { kind: 'title', id: 'early-player',   name: '早鳥玩家',      group: 'limited',     rank: 'epic',   obtain: '早期註冊 PLAKORO ARENA 的玩家' },
 
   { kind: 'title', id: 'm1-champion',    name: 'Meetup#1 冠軍', group: 'meetup1',     rank: 'gold',   obtain: 'Meetup#1 線下活動：冠軍' },
@@ -75,6 +88,14 @@ export const ASSETS = [
   { kind: 'title', id: 'm2-roll',        name: '骰起來！',      group: 'meetup2',     rank: 'plain',  obtain: '參與 Meetup#2 線下活動' },
   { kind: 'title', id: 'm2-no-regret',   name: '落子無悔',      group: 'meetup2',     rank: 'epic',   obtain: 'Meetup#2 線下活動：前三名' },
   { kind: 'title', id: 'm2-general',     name: '骰子大將軍',    group: 'meetup2',     rank: 'legend', obtain: 'Meetup#2 線下活動：冠軍' },
+
+  { kind: 'title', id: 'm3-champion',    name: 'Meetup#3 冠軍', group: 'meetup3',     rank: 'gold',   obtain: 'Meetup#3 線下活動：冠軍' },
+  { kind: 'title', id: 'm3-runner-up',   name: 'Meetup#3 亞軍', group: 'meetup3',     rank: 'silver', obtain: 'Meetup#3 線下活動：亞軍' },
+  { kind: 'title', id: 'm3-third',       name: 'Meetup#3 季軍', group: 'meetup3',     rank: 'bronze', obtain: 'Meetup#3 線下活動：季軍' },
+  { kind: 'title', id: 'm3-attendee',    name: 'Meetup#3 會眾', group: 'meetup3',     rank: 'plain',  obtain: '參與 Meetup#3 線下活動' },
+  { kind: 'title', id: 'm3-gang',        name: '骰子幫成員',    group: 'meetup3',     rank: 'plain',  obtain: '參與 Meetup#3 線下活動' },
+  { kind: 'title', id: 'm3-overlord',    name: '街頭骰子霸主',  group: 'meetup3',     rank: 'epic',   obtain: 'Meetup#3 線下活動：前三名' },
+  { kind: 'title', id: 'm3-godfather',   name: '地下骰子教父',  group: 'meetup3',     rank: 'legend', obtain: 'Meetup#3 線下活動：冠軍' },
 
   // Awarded by hand. Nothing checks these — the battle detail that would prove them isn't
   // recorded anywhere — so someone watched it happen and says so. Each pairs with a mascot
