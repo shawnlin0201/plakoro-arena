@@ -21,7 +21,7 @@ import { translateApiError } from '../data/apiErrors'
 import { googleAvailable, renderGoogleButton } from '../data/googleSignIn'
 import { TITLE_GROUPS, resolveTitle } from '../data/assetCatalogue'
 import { fetchLeaderboard, winRatePercent } from '../data/leaderboardApi'
-import { exportElementAsPng } from '../data/exportImage'
+import { renderPlayerImage, playerImageFileName } from '../game/roundImage'
 import { pointReason } from '../data/pointReason'
 import PlayerBanner from './tournament/PlayerBanner.vue'
 import VolumeBar from './VolumeBar.vue'
@@ -313,27 +313,30 @@ const preview = computed(() => ({
 }))
 
 /* ── 匯出圖片 ────────────────────────────────────────────────────────────
-   拍的只有徽章本身。底下的頁籤與選擇器是編輯用的，不該出現在分享出去的圖裡。
+   不走 exportElementAsPng。那支是拿 html2canvas 翻拍畫面的，而旗幟是 CSS 背景圖 ——
+   html2canvas 會先把背景點陣化成版面大小再放大，實測拉普拉斯銳利度只有 3.1，原圖直接
+   畫到同尺寸是 28.3，差了九倍，看起來就是整片糊掉。等再久也一樣，那不是還沒載完。
 
-   整張圖就是徽章，沒有別的：不接來源說明與 QR（credit: false），也不留白邊。包住它的
-   容器寬度本來就等於徽章寬度，所以拍出來是齊邊的一張，貼到哪裡都不帶一圈底色。
-
-   密度拉到 3，不是預設的 2。徽章寬 12rem，換算成匯出的基準字級是 368px —— 乘 2 只有
-   737px，而旗幟原圖是 1024px 寬，等於把素材縮掉三成才存檔，放大看就糊。乘 3 是 1106px，
-   剛好蓋過原圖；再往上只是把 1024px 內插成更大的一張，檔案變大而細節沒有變多。
-   整張圖也才 1106x415，離 iOS Safari 的畫布上限還很遠（見 exportImage.js 對 2 的說明）。
+   改用 roundImage.js 的 renderPlayerImage：它本來就是畫同一張徽章給賽事用的，走的是
+   canvas 的 drawImage，素材從原解析度直接畫上去。margin 給 0，整張圖就只有玩家資訊。
    ──────────────────────────────────────────────────────────────────── */
-const exportTargetRef = ref(null)
 const exporting = ref(false)
 
 async function exportBadge() {
-  if (!exportTargetRef.value || exporting.value) return
+  if (exporting.value) return
   exporting.value = true
   try {
-    await exportElementAsPng(exportTargetRef.value, `plakoro-badge-${preview.value.name}`, {
-      credit: false,
-      scale: 3
-    })
+    const blob = await renderPlayerImage({ nameplate: preview.value, t, margin: 0 })
+    if (!blob) return
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = playerImageFileName(preview.value)
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    // 隔一拍再收。同一拍收掉的話，有些瀏覽器還沒把 blob 讀完，下載就被取消了。
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
   } finally {
     exporting.value = false
   }
@@ -403,11 +406,11 @@ function handleSignOut() {
       <!-- Outside the scroller: the preview is what every choice below is being judged against,
            so scrolling it away would mean picking a flag with nothing to check it on. -->
       <div class="pp-preview">
-        <!-- 匯出的範圍就只有徽章；按鈕擺在框外，絕對定位靠右，這樣徽章仍然置中 ——
-             底下每一個選擇都是拿它來對的，偏掉就不好比。 -->
-        <div ref="exportTargetRef" class="pp-export">
-          <PlayerBanner :nameplate="preview" size="lg" />
-        </div>
+        <!-- 按鈕絕對定位靠右，徽章仍然置中 —— 底下每一個選擇都是拿它來對的。
+             用 md 不用 lg：名字與稱號的字級是固定的 rem，不跟著 --h 走，所以 lg 的字
+             相對整張是比較小的 —— 而 roundImage.js 畫的那一份是照 md 的比例推出來的。
+             預覽要就是匯出的那一張，差一號就對不起來。 -->
+        <PlayerBanner :nameplate="preview" />
         <button class="btn secondary pp-export-btn" :disabled="exporting" @click="exportBadge">
           {{ exporting ? t('profile.exportingImage') : t('profile.exportImage') }}
         </button>
@@ -840,9 +843,6 @@ function handleSignOut() {
   justify-content: center;
   padding: 0.25rem 0 0.5rem;
 }
-/* 直向而且置中：匯出時那條來源說明會被接在這個容器的最後面，橫向的話它會跑到徽章旁邊
-   去，而不是底下。 */
-.pp-export { display: flex; flex-direction: column; align-items: center; }
 .pp-export-btn {
   position: absolute;
   right: 0.625rem;

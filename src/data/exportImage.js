@@ -5,10 +5,6 @@
 // options were accidents rather than decisions. The two things every export needs — the custom
 // fonts surviving the capture, and the footer saying where the picture came from — are
 // therefore written once.
-//
-// The footer is an option rather than a rule because one export is not a sheet: the player
-// badge is a single small graphic someone puts beside their name, and a credit bar wider than
-// the badge itself turns the thing being shared into the smaller half of the picture.
 import html2canvas from 'html2canvas'
 import { asset } from './assetPath'
 
@@ -152,15 +148,14 @@ function appendCredit(doc, target, qrSrc) {
  * @param {string} [opts.background]  the ground the capture composites onto
  * @param {number} [opts.scale]       pixel density; see DEFAULT_SCALE
  * @param {string} [opts.hide]        selector for edit-only chrome to drop from the clone
- * @param {boolean} [opts.credit=true] whether to append the PLAKORO TAIWAN footer + QR
  * @param {(doc: Document, root: HTMLElement) => void} [opts.onclone]  further clone surgery
  */
 export async function exportElementAsPng(el, filename, opts = {}) {
   if (!el) return false
-  const { background = '#ffffff', scale = DEFAULT_SCALE, hide, onclone, credit = true } = opts
+  const { background = '#ffffff', scale = DEFAULT_SCALE, hide, onclone } = opts
 
   // Resolved before the capture starts, so the clone has no network round trip to lose.
-  const qrSrc = credit ? await dataUrl(QR_PATH) : null
+  const qrSrc = await dataUrl(QR_PATH)
   const canvas = await html2canvas(el, {
     backgroundColor: background,
     scale: normalisedScale(scale),
@@ -174,7 +169,7 @@ export async function exportElementAsPng(el, filename, opts = {}) {
       enlargeDamage(root)
       if (hide) doc.querySelectorAll(hide).forEach(n => n.remove())
       if (onclone) onclone(doc, root)
-      if (credit) appendCredit(doc, root, qrSrc)
+      appendCredit(doc, root, qrSrc)
     }
   })
 

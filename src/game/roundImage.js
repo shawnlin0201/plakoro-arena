@@ -442,15 +442,18 @@ export async function renderStandingsImage({ tournament, standings, plateFor, t 
  *
  * Drawn much larger than the sheets: this one is looked at by itself rather than scanned down
  * a column, and it is the image that leaves the venue.
+ *
+ * `margin` is a fraction of the plate's height. The default frames it so it reads as a
+ * finished picture; 0 is flush, for somewhere the plate is the whole image — a profile badge
+ * dropped into a chat has its own surroundings and does not want ours.
  */
-export async function renderPlayerImage({ nameplate, t }) {
+export async function renderPlayerImage({ nameplate, t, margin: marginRatio = 0.18 }) {
   const images = await loadFor([nameplate])
 
-  // The plate scaled up, with a margin so it reads as a finished picture rather than a crop.
   const scale = 3
   const w = PLATE_W * scale
   const h = PLATE_H * scale
-  const margin = Math.round(PLATE_H * scale * 0.18)
+  const margin = Math.round(PLATE_H * scale * marginRatio)
   const W = w + margin * 2
   const H = h + margin * 2
   const { canvas, ctx } = startSheet(W, H)
