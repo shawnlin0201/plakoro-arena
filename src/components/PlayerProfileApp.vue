@@ -1,11 +1,12 @@
 <script setup>
 // Your own player profile: the face, the flag, and the name you go by.
 //
-// Only the things a player chooses. Medals, titles and win rates are not here and will never
-// be — those are read off the tournament records, and a profile screen that could set them
-// would make every badge in the app worthless. Avatars and flags are a softer version of the
-// same rule: picking is free, but only among tiers this record has actually reached — the
-// pickers below are gated by live stats, not left wide open the way a mock account would be.
+// Only the things a player chooses. Medals and win rates are shown but never editable here —
+// they are read off the tournament records the same way the leaderboard reads them, and a
+// profile screen that could set them would make every badge in the app worthless. Avatars and
+// flags are a softer version of the same rule: picking is free, but only among tiers this
+// record has actually reached — the pickers below are gated by live stats, not left wide open
+// the way a mock account would be.
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import * as authApi from '../data/authApi'
@@ -19,6 +20,8 @@ import { getToken } from '../data/session'
 import { translateApiError } from '../data/apiErrors'
 import { googleAvailable, renderGoogleButton } from '../data/googleSignIn'
 import { TITLE_GROUPS, resolveTitle } from '../data/assetCatalogue'
+import { fetchLeaderboard, winRatePercent } from '../data/leaderboardApi'
+import { exportElementAsPng } from '../data/exportImage'
 import { pointReason } from '../data/pointReason'
 import PlayerBanner from './tournament/PlayerBanner.vue'
 import VolumeBar from './VolumeBar.vue'
@@ -182,6 +185,12 @@ onMounted(async () => {
     // Stats/unlocks just didn't load this time — stay locked down rather than guessing.
   }
   try {
+    const data = await fetchLeaderboard('offline', 'all', currentIdentity.value.code)
+    record.value = data.me || null
+  } catch (e) {
+    // 徽章照樣畫得出來，只是沒有勝率那一行。
+  }
+  try {
     const points = await authApi.listPoints(token)
     pointBalance.value = points.balance
     pointEntries.value = points.entries
@@ -265,6 +274,16 @@ const visibleTitleGroups = computed(() =>
     .map(g => ({ ...g, titles: g.titles.filter(ti => shown(ti.id, isTitleUnlocked(ti.id, g.key))) }))
     .filter(g => g.titles.length > 0))
 
+/* ── 戰績 ────────────────────────────────────────────────────────────────
+   這張徽章要跟排行榜上看到的是同一張，所以數字也走同一個來源：排行榜那支 API 回的
+   `me`，不是本機算的。scope 用 offline、window 用 all —— 線上對戰還沒有東西寫進
+   online_matches，而這裡要的是生涯，不是某一段時間。
+
+   讀不到就維持 null：徽章碰到 null 會把勝率那行整個收起來（見 PlayerBanner），
+   比印一個 0% 誠實 —— 沒打過跟全輸不是同一件事。
+   ──────────────────────────────────────────────────────────────────── */
+const record = ref(null)
+
 // A draft, so backing out leaves the saved profile alone.
 const draft = ref({
   code: currentIdentity.value.code,
@@ -283,11 +302,42 @@ const preview = computed(() => ({
   avatar: draft.value.avatar,
   background: draft.value.background,
   title: resolveTitle(draft.value.titleId),
-  // Earned, so the preview shows them as they really are: empty, until an event says otherwise.
-  medals: { gold: 0, silver: 0, bronze: 0 },
-  events: 0,
-  winRate: null
+  // Earned, not chosen: these come off the record and ignore the draft entirely.
+  medals: {
+    gold: record.value?.gold || 0,
+    silver: record.value?.silver || 0,
+    bronze: record.value?.bronze || 0
+  },
+  events: record.value?.events || 0,
+  winRate: record.value ? winRatePercent(record.value) : null
 }))
+
+/* ── 匯出圖片 ────────────────────────────────────────────────────────────
+   拍的只有徽章本身。底下的頁籤與選擇器是編輯用的，不該出現在分享出去的圖裡。
+
+   整張圖就是徽章，沒有別的：不接來源說明與 QR（credit: false），也不留白邊。包住它的
+   容器寬度本來就等於徽章寬度，所以拍出來是齊邊的一張，貼到哪裡都不帶一圈底色。
+
+   密度拉到 3，不是預設的 2。徽章寬 12rem，換算成匯出的基準字級是 368px —— 乘 2 只有
+   737px，而旗幟原圖是 1024px 寬，等於把素材縮掉三成才存檔，放大看就糊。乘 3 是 1106px，
+   剛好蓋過原圖；再往上只是把 1024px 內插成更大的一張，檔案變大而細節沒有變多。
+   整張圖也才 1106x415，離 iOS Safari 的畫布上限還很遠（見 exportImage.js 對 2 的說明）。
+   ──────────────────────────────────────────────────────────────────── */
+const exportTargetRef = ref(null)
+const exporting = ref(false)
+
+async function exportBadge() {
+  if (!exportTargetRef.value || exporting.value) return
+  exporting.value = true
+  try {
+    await exportElementAsPng(exportTargetRef.value, `plakoro-badge-${preview.value.name}`, {
+      credit: false,
+      scale: 3
+    })
+  } finally {
+    exporting.value = false
+  }
+}
 
 const dirty = computed(() =>
   draft.value.name.trim() !== (currentIdentity.value.name || '') ||
@@ -353,7 +403,14 @@ function handleSignOut() {
       <!-- Outside the scroller: the preview is what every choice below is being judged against,
            so scrolling it away would mean picking a flag with nothing to check it on. -->
       <div class="pp-preview">
-        <PlayerBanner :nameplate="preview" size="lg" />
+        <!-- 匯出的範圍就只有徽章；按鈕擺在框外，絕對定位靠右，這樣徽章仍然置中 ——
+             底下每一個選擇都是拿它來對的，偏掉就不好比。 -->
+        <div ref="exportTargetRef" class="pp-export">
+          <PlayerBanner :nameplate="preview" size="lg" />
+        </div>
+        <button class="btn secondary pp-export-btn" :disabled="exporting" @click="exportBadge">
+          {{ exporting ? t('profile.exportingImage') : t('profile.exportImage') }}
+        </button>
       </div>
 
       <div class="pp-body">
@@ -777,10 +834,22 @@ function handleSignOut() {
 }
 
 .pp-preview {
+  position: relative;
   flex-shrink: 0;
   display: flex;
   justify-content: center;
   padding: 0.25rem 0 0.5rem;
+}
+/* 直向而且置中：匯出時那條來源說明會被接在這個容器的最後面，橫向的話它會跑到徽章旁邊
+   去，而不是底下。 */
+.pp-export { display: flex; flex-direction: column; align-items: center; }
+.pp-export-btn {
+  position: absolute;
+  right: 0.625rem;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 0.3125rem 0.5rem;
+  font-size: 0.625rem;
 }
 
 .pp-foot-btn { padding: 0.4375rem 0.75rem; font-size: 0.6875rem; }

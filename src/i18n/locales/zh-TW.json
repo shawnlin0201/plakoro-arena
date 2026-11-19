@@ -937,6 +937,8 @@
     "save": "儲存",
     "saveError": "儲存失敗，請稍後再試",
     "tabBadge": "玩家徽章",
+    "exportImage": "匯出圖片",
+    "exportingImage": "匯出中…",
     "tabSettings": "設定",
     "title": "玩家資料",
     "titleLabel": "稱號",

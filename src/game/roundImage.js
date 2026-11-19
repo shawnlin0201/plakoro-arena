@@ -237,11 +237,21 @@ function drawPlate(ctx, plate, x, y, images, t) {
   })
 
   // Bottom-right, opposite the strip — same corner it sits in on screen.
+  //
+  // On a chip, not bare: the scrim fades to nearly nothing at this end (see the gradient
+  // above) and the artwork under it is at its brightest, so white text alone comes out
+  // unreadable there. Matches PlayerBanner.vue's .code.
   if (plate.code) {
+    const codeW = ctx.measureText(plate.code).width
+    const codePad = statFont * 0.4
+    const chipH = statFont * 1.5
+    ctx.shadowColor = 'transparent'
+    ctx.fillStyle = 'rgba(0,0,0,.55)'
+    roundRect(ctx, right - codeW - codePad * 2, bottom - statFont, codeW + codePad * 2, chipH, statFont * 0.375)
+    ctx.fill()
     ctx.textAlign = 'right'
-    ctx.fillStyle = 'rgba(255,255,255,.95)'
-    ctx.shadowColor = 'rgba(0,0,0,.9)'
-    ctx.fillText(plate.code, right, bottom)
+    ctx.fillStyle = '#fff'
+    ctx.fillText(plate.code, right - codePad, bottom)
     ctx.textAlign = 'left'
   }
   ctx.restore()

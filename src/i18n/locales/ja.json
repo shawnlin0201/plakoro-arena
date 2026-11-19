@@ -938,6 +938,8 @@
     "save": "保存",
     "saveError": "保存に失敗しました。もう一度お試しください",
     "tabBadge": "プレイヤーバッジ",
+    "exportImage": "画像を書き出す",
+    "exportingImage": "書き出し中…",
     "tabSettings": "設定",
     "title": "プレイヤー情報",
     "titleLabel": "称号",

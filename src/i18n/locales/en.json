@@ -938,6 +938,8 @@
     "save": "Save",
     "saveError": "Save failed, please try again",
     "tabBadge": "Player badge",
+    "exportImage": "Export image",
+    "exportingImage": "Exporting…",
     "tabSettings": "Settings",
     "title": "Player profile",
     "titleLabel": "Title",
