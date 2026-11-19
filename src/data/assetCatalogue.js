@@ -18,7 +18,9 @@
 //           in the same gold as 冠軍 — the point of a rare colour is that most people lack it.
 //   `group` which section it sits under in the pickers. `general` is special: everything in it
 //           is free to everyone (see isTitleUnlocked), so a limited title must not go there no
-//           matter how general it sounds.
+//           matter how general it sounds. Its ids must also start with `gen-` — that prefix is
+//           how the server knows the same thing without being handed this file; see the check
+//           at the foot of this module.
 export const GROUP_LABELS = {
   general: '通用',
   limited: '限定',
@@ -109,6 +111,32 @@ export const ASSETS = [
   // an empty-looking slot where a player can count what they are missing.
   { kind: 'title', id: 'secret-poop',    name: '便便～',        group: 'secret',      rank: 'epic',   obtain: '秘密禮物' }
 ]
+
+/*
+ * 「通用」組的稱號不需要授予，所有人都戴得到 —— 但那個判斷在兩個地方各做一次：這裡的
+ * isTitleUnlocked 決定選擇器上亮不亮，伺服器的 isAssetAllowed 決定存不存得進去。伺服器
+ * 讀不到這份目錄，它認的是 id 開頭的 `gen-`。
+ *
+ * 所以兩邊靠的是一個約定：通用組的 id 一律 gen- 開頭。約定沒人檢查就會壞 —— 這正是上一
+ * 次出事的方式：伺服器那邊本來寫死認 `gen-rookie`，通用組只要多第二個稱號，玩家就會看到
+ * 一個點得下去、按了儲存卻被退的稱號。
+ *
+ * 所以在這裡擋下來。開發時就炸，而不是等上線之後靠玩家回報。
+ */
+if (import.meta.env.DEV) {
+  const titles = ASSETS.filter(a => a.kind === 'title')
+  const missingPrefix = titles.filter(a => a.group === 'general' && !a.id.startsWith('gen-'))
+  // 反過來也要擋。gen- 開頭卻放在別組的話，選擇器會鎖著它，伺服器卻放行 —— 那是一個
+  // 「畫面上拿不到、但手刻一個請求就戴得上」的稱號，比對不起來更糟。
+  const falsePrefix = titles.filter(a => a.group !== 'general' && a.id.startsWith('gen-'))
+  if (missingPrefix.length || falsePrefix.length) {
+    throw new Error([
+      '通用組的稱號 id 必須以 gen- 開頭，且只有通用組可以用這個前綴（伺服器靠它放行）。',
+      missingPrefix.length ? `少了前綴：${missingPrefix.map(a => a.id).join(', ')}` : '',
+      falsePrefix.length ? `前綴用錯組：${falsePrefix.map(a => a.id).join(', ')}` : ''
+    ].filter(Boolean).join(' '))
+  }
+}
 
 const BY_KEY = new Map(ASSETS.map(a => [`${a.kind}:${a.id}`, a]))
 
