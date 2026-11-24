@@ -1,6 +1,6 @@
 <!-- Bottom-left, toggled by the volume icon in GlobalTopBar.vue (not tied to any one screen,
      since that trigger is global too). Shows what's playing and the transport — the actual
-     playback (playlist, looping, autoplay-unlock) all lives in data/backgroundMusic.js; this is
+     playback (playlist, looping) all lives in data/backgroundMusic.js; this is
      just the face of it, plus the one mute control that used to live on the icon itself. -->
 <script setup>
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
