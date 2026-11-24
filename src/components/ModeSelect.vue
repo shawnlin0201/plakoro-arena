@@ -45,7 +45,6 @@ const MODES = [
   { key: 'duel' },
   { key: 'solo' },
   { key: 'diceBuilder' },
-  { key: 'storeInfo' },
   // Hidden 2026-08-28: the market data behind it isn't maintainable by hand yet — most listing
   // sources need a login to snapshot, so the figures would go stale without anyone noticing.
   { key: 'priceLog', enabled: false },
@@ -66,6 +65,8 @@ const MODES = [
   // `group` moves a mode one level down. The top level is what a player opens the app to do;
   // these three are things an organiser or a theorycrafter comes looking for, and keeping them
   // up front pushed the front page past the point where every card still fit.
+  // 哪裡買得到：找得到的人多半是已經決定要買的人，不是打開 app 要做的第一件事。
+  { key: 'storeInfo', group: 'tools' },
   { key: 'tournament', group: 'tools' },
   { key: 'tierMaker', group: 'tools' },
   // 所有人都看得到，數值只有後台改得動（調整鍵長在那張圖上，見 TraitChartApp）。
