@@ -93,33 +93,74 @@ const DEFAULT_SCALE = 2
 const EXPORT_STAGE_HEIGHT = 720
 const EXPORT_ROOT_PX = 16 * EXPORT_STAGE_HEIGHT / 375
 
+// One rem, in pixels, on the live page. Both the capture scale and the credit row's size are
+// measured against it.
+function rootPx() {
+  return parseFloat(getComputedStyle(document.documentElement).fontSize)
+}
+
 function normalisedScale(density) {
-  const live = parseFloat(getComputedStyle(document.documentElement).fontSize)
+  const live = rootPx()
   // A root font-size this should never be means the stage has not laid out yet; capturing at
   // the plain density is wrong-sized but still a picture, which beats dividing by zero.
   if (!(live > 0)) return density
   return density * EXPORT_ROOT_PX / live
 }
 
+// Shrink the credit row until it fits the sheet it is sitting under.
+//
+// Why it has to: the capture is exactly the target element's box, and a child wider than that
+// box simply falls outside the canvas. The row is centred, so an overflow spills off both
+// edges at once, and the QR code — the right-most thing in it — is the first part to go. That
+// was the "sometimes the QR code is missing" bug: not a failed image load, a crop. Measured on
+// a 500px-wide sheet, the exported QR came out 115px of its 215px with the cut running exactly
+// down the canvas edge; on a narrower sheet the whole code lands outside and nothing of it is
+// left to see.
+//
+// Everything inside the row is sized in `em` so one font-size here scales the lot — text, gap,
+// padding and QR together — which keeps the proportions the design had and makes the fit exact
+// rather than approximate: scaling the content by `avail / natural` makes it `avail` wide.
+//
+// `max-content` is what gets the honest natural width. Reading scrollWidth instead would
+// undercount by half, because a centred overflow hangs off the left edge too and scrollWidth
+// only counts what spills to the right.
+function fitCredit(bar, target, basePx) {
+  const avail = target.clientWidth
+  if (!(avail > 0)) return
+  // max-width has to come off for the measurement. It caps `max-content` too, so leaving it
+  // on makes the row report the width it has already been squeezed into — which is never
+  // wider than the space available, so the overflow it is there to catch measures as zero.
+  bar.style.maxWidth = 'none'
+  bar.style.width = 'max-content'
+  const natural = bar.getBoundingClientRect().width
+  bar.style.width = ''
+  bar.style.maxWidth = '100%'
+  if (!(natural > avail)) return
+  bar.style.fontSize = `${basePx * avail / natural}px`
+}
+
 // Appended inside the clone, so nothing about the live screen moves while the picture is
-// taken. Sized in `rem` like the rest of the project: the root font-size is what the stage
-// scales, so rem is what keeps the credit the same size *relative to the sheet it sits under*
-// on every device. In px it would drift against the content instead of with it.
+// taken. The row's own font-size is one rem's worth of pixels, read from the live document and
+// passed in rather than written as `1rem`: everything inside it is in `em`, so fitCredit only
+// has to change this one number to scale the lot, and it can do that arithmetic without asking
+// the clone's window for a computed style — a cross-document getComputedStyle call that comes
+// back empty, which is how the first attempt at this fix silently did nothing.
 //
 // `qrSrc` is already a data URI by the time it gets here. An <img> created during onclone has
 // no chance to finish a network request before html2canvas paints, so a plain path renders as
 // a blank gap.
-function appendCredit(doc, target, qrSrc) {
+function appendCredit(doc, target, qrSrc, basePx) {
   const bar = doc.createElement('div')
   bar.setAttribute('style', [
-    'display:flex', 'align-items:center', 'gap:0.75rem', 'justify-content:center',
-    'padding:0.625rem 0.75rem 0.25rem', 'margin-top:0.375rem',
+    'display:flex', 'align-items:center', 'gap:0.75em', 'justify-content:center',
+    'padding:0.625em 0.75em 0.25em', 'margin-top:0.375rem',
+    'box-sizing:border-box', 'max-width:100%', `font-size:${basePx}px`,
     'border-top:0.0625rem solid rgba(0,0,0,.12)'
   ].join(';'))
 
   const text = doc.createElement('div')
   text.setAttribute('style', [
-    'font-size:1rem', 'font-weight:700', 'line-height:1.45', 'color:#1F1F1D',
+    'font-size:1em', 'font-weight:700', 'line-height:1.45', 'color:#1F1F1D',
     'font-family:"Hiragino Sans","Noto Sans TC","Noto Sans JP",sans-serif',
     'text-align:right', 'white-space:nowrap'
   ].join(';'))
@@ -133,10 +174,11 @@ function appendCredit(doc, target, qrSrc) {
   if (qrSrc) {
     const qr = doc.createElement('img')
     qr.src = qrSrc
-    qr.setAttribute('style', 'width:3.5rem;height:3.5rem;display:block;flex:none;')
+    qr.setAttribute('style', 'width:3.5em;height:3.5em;display:block;flex:none;')
     bar.appendChild(qr)
   }
   target.appendChild(bar)
+  fitCredit(bar, target, basePx)
 }
 
 /**
@@ -169,7 +211,7 @@ export async function exportElementAsPng(el, filename, opts = {}) {
       enlargeDamage(root)
       if (hide) doc.querySelectorAll(hide).forEach(n => n.remove())
       if (onclone) onclone(doc, root)
-      appendCredit(doc, root, qrSrc)
+      appendCredit(doc, root, qrSrc, rootPx())
     }
   })
 
