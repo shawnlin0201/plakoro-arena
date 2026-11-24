@@ -30,6 +30,11 @@ export function isCharaColorConditionMet(effType, owner, opponent) {
     const n = parseInt(hpLowMatch[1], 10)
     return owner.hp <= n
   }
+  // 波士可多拉「強力鋼尾」：上一個對手回合沒被招式打到。效果本身在 effectQueue 會生效，
+  // 漏在這裡的話那一列永遠是暗的 —— 玩家看不出條件已經成立，只能自己記上回合有沒有被打。
+  if (effType === "DAMAGE_EXTRA_IF_UNHURT") {
+    return !owner.committedTookDamage
+  }
   // Same HP gate, damage-reduction flavour — needed here too, or the row stays unhighlighted
   // while its condition is actually met and the player can't tell it's live.
   const reduceTakenHpLowMatch = /^MOD_REDUCE_TAKEN_(\d+)HP_LOW$/.exec(effType)

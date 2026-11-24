@@ -294,7 +294,10 @@ export function useBattleState(movesRef) {
       state.diceRerollRequest = {
         targetKey: state.turnPlayer,
         byKey: opponentKey(state.turnPlayer),
-        n: forced.n,
+        // 夾到實際擲出的顆數。寶石閃光指定兩顆，但對手可能先被臂錘或龍之波動扣到只剩
+        // 一顆 —— 確定鍵要求「剛好選滿 n 顆」，選不滿就永遠按不下去，回合卡在這裡。
+        // 剩幾顆就選幾顆。
+        n: Math.min(forced.n, (energyRolledTypes || []).length),
         from: forced.from,
         indices: null
       }

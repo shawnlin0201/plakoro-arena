@@ -1,4 +1,4 @@
-import { STEP, plantMod } from './turnMods'
+import { STEP, plantMod, modOf } from './turnMods'
 
 export function pushDiceModBadge(player, name, type) {
   if (!player.diceModBadges) player.diceModBadges = []
@@ -334,11 +334,30 @@ function applyOneEffect(eff, ctx, answer) {
     // rather than to pretend to simulate it.
     //
     // Each of these parks a notice on whoever it applies to, consumed on their next turn.
-    case "REROLL_CHARADICE_SELF":
-      // Value is how many rerolls, not a damage figure: チャンスタックル grants one on its
+    case "REROLL_CHARADICE_SELF": {
+      // Value is how many rerolls, not a damage figure: 吉利蛋「機會擲骰」grants one on its
       // own and upgrades to two when the character die cooperates, so they do not stack —
       // the larger wins.
-      plantMod(ctx.mover, { step: STEP.DICE_ROLL, kind: 'rerollCharaDie', n: eff.value, from: ctx.mv.name, notice: 'rerollCharaSelf' })
+      //
+      // Raised in place rather than planted twice. The reader of this mod is modOf(), which
+      // takes the *first* match — so a second mod carrying the bigger number was never read,
+      // and the [立] upgrade did nothing. A second one also duplicated the notice on the move
+      // panel, where both copies share a v-for key.
+      const existing = modOf(ctx.mover, STEP.DICE_ROLL, 'rerollCharaDie')
+      if (existing) existing.n = Math.max(existing.n, eff.value)
+      else plantMod(ctx.mover, { step: STEP.DICE_ROLL, kind: 'rerollCharaDie', n: eff.value, from: ctx.mv.name, notice: 'rerollCharaSelf' })
+      return null
+    }
+    // 「このワザは失敗する」—— 這一招不造成傷害，就這樣。
+    //
+    // 以前是寫成 DAMAGE_EXTRA = -(招式傷害)，那在平常剛好等於零，但 dmgToOpp 的起點是
+    // 已經加過弱點的數字：七夕青鳥「飛翔」(40) 打到弱飛行的對手是 40+20-40 = 20，一個
+    // 失敗的招式還是打出了傷害。歸零才是卡面寫的事。
+    //
+    // 只動傷害。失敗的是這一招打出去的那一下，之前已經種下的控制效果（對手角色骰倒立、
+    // 能量骰減少…）不受影響 —— 卡面也沒說它們會一起消失。
+    case "SPECIAL_MOVE_FAILS":
+      ctx.dmgToOpp = 0
       return null
     case "REROLL_DICE_ENEMY":
       // Both: the flag drives the real picker when the app owns the dice, and the notice is
