@@ -1,9 +1,33 @@
-import { STEP, plantMod } from './turnMods'
+import { STEP, plantMod, modOf } from './turnMods'
 
 export function pushDiceModBadge(player, name, type) {
   if (!player.diceModBadges) player.diceModBadges = []
   if (player.diceModBadges.some(b => b.name === name)) return
   player.diceModBadges.push({ name, type })
+}
+
+// 「このワザはキャラコロを合計N回振る」—— 招式自己帶一段擲骰流程，跟其他招式不一樣。
+//
+// 平常一回合只擲一次角色骰，擲中哪一列就跑哪一列的效果；沒中就沒有效果。這幾招不是這樣：
+// 卡面要求的是「擲滿 N 次，中幾次算幾次」，所以第一擲沒中也還有 N-1 次機會。水手裏劍基礎
+// 傷害 0，照前者算的話第一擲沒中整招就是 0，可是卡片上它還有兩次機會打到 40。
+//
+// 因此這一列不走「玩家選到哪一列」的路，而是只要招式帶這種效果就一定排進佇列，並且把這回合
+// 已經擲過的那一次當成第 1 擲 —— 中不中由 result 決定。剩下的由效果佇列一次問一擲。
+//
+// @returns {{ceIndex:number, entry:object, multi:{thrown:number,hits:number}}|null}
+export function multiRollStart(mv, result) {
+  if (!mv || !result || result.kind === 'fail') return null
+  const chara = mv.chara || []
+  const idx = chara.findIndex(ce => /^DAMAGE_EXTRA_(\d+)CHARADICE$/.test(ce.type || ''))
+  if (idx < 0) return null
+  const ce = chara[idx]
+  const hit = result.kind === 'chara' && result.ce === ce
+  return {
+    ceIndex: idx,
+    entry: { type: ce.type, value: ce.value },
+    multi: { thrown: 1, hits: hit ? 1 : 0 }
+  }
 }
 
 // Whether a character-die effect row is still reachable while `fix` is in force.
@@ -76,18 +100,20 @@ function applyOneEffect(eff, ctx, answer) {
     ctx.dmgToOpp += answer * eff.value
     return null
   }
-  // サンダー「ダブルサンダー」/ ゲッコウガ「みずしゅりけん」: the move throws the character
-  // die a fixed number of times in total and pays per hit.
+  // 閃電鳥「雙重閃電」/ 甲賀忍蛙「水手裏劍」: the move throws the character die a fixed number
+  // of times in total and pays per hit.
   //
   // Asked one throw at a time, not as a single "how many hit?" count. At a table the player
   // throws, looks, throws again — batching it into one number asks them to do the bookkeeping
-  // the app is for, and it also hid an off-by-one: the throw that made this row selectable in
-  // the first place already happened and already hit, so only n-1 remain. The old prompt
-  // offered 0..n and let that first hit be counted twice or not at all.
+  // the app is for.
+  //
+  // The tally is seeded by whoever starts the queue (multiRollStart), not here, because only
+  // they know how the turn's own throw landed. The fallback below is for a context that
+  // somehow arrives without one: throw the whole N rather than assume a hit nobody saw.
   const charaDiceMatch = /^DAMAGE_EXTRA_(\d+)CHARADICE$/.exec(eff.type)
   if (charaDiceMatch) {
     const total = parseInt(charaDiceMatch[1], 10)
-    const st = ctx.multi || (ctx.multi = { thrown: 1, hits: 1 })
+    const st = ctx.multi || (ctx.multi = { thrown: 0, hits: 0 })
     if (answer !== undefined) {
       st.thrown += 1
       if (answer) st.hits += 1
@@ -334,11 +360,30 @@ function applyOneEffect(eff, ctx, answer) {
     // rather than to pretend to simulate it.
     //
     // Each of these parks a notice on whoever it applies to, consumed on their next turn.
-    case "REROLL_CHARADICE_SELF":
-      // Value is how many rerolls, not a damage figure: チャンスタックル grants one on its
+    case "REROLL_CHARADICE_SELF": {
+      // Value is how many rerolls, not a damage figure: 吉利蛋「機會擲骰」grants one on its
       // own and upgrades to two when the character die cooperates, so they do not stack —
       // the larger wins.
-      plantMod(ctx.mover, { step: STEP.DICE_ROLL, kind: 'rerollCharaDie', n: eff.value, from: ctx.mv.name, notice: 'rerollCharaSelf' })
+      //
+      // Raised in place rather than planted twice. The reader of this mod is modOf(), which
+      // takes the *first* match — so a second mod carrying the bigger number was never read,
+      // and the [立] upgrade did nothing. A second one also duplicated the notice on the move
+      // panel, where both copies share a v-for key.
+      const existing = modOf(ctx.mover, STEP.DICE_ROLL, 'rerollCharaDie')
+      if (existing) existing.n = Math.max(existing.n, eff.value)
+      else plantMod(ctx.mover, { step: STEP.DICE_ROLL, kind: 'rerollCharaDie', n: eff.value, from: ctx.mv.name, notice: 'rerollCharaSelf' })
+      return null
+    }
+    // 「このワザは失敗する」—— 這一招不造成傷害，就這樣。
+    //
+    // 以前是寫成 DAMAGE_EXTRA = -(招式傷害)，那在平常剛好等於零，但 dmgToOpp 的起點是
+    // 已經加過弱點的數字：七夕青鳥「飛翔」(40) 打到弱飛行的對手是 40+20-40 = 20，一個
+    // 失敗的招式還是打出了傷害。歸零才是卡面寫的事。
+    //
+    // 只動傷害。失敗的是這一招打出去的那一下，之前已經種下的控制效果（對手角色骰倒立、
+    // 能量骰減少…）不受影響 —— 卡面也沒說它們會一起消失。
+    case "SPECIAL_MOVE_FAILS":
+      ctx.dmgToOpp = 0
       return null
     case "REROLL_DICE_ENEMY":
       // Both: the flag drives the real picker when the app owns the dice, and the notice is

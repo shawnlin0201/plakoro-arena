@@ -58,7 +58,7 @@
   "charSelect": {
     "title": "ポケモンを選択",
     "empty": "選択できるポケモンがありません。データベースにキャラクターが登録されているかご確認ください。",
-    "weaknessPrefix": "(弱点:",
+    "weaknessShort": "弱点",
     "comingSoon": "近日公開"
   },
   "energyDice": {
@@ -150,12 +150,13 @@
     "storeInfo": "店舗情報",
     "priceLog": "取引マーケット",
     "tournament": "トーナメント編成",
-    "tierList": "強さランキング",
+    "tierList": "技期待値ランキング",
     "typeChart": "タイプ相性表",
     "tierMaker": "Tierメーカー",
     "traitChart": "キャラ特性図",
     "adminSwitch": "アカウント管理",
     "adminRewards": "大会報酬の管理",
+    "adminSeason": "シーズン管理",
     "adminHandbook": "ハンドブック権限",
     "group": {
       "tools": "その他のツール"
@@ -497,6 +498,8 @@
       "tempoDenyDice2AndChara": "ダイス −2 ＋キャラダイス無効",
       "tempoNullifyDamage": "ダメージ無効",
       "tempoBindMove": "技を 1 つ封じる",
+      "tempoForcedReroll1": "相手がエネルギーダイス 1 個を振り直し",
+      "tempoForcedReroll2": "相手がエネルギーダイス 2 個を振り直し",
       "tempoGainDice1": "エネルギーダイス +1",
       "tempoGainDice2": "エネルギーダイス +2",
       "noteNeedsHp": "残りHPを入れると計算されます",
@@ -686,7 +689,9 @@
     }
   },
   "tierList": {
-    "title": "キャラ強さランキング",
+    "title": "キャラ技期待値ランキング",
+    "exportImage": "画像を書き出す",
+    "exporting": "書き出し中…",
     "hint": "各ポケモンに合わせた単色ダイス3個で、上位{n}ワザを交互に撃ち続けたときの平均です",
     "calculating": "計算中…",
     "fewMoves": "このポケモンのワザは{n}つだけです",
@@ -708,6 +713,8 @@
     "main": "メイン",
     "secondary": "サブ",
     "weakness": "弱点",
+    "exportImage": "画像を書き出す",
+    "exporting": "書き出し中…",
     "colorlessOnly": "無色のみ"
   },
   "tierMaker": {
@@ -932,6 +939,9 @@
     "save": "保存",
     "saveError": "保存に失敗しました。もう一度お試しください",
     "tabBadge": "プレイヤーバッジ",
+    "emptyPicker": "まだ選べるものがありません。メールボックスのギフトを開くとここに並びます。",
+    "exportImage": "画像を書き出す",
+    "exportingImage": "書き出し中…",
     "tabSettings": "設定",
     "title": "プレイヤー情報",
     "titleLabel": "称号",
@@ -952,10 +962,8 @@
     "emailField": "アドレス",
     "emailHint": "ID や PIN を忘れたときのために登録してください。",
     "googleTitle": "Google ログイン",
-    "googleNote": "連携すると次回から Google でログインできます。PIN を覚える必要はありません。",
     "googleState": "状態",
-    "googleLinked": "連携済み",
-    "googleOnward": "今後は Google でログインできます。"
+    "googleLinked": "連携済み"
   },
   "notice": {},
   "mailbox": {

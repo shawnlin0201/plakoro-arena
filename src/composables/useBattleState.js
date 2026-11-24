@@ -2,7 +2,7 @@ import { clearMods, modOf, modSum, STEP } from '../game/turnMods'
 import { reactive } from 'vue'
 import { loadMoveHistory, saveMoveHistoryForChar } from '../data/moveHistory'
 import { computeDisplayDamage as computeDisplayDamagePure, isCharaColorConditionMet } from '../game/damage'
-import { advanceEffectQueue } from '../game/effectQueue'
+import { advanceEffectQueue, multiRollStart } from '../game/effectQueue'
 
 // Set by useOnlineRoom on host()/join()/leave(). Lets the handful of effect hooks below tell
 // "real synced dice are available" (online) from "nothing to read but a self-report" (hotseat/
@@ -294,7 +294,10 @@ export function useBattleState(movesRef) {
       state.diceRerollRequest = {
         targetKey: state.turnPlayer,
         byKey: opponentKey(state.turnPlayer),
-        n: forced.n,
+        // 夾到實際擲出的顆數。寶石閃光指定兩顆，但對手可能先被臂錘或龍之波動扣到只剩
+        // 一顆 —— 確定鍵要求「剛好選滿 n 顆」，選不滿就永遠按不下去，回合卡在這裡。
+        // 剩幾顆就選幾顆。
+        n: Math.min(forced.n, (energyRolledTypes || []).length),
         from: forced.from,
         indices: null
       }
@@ -351,20 +354,26 @@ export function useBattleState(movesRef) {
 
     const queue = []
     if (mv.effectType) queue.push({ type: mv.effectType, value: mv.effectValue })
-    if (result.kind === "chara" && result.ce && result.ce.type) {
+    // 合計 N 次的招式自己帶流程：排進佇列的條件是「招式有這種效果」，不是「玩家選到這一列」。
+    // 第一擲沒中照樣要把剩下的擲完（見 multiRollStart）。
+    const multi = multiRollStart(mv, result)
+    if (multi) {
+      queue.push(multi.entry)
+    } else if (result.kind === "chara" && result.ce && result.ce.type) {
       queue.push({ type: result.ce.type, value: result.ce.value })
     }
     // `ce` (the character-die effect the player picked, with its own `.orientations`) rides
     // along on ctx so hooks below can tell which orientations to keep re-checking on any further
     // real throws of that same die — only meaningful when this turn's effect came from a chara
     // pick, null otherwise.
-    const ceIndex = result.kind === "chara" && result.ce
-      ? (mv.chara || []).indexOf(result.ce)
+    const ceIndex = multi ? multi.ceIndex
+      : result.kind === "chara" && result.ce ? (mv.chara || []).indexOf(result.ce)
       : null
     state.effectCtx = {
       moverKey, oppKey, moveId: mv.id, ceIndex,
       queue, cursor: 0,
       dmgToOpp: result.dmgInfo.raw, dmgToSelf: 0,
+      multi: multi ? multi.multi : null,
       charaShieldAsked: false
     }
     runEffects()

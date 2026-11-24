@@ -336,6 +336,12 @@ const MARK_ANGLE = -Math.PI / 6
 // never turn the mark into something that competes with the text.
 const MARK_ALPHA_MIN = 0.05
 const MARK_ALPHA_MAX = 0.13
+// 跟編號交替的第二段。編號講的是「這份是誰的」，這句講的是「拿去散佈會怎樣」—— 兩件事
+// 要同一個人看到，而不是只看到其中一半。
+//
+// 不進 i18n：跟條款與隱私權同一個理由，法律用語一律中文（見 scripts/build-legal.mjs）。
+// 手冊本身也只有中文版。
+const MARK_NOTICE = '有著作權，侵害必究'
 
 /**
  * How strongly this particular page has to be stamped.
@@ -375,6 +381,10 @@ function inkStrength(ctx, width, height) {
  * Drawn into the canvas rather than laid over it in the DOM: an overlay is one devtools click
  * from gone, and "save image" would write out a clean copy. Once it is in the pixels, every
  * route the page can leave by carries it.
+ *
+ * Two lines alternating down the page, not one repeated: the code and the notice. Each row
+ * steps by its own text's width — the notice is half again as wide as a player code, and a
+ * shared step would either crowd one or strand the other.
  */
 function stamp(ctx, width, height, text) {
   if (!text) return
@@ -385,14 +395,20 @@ function stamp(ctx, width, height, text) {
   ctx.font = `700 ${Math.round(width * 0.04)}px "Hiragino Sans", system-ui, sans-serif`
   ctx.textBaseline = 'middle'
   ctx.rotate(MARK_ANGLE)
-  const stepX = ctx.measureText(text).width * 1.75
+  const lines = [text, MARK_NOTICE]
+  const stepsX = lines.map(line => ctx.measureText(line).width * 1.75)
   const stepY = width * 0.115
   // Rotating moves the page out from under the origin, so the grid is drawn over a box big
   // enough to still cover every corner afterwards.
-  for (let y = -width; y < height + width; y += stepY) {
-    const offset = (Math.round(y / stepY) % 2) * (stepX / 2)
+  let row = 0
+  for (let y = -width; y < height + width; y += stepY, row++) {
+    const i = row % 2
+    const stepX = stepsX[i]
+    // 第二列往右挪半格。兩列的字本來就不一樣長了，但不挪的話每一行的起點還是對齊成一
+    // 條直線，看起來像表格而不是浮水印。
+    const offset = i * (stepX / 2)
     for (let x = -height; x < width + height; x += stepX) {
-      ctx.fillText(text, x + offset, y)
+      ctx.fillText(lines[i], x + offset, y)
     }
   }
   ctx.restore()

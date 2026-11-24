@@ -1,14 +1,22 @@
 <!-- The quick-access icon in GlobalTopBar.vue — clicking it opens/closes the music player panel
-     (MusicPlayer.vue) rather than muting directly; actual mute lives as a control inside that
-     panel now. The icon itself still reflects mute state at a glance either way. -->
+     (MusicPlayer.vue). It is not a switch: transport and mute are both controls inside that
+     panel. What it does do is report, so the icon and the click answer two different questions
+     — the icon says whether sound is coming out right now, the click opens the place to change
+     that.
+
+     "Sound is coming out" is playing AND not muted, because there are two ways to be silent
+     now that nothing starts on its own, and an icon that only knew about mute would show an
+     open speaker over silence. -->
 <script setup>
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { audioSettings } from '../data/audioSettings'
 import { toggleMusicPlayer } from '../data/musicPlayerUi'
 import Icon from './Icon.vue'
-import '../data/backgroundMusic'
+import { isPlaying } from '../data/backgroundMusic'
 
 const { t } = useI18n()
+const audible = computed(() => isPlaying.value && !audioSettings.value.muted)
 </script>
 
 <template>
@@ -16,7 +24,7 @@ const { t } = useI18n()
     class="volume-toggle"
     :aria-label="t('app.musicPlayer')"
     @click="toggleMusicPlayer"
-  ><Icon :name="audioSettings.muted ? 'volume-off' : 'volume'" /></button>
+  ><Icon :name="audible ? 'volume' : 'volume-off'" /></button>
 </template>
 
 <style scoped>

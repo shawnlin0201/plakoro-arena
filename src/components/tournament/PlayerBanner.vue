@@ -63,6 +63,14 @@ const top3 = computed(() => {
       </span>
       <span v-if="top3" class="stat">{{ t('tournament.banner.top3') }} {{ top3 }}</span>
     </span>
+
+    <!-- 右下角：玩家編號。roundImage.js 畫的那一份本來就有（它的註解還寫著「跟畫面上同
+         一個角落」），只有這裡漏掉 —— 兩份畫的是同一個設計，補回來。客服認的是這組編
+         號，所以它要讀得出來，不是陪襯。
+         不塞進上面那排戰績裡：那排是 align-items:baseline 加 overflow:hidden，墊了底色
+         之後盒子會比那排高，超出去的部分會被裁掉（實測只剩一條黑線）。自己絕對定位在
+         角落，就不受那排的高度管。 -->
+    <span v-if="nameplate.code" class="code">{{ nameplate.code }}</span>
   </span>
 </template>
 
@@ -181,6 +189,25 @@ const top3 = computed(() => {
 }
 /* One weight, one colour. The strip is a footnote to the name above it; colouring the
    numbers made it compete with the title, which is the part that is supposed to stand out. */
+/* 壓一塊底色，不是只給陰影。遮罩是左深右淺的（見 .scrim），而編號正好落在最淺的那一
+   端，底下又是圖最亮的地方 —— 白字配白底，陰影擋不住。
+   用底色而不是描邊，還有一個理由：匯出圖片走的是 html2canvas，它畫不出多層 text-shadow
+   疊成的描邊（見 exportImage.js 的說明），但畫得出方塊。螢幕上跟圖片裡要是同一個樣子。
+   內距跟 .flag 的一樣，所以它跟左邊那排戰績是同一條底線、同一道邊。 */
+.code {
+  position: absolute;
+  right: 0.5rem;
+  bottom: 0.3125rem;
+  font-size: 0.375rem;
+  font-weight: 500;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+  padding: 0.0625rem 0.1875rem;
+  border-radius: 0.1875rem;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
 .stat {
   font-size: 0.375rem;
   font-weight: 500;

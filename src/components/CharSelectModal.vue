@@ -46,7 +46,10 @@ function pick(c) {
       <div class="pick-bottom">
         <div class="nm-row">
           <span class="nm">{{ c.name }}</span>
-          <span v-if="c.weaknesses.length > 0" class="nm-wk">{{ t('charSelect.weaknessPrefix') }}<img v-for="w in c.weaknesses" :key="w.type" :src="asset(`image/ICON/${w.type}.png`)" class="img-icon nm-wk-icon" :alt="w.type">)</span>
+          <span v-if="c.weaknesses.length > 0" class="nm-wk-line">
+            <span>{{ t('charSelect.weaknessShort') }}</span>
+            <img v-for="w in c.weaknesses" :key="w.type" :src="asset(`image/ICON/${w.type}.png`)" class="img-icon nm-wk-icon" :alt="w.type">
+          </span>
         </div>
       </div>
     </div>

@@ -29,6 +29,20 @@ const SETTLE_MS = 300
 
 export function useStageLayout() {
   let timer = 0
+  let frame = 0
+  // 上一次真的寫進去的值。旋轉動畫期間 visualViewport 的 resize 會連續觸發幾十次，而
+  // 其中絕大多數算出來是同一個數字 —— 每寫一次根字級，整個 App 的每個 rem 都要重算
+  // 版面，那是看得見的頓。
+  let appliedPx = 0
+
+  /** 一幀最多算一次。連續來的事件合併成一次，不是一次一個 reflow。 */
+  function scheduleLayout() {
+    if (frame) return
+    frame = requestAnimationFrame(() => {
+      frame = 0
+      layoutStage()
+    })
+  }
 
   function layoutStage() {
     // 舞台就是視窗（見 style.css 的 #stage），所以這裡只剩一件事：決定 1rem 有多大。
@@ -46,7 +60,11 @@ export function useStageLayout() {
     const vh = vp?.height || window.innerHeight
     if (!vw || !vh) return
     const base = vh > vw ? vw : Math.min(vh, vw * 9 / 16)
-    document.documentElement.style.fontSize = (ROOT_FONT_SIZE * base / DESIGN_WIDTH) + 'px'
+    const px = ROOT_FONT_SIZE * base / DESIGN_WIDTH
+    // 同一個值就不要寫。寫了也「沒變」，但那一次賦值本身就會讓整棵樹的樣式失效。
+    if (Math.abs(px - appliedPx) < 0.01) return
+    appliedPx = px
+    document.documentElement.style.fontSize = px + 'px'
   }
 
   /**
@@ -58,6 +76,8 @@ export function useStageLayout() {
    *
    * html/body 是 overflow:hidden，看起來沒有東西可以捲 —— 但被錯開的正是版面視窗，而
    * scrollTo 動的就是它。先到 1 再回 0，是因為捲到同一個位置不會觸發任何重算。
+   *
+   * 完整的排查過程、以及三條試過但無效的路，見 design/ios-rotation.md。
    */
   function realign() {
     window.scrollTo(0, 1)
@@ -67,20 +87,21 @@ export function useStageLayout() {
 
   function onOrientation() {
     clearTimeout(timer)
-    layoutStage()
+    scheduleLayout()
     timer = setTimeout(realign, SETTLE_MS)
   }
 
   onMounted(() => {
     layoutStage()
-    window.addEventListener('resize', layoutStage)
+    window.addEventListener('resize', scheduleLayout)
     window.addEventListener('orientationchange', onOrientation)
-    window.visualViewport?.addEventListener('resize', layoutStage)
+    window.visualViewport?.addEventListener('resize', scheduleLayout)
   })
   onUnmounted(() => {
     clearTimeout(timer)
-    window.removeEventListener('resize', layoutStage)
+    cancelAnimationFrame(frame)
+    window.removeEventListener('resize', scheduleLayout)
     window.removeEventListener('orientationchange', onOrientation)
-    window.visualViewport?.removeEventListener('resize', layoutStage)
+    window.visualViewport?.removeEventListener('resize', scheduleLayout)
   })
 }

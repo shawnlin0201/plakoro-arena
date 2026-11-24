@@ -1,11 +1,12 @@
 <script setup>
 // Your own player profile: the face, the flag, and the name you go by.
 //
-// Only the things a player chooses. Medals, titles and win rates are not here and will never
-// be — those are read off the tournament records, and a profile screen that could set them
-// would make every badge in the app worthless. Avatars and flags are a softer version of the
-// same rule: picking is free, but only among tiers this record has actually reached — the
-// pickers below are gated by live stats, not left wide open the way a mock account would be.
+// Only the things a player chooses. Medals and win rates are shown but never editable here —
+// they are read off the tournament records the same way the leaderboard reads them, and a
+// profile screen that could set them would make every badge in the app worthless. Avatars and
+// flags are a softer version of the same rule: picking is free, but only among tiers this
+// record has actually reached — the pickers below are gated by live stats, not left wide open
+// the way a mock account would be.
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import * as authApi from '../data/authApi'
@@ -14,11 +15,13 @@ import { sfxSettings, setSfxVolume } from '../data/sfxSettings'
 import { lowData, setLowData } from '../data/lowDataMode'
 import { currentIdentity, setCurrentPlayer, signOut } from '../data/currentPlayer'
 import { isAdminAccount, isAdminMode, setAdminMode } from '../data/adminSession'
-import { AVATAR_IDS, BACKGROUND_IDS, avatarUrl, backgroundUrl, isSecretAsset, tierOfAsset } from '../data/nameplateAssets'
+import { AVATAR_IDS, BACKGROUND_IDS, avatarUrl, backgroundUrl, isSecretAsset } from '../data/nameplateAssets'
 import { getToken } from '../data/session'
 import { translateApiError } from '../data/apiErrors'
 import { googleAvailable, renderGoogleButton } from '../data/googleSignIn'
 import { TITLE_GROUPS, resolveTitle } from '../data/assetCatalogue'
+import { fetchLeaderboard, winRatePercent } from '../data/leaderboardApi'
+import { renderPlayerImage, playerImageFileName } from '../game/roundImage'
 import { pointReason } from '../data/pointReason'
 import PlayerBanner from './tournament/PlayerBanner.vue'
 import VolumeBar from './VolumeBar.vue'
@@ -182,6 +185,12 @@ onMounted(async () => {
     // Stats/unlocks just didn't load this time — stay locked down rather than guessing.
   }
   try {
+    const data = await fetchLeaderboard('offline', 'all', currentIdentity.value.code)
+    record.value = data.me || null
+  } catch (e) {
+    // 徽章照樣畫得出來，只是沒有勝率那一行。
+  }
+  try {
     const points = await authApi.listPoints(token)
     pointBalance.value = points.balance
     pointEntries.value = points.entries
@@ -220,8 +229,10 @@ function entryDate(e) {
 //
 // Deciding what someone gets belongs in the reward package, which is admin-editable. A rule
 // here could only ever drift from it — and did.
+// 頭像與旗幟一律看發放紀錄。`-default` 曾經在這裡直接回 true，而那正是新賽季默默發生、
+// 玩家完全不知道的原因 —— 基本款自己出現在選擇器裡，沒有禮物也沒有通知。現在它跟其他
+// 素材一樣要發，開季才有那一下。伺服器那邊是同一條規則（isAssetAllowed）。
 function isUnlocked(id, kind) {
-  if (tierOfAsset(id) === 'default') return true
   const owned = kind === 'avatar' ? ownedAvatars.value : ownedBackgrounds.value
   return owned.has(id)
 }
@@ -265,6 +276,16 @@ const visibleTitleGroups = computed(() =>
     .map(g => ({ ...g, titles: g.titles.filter(ti => shown(ti.id, isTitleUnlocked(ti.id, g.key))) }))
     .filter(g => g.titles.length > 0))
 
+/* ── 戰績 ────────────────────────────────────────────────────────────────
+   這張徽章要跟排行榜上看到的是同一張，所以數字也走同一個來源：排行榜那支 API 回的
+   `me`，不是本機算的。scope 用 offline、window 用 all —— 線上對戰還沒有東西寫進
+   online_matches，而這裡要的是生涯，不是某一段時間。
+
+   讀不到就維持 null：徽章碰到 null 會把勝率那行整個收起來（見 PlayerBanner），
+   比印一個 0% 誠實 —— 沒打過跟全輸不是同一件事。
+   ──────────────────────────────────────────────────────────────────── */
+const record = ref(null)
+
 // A draft, so backing out leaves the saved profile alone.
 const draft = ref({
   code: currentIdentity.value.code,
@@ -283,11 +304,45 @@ const preview = computed(() => ({
   avatar: draft.value.avatar,
   background: draft.value.background,
   title: resolveTitle(draft.value.titleId),
-  // Earned, so the preview shows them as they really are: empty, until an event says otherwise.
-  medals: { gold: 0, silver: 0, bronze: 0 },
-  events: 0,
-  winRate: null
+  // Earned, not chosen: these come off the record and ignore the draft entirely.
+  medals: {
+    gold: record.value?.gold || 0,
+    silver: record.value?.silver || 0,
+    bronze: record.value?.bronze || 0
+  },
+  events: record.value?.events || 0,
+  winRate: record.value ? winRatePercent(record.value) : null
 }))
+
+/* ── 匯出圖片 ────────────────────────────────────────────────────────────
+   不走 exportElementAsPng。那支是拿 html2canvas 翻拍畫面的，而旗幟是 CSS 背景圖 ——
+   html2canvas 會先把背景點陣化成版面大小再放大，實測拉普拉斯銳利度只有 3.1，原圖直接
+   畫到同尺寸是 28.3，差了九倍，看起來就是整片糊掉。等再久也一樣，那不是還沒載完。
+
+   改用 roundImage.js 的 renderPlayerImage：它本來就是畫同一張徽章給賽事用的，走的是
+   canvas 的 drawImage，素材從原解析度直接畫上去。margin 給 0，整張圖就只有玩家資訊。
+   ──────────────────────────────────────────────────────────────────── */
+const exporting = ref(false)
+
+async function exportBadge() {
+  if (exporting.value) return
+  exporting.value = true
+  try {
+    const blob = await renderPlayerImage({ nameplate: preview.value, t, margin: 0 })
+    if (!blob) return
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = playerImageFileName(preview.value)
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    // 隔一拍再收。同一拍收掉的話，有些瀏覽器還沒把 blob 讀完，下載就被取消了。
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+  } finally {
+    exporting.value = false
+  }
+}
 
 const dirty = computed(() =>
   draft.value.name.trim() !== (currentIdentity.value.name || '') ||
@@ -353,7 +408,14 @@ function handleSignOut() {
       <!-- Outside the scroller: the preview is what every choice below is being judged against,
            so scrolling it away would mean picking a flag with nothing to check it on. -->
       <div class="pp-preview">
-        <PlayerBanner :nameplate="preview" size="lg" />
+        <!-- 按鈕絕對定位靠右，徽章仍然置中 —— 底下每一個選擇都是拿它來對的。
+             用 md 不用 lg：名字與稱號的字級是固定的 rem，不跟著 --h 走，所以 lg 的字
+             相對整張是比較小的 —— 而 roundImage.js 畫的那一份是照 md 的比例推出來的。
+             預覽要就是匯出的那一張，差一號就對不起來。 -->
+        <PlayerBanner :nameplate="preview" />
+        <button class="btn secondary pp-export-btn" :disabled="exporting" @click="exportBadge">
+          {{ exporting ? t('profile.exportingImage') : t('profile.exportImage') }}
+        </button>
       </div>
 
       <div class="pp-body">
@@ -370,6 +432,7 @@ function handleSignOut() {
               <img :src="avatarUrl(id)" alt="" loading="lazy">
             </button>
           </div>
+          <p v-if="!visibleAvatarIds.length" class="pp-empty">{{ t('profile.emptyPicker') }}</p>
         </div>
 
         <div class="pp-field">
@@ -385,6 +448,7 @@ function handleSignOut() {
               <img :src="backgroundUrl(id)" alt="" loading="lazy">
             </button>
           </div>
+          <p v-if="!visibleBackgroundIds.length" class="pp-empty">{{ t('profile.emptyPicker') }}</p>
         </div>
 
         <div class="pp-field">
@@ -513,7 +577,6 @@ function handleSignOut() {
            本身就是「本人」的證明。 -->
       <div v-if="googleAvailable" class="pp-form">
         <div class="pp-form-title">{{ t('profile.googleTitle') }}</div>
-        <p class="pp-form-note">{{ t('profile.googleNote') }}</p>
 
         <!-- 綁好之後這裡只剩狀態。不放解除的按鈕，是因為往後希望大家都走 Google ——
              這是介面上的選擇，伺服器那支 API 還在。 -->
@@ -522,7 +585,6 @@ function handleSignOut() {
             <span class="pp-form-label">{{ t('profile.googleState') }}</span>
             <span class="pp-form-value">{{ t('profile.googleLinked') }}</span>
           </div>
-          <p class="pp-form-note">{{ t('profile.googleOnward') }}</p>
         </template>
 
         <div v-show="!googleLinked" ref="googleSlot" class="pp-google-slot"></div>
@@ -779,16 +841,26 @@ function handleSignOut() {
 }
 
 .pp-preview {
+  position: relative;
   flex-shrink: 0;
   display: flex;
   justify-content: center;
   padding: 0.25rem 0 0.5rem;
+}
+.pp-export-btn {
+  position: absolute;
+  right: 0.625rem;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 0.3125rem 0.5rem;
+  font-size: 0.625rem;
 }
 
 .pp-foot-btn { padding: 0.4375rem 0.75rem; font-size: 0.6875rem; }
 
 .pp-field { width: 100%; max-width: 30rem; display: flex; flex-direction: column; gap: 0.25rem; }
 .pp-label { font-size: 0.625rem; font-weight: 800; color: var(--sub); letter-spacing: 0.04em; }
+.pp-empty { margin: 0.25rem 0 0; font-size: 0.625rem; line-height: 1.5; color: var(--sub); }
 
 .pp-input {
   width: 100%;

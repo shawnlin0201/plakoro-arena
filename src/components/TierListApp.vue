@@ -6,6 +6,7 @@ import { asset } from '../data/assetPath'
 import { rankCharacters, METRIC_TOP_N, METRIC_PER_TURN } from '../game/characterRanking'
 import { SUSTAINABLE_SLOTS } from '../game/turnValue'
 import { buildTempoTable } from '../game/tempoValue'
+import { exportElementAsPng } from '../data/exportImage'
 
 const emit = defineEmits(['back', 'inspect'])
 const { characters, moves } = inject('characterData')
@@ -73,6 +74,29 @@ function toggle(id) {
   expandedId.value = expandedId.value === id ? null : id
 }
 
+/* ── 匯出圖片 ────────────────────────────────────────────────────────────
+   截的是標題、說明與排行列表，不含上面那排切換鈕 —— 那是操作用的，留在圖裡只會讓人
+   以為圖上那幾顆可以按。展開中的招式明細會一起入鏡，那是刻意的：那正是「這個分數是
+   哪幾招加出來的」的答案。
+   ──────────────────────────────────────────────────────────────────── */
+const exportTargetRef = ref(null)
+const exporting = ref(false)
+
+async function exportImage() {
+  if (!exportTargetRef.value || exporting.value) return
+  exporting.value = true
+  try {
+    // 檔名帶上現在的讀法，否則兩種指標匯出來的圖長得很像卻是不同的東西。
+    const mode = perTurn.value ? 'per-turn' : `top${slots.value}`
+    await exportElementAsPng(exportTargetRef.value, `plakoro-move-value-${mode}`, {
+      // 每一列的展開鍵只在畫面上有意義。
+      hide: '.tier-inspect'
+    })
+  } finally {
+    exporting.value = false
+  }
+}
+
 // Folded away by default, same as the odds view's own "計算前提" — the caveats matter, but
 // most players read the numbers first and only want the fine print on request.
 const showNotes = ref(false)
@@ -80,6 +104,8 @@ const showNotes = ref(false)
 
 <template>
   <div class="board select-board" style="overflow-y:auto; align-items:center;">
+    <!-- 要截進圖裡的範圍：標題、說明、排行。上面那排切換鈕留在外面。 -->
+    <div ref="exportTargetRef" style="width:100%; max-width:34rem; display:flex; flex-direction:column; align-items:center; background:var(--bg);">
     <div class="modal-title" style="margin:0.5rem 0 0.25rem;">{{ t('tierList.title') }}</div>
     <div class="center-hint" style="padding-bottom:0.375rem;">{{ perTurn ? t('tierList.hintPerTurn', { n: slots }) : t('tierList.hint', { n: slots }) }}</div>
 
@@ -168,10 +194,18 @@ const showNotes = ref(false)
       </div>
     </div>
 
-    <div style="width:100%; max-width:34rem; padding:0.625rem 0.75rem 0; display:flex; justify-content:center;">
+    </div>
+
+    <div style="width:100%; max-width:34rem; padding:0.625rem 0.75rem 0; display:flex; justify-content:center; gap:0.375rem; flex-wrap:wrap;">
       <button class="btn secondary" style="padding:0.1875rem 0.5rem; font-size:0.625rem;" @click="showNotes = !showNotes">
         {{ t('common.methodology') }}
       </button>
+      <button
+        class="btn secondary"
+        style="padding:0.1875rem 0.5rem; font-size:0.625rem;"
+        :disabled="exporting"
+        @click="exportImage"
+      >{{ exporting ? t('tierList.exporting') : t('tierList.exportImage') }}</button>
     </div>
 
     <div

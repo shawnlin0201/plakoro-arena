@@ -1,7 +1,7 @@
 import { clearMods, modOf, modSum, STEP } from '../game/turnMods'
 import { reactive } from 'vue'
 import { computeDisplayDamage as computeDisplayDamagePure, isCharaColorConditionMet } from '../game/damage'
-import { advanceEffectQueue } from '../game/effectQueue'
+import { advanceEffectQueue, multiRollStart } from '../game/effectQueue'
 import { buildAiOpponentForTier, scaleMoveForFloor, maxAffordableCostForTier } from '../game/aiOpponent'
 import { generateActMap, reachableNodeIds as mapReachableNodeIds } from '../game/mapGen'
 import { drawRandomEvent } from '../game/eventPool'
@@ -343,15 +343,22 @@ export function useSoloRun(charactersRef, movesRef) {
 
     const queue = []
     if (mv.effectType) queue.push({ type: mv.effectType, value: mv.effectValue })
-    if (result.kind === "chara" && result.ce && result.ce.type) {
+    // 同對戰模式：合計 N 次的招式不看玩家選到哪一列，一定排進佇列（見 multiRollStart）。
+    const multi = multiRollStart(mv, result)
+    if (multi) {
+      queue.push(multi.entry)
+    } else if (result.kind === "chara" && result.ce && result.ce.type) {
       queue.push({ type: result.ce.type, value: result.ce.value })
     }
     const dmgInfo = result.dmgInfo || computeDisplayDamage(mv, mover, opp)
-    const ceIndex = result.kind === "chara" && result.ce ? (mv.chara || []).indexOf(result.ce) : null
+    const ceIndex = multi ? multi.ceIndex
+      : result.kind === "chara" && result.ce ? (mv.chara || []).indexOf(result.ce)
+      : null
     state.effectCtx = {
       moverKey, oppKey, moveId: mv.id, ceIndex,
       queue, cursor: 0,
       dmgToOpp: dmgInfo.raw + (mover.atkBonus || 0), dmgToSelf: 0,
+      multi: multi ? multi.multi : null,
       charaShieldAsked: false
     }
     runEffects()

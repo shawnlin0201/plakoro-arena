@@ -58,7 +58,7 @@
   "charSelect": {
     "title": "Choose a Pokémon",
     "empty": "No Pokémon available to choose. Please check that characters are registered in the database.",
-    "weaknessPrefix": "(Weak:",
+    "weaknessShort": "Weak",
     "comingSoon": "Coming soon"
   },
   "energyDice": {
@@ -150,12 +150,13 @@
     "storeInfo": "Stores",
     "priceLog": "Market",
     "tournament": "Tournament Scheduler",
-    "tierList": "Strength ranking",
+    "tierList": "Move value ranking",
     "typeChart": "Type matchups",
     "tierMaker": "Tier Maker",
     "traitChart": "Trait chart",
     "adminSwitch": "Account Admin",
     "adminRewards": "Manage Tournament Rewards",
+    "adminSeason": "Seasons",
     "adminHandbook": "Handbook Access",
     "group": {
       "tools": "More tools"
@@ -497,6 +498,8 @@
       "tempoDenyDice2AndChara": "Two dice fewer + no chara die",
       "tempoNullifyDamage": "Damage nullified",
       "tempoBindMove": "One move banned",
+      "tempoForcedReroll1": "Opponent rerolls 1 energy die",
+      "tempoForcedReroll2": "Opponent rerolls 2 energy dice",
       "tempoGainDice1": "One die more",
       "tempoGainDice2": "Two dice more",
       "noteNeedsHp": "Counted once you enter remaining HP",
@@ -686,7 +689,9 @@
     }
   },
   "tierList": {
-    "title": "Character strength ranking",
+    "title": "Character move-value ranking",
+    "exportImage": "Export image",
+    "exporting": "Exporting…",
     "hint": "Each Pokémon on three pure dice built for them, scored by alternating their {n} best moves",
     "calculating": "working…",
     "fewMoves": "this Pokémon has only {n} moves",
@@ -708,6 +713,8 @@
     "main": "Main",
     "secondary": "Sub",
     "weakness": "Weak to",
+    "exportImage": "Export image",
+    "exporting": "Exporting…",
     "colorlessOnly": "colourless only"
   },
   "tierMaker": {
@@ -932,6 +939,9 @@
     "save": "Save",
     "saveError": "Save failed, please try again",
     "tabBadge": "Player badge",
+    "emptyPicker": "Nothing to pick yet — open the gifts in your mailbox and they will show up here.",
+    "exportImage": "Export image",
+    "exportingImage": "Exporting…",
     "tabSettings": "Settings",
     "title": "Player profile",
     "titleLabel": "Title",
@@ -952,10 +962,8 @@
     "emailField": "Address",
     "emailHint": "Leave an email so you can recover your account if you forget your handle or PIN.",
     "googleTitle": "Google sign-in",
-    "googleNote": "Link it and you can sign in with Google next time, no PIN to remember.",
     "googleState": "Status",
-    "googleLinked": "Linked",
-    "googleOnward": "You can just sign in with Google from now on."
+    "googleLinked": "Linked"
   },
   "notice": {},
   "mailbox": {

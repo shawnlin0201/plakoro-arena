@@ -10,7 +10,7 @@
 // online_matches until online battle exists.
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { fetchLeaderboard } from '../data/leaderboardApi'
+import { fetchLeaderboard, winRatePercent } from '../data/leaderboardApi'
 import { currentIdentity, isSignedIn } from '../data/currentPlayer'
 import { resolveTitle } from '../data/assetCatalogue'
 import { NAMEPLATE_VERSION } from '../game/playerNameplate'
@@ -76,16 +76,8 @@ function plateOf(r) {
     title: resolveTitle(r.title_id),
     medals: { gold: r.gold || 0, silver: r.silver || 0, bronze: r.bronze || 0 },
     events: r.events,
-    winRate: winRateOf(r)
+    winRate: winRatePercent(r)
   }
-}
-
-// Decided matches only, matching playerBadges.winRate — a bye scores in the standings but says
-// nothing about the player, and counting it would inflate everyone who ever sat out a round.
-function winRateOf(r) {
-  const played = (r.wins || 0) + (r.losses || 0) + (r.draws || 0)
-  if (!played) return null
-  return Math.round((r.wins / played) * 100)
 }
 
 const myNameplate = computed(() => (mine.value ? plateOf(mine.value) : null))

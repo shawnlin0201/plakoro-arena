@@ -187,6 +187,9 @@ const TEMPO_ROWS = [
   { key: 'denyDice2AndChara', label: 'tempoDenyDice2AndChara', self: false },
   { key: 'nullifyDamage', label: 'tempoNullifyDamage', self: false },
   { key: 'bindMove', label: 'tempoBindMove', self: false },
+  // 只會落在對手身上：自己沒有「被逼著重擲」這回事。
+  { key: 'forcedReroll1', label: 'tempoForcedReroll1', self: false },
+  { key: 'forcedReroll2', label: 'tempoForcedReroll2', self: false },
   { key: 'gainDice1', label: 'tempoGainDice1', self: true },
   { key: 'gainDice2', label: 'tempoGainDice2', self: true }
 ]
@@ -443,7 +446,15 @@ async function exportImage() {
             <div class="ic"><img :src="c.imageUrl || asset(`image/CHARA/${c.name}.png`)" class="img-icon" :alt="c.name"></div>
           </div>
           <div class="pick-bottom">
-            <div class="nm-row"><span class="nm">{{ c.name }}</span></div>
+            <!-- 弱點自己佔一行，寫法與對戰選角同一套：兩邊看到的東西要一樣，不然同一隻
+                 角色在兩個畫面上的資訊量不同，反而要回頭對。 -->
+            <div class="nm-row">
+              <span class="nm">{{ c.name }}</span>
+              <span v-if="c.weaknesses.length > 0" class="nm-wk-line">
+                <span>{{ t('charSelect.weaknessShort') }}</span>
+                <img v-for="w in c.weaknesses" :key="w.type" :src="asset(`image/ICON/${w.type}.png`)" class="img-icon nm-wk-icon" :alt="w.type">
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -469,6 +480,13 @@ async function exportImage() {
             <img :src="selectedCharacter.imageUrl || asset(`image/CHARA/${selectedCharacter.name}.png`)" class="img-icon" :alt="selectedCharacter.name">
           </div>
           <span style="font-size:0.875rem; font-weight:800;">{{ selectedCharacter.name }}</span>
+          <!-- 期望效益不含弱點加成（見下方說明），所以讀表的人得自己把那 +20 加回去 ——
+               擺在名字旁邊，才不用為了這件事翻到屬性克制表。寫法跟上一頁的選角卡一致，
+               只有顏色要換：卡片那塊是深底，這裡是淺底。 -->
+          <span v-if="selectedCharacter.weaknesses.length > 0" class="nm-wk-line" style="color:var(--sub); font-size:0.6875rem;">
+            <span>{{ t('charSelect.weaknessShort') }}</span>
+            <img v-for="w in selectedCharacter.weaknesses" :key="w.type" :src="asset(`image/ICON/${w.type}.png`)" class="img-icon nm-wk-icon" :alt="w.type">
+          </span>
           <button class="btn secondary" style="padding:0.1875rem 0.5rem; font-size:0.625rem;" @click="selectedCharacterId = null">{{ t('diceBuilder.moveOdds.changeCharacter') }}</button>
         </div>
       </div>
