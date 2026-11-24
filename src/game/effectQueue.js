@@ -6,6 +6,30 @@ export function pushDiceModBadge(player, name, type) {
   player.diceModBadges.push({ name, type })
 }
 
+// 「このワザはキャラコロを合計N回振る」—— 招式自己帶一段擲骰流程，跟其他招式不一樣。
+//
+// 平常一回合只擲一次角色骰，擲中哪一列就跑哪一列的效果；沒中就沒有效果。這幾招不是這樣：
+// 卡面要求的是「擲滿 N 次，中幾次算幾次」，所以第一擲沒中也還有 N-1 次機會。水手裏劍基礎
+// 傷害 0，照前者算的話第一擲沒中整招就是 0，可是卡片上它還有兩次機會打到 40。
+//
+// 因此這一列不走「玩家選到哪一列」的路，而是只要招式帶這種效果就一定排進佇列，並且把這回合
+// 已經擲過的那一次當成第 1 擲 —— 中不中由 result 決定。剩下的由效果佇列一次問一擲。
+//
+// @returns {{ceIndex:number, entry:object, multi:{thrown:number,hits:number}}|null}
+export function multiRollStart(mv, result) {
+  if (!mv || !result || result.kind === 'fail') return null
+  const chara = mv.chara || []
+  const idx = chara.findIndex(ce => /^DAMAGE_EXTRA_(\d+)CHARADICE$/.test(ce.type || ''))
+  if (idx < 0) return null
+  const ce = chara[idx]
+  const hit = result.kind === 'chara' && result.ce === ce
+  return {
+    ceIndex: idx,
+    entry: { type: ce.type, value: ce.value },
+    multi: { thrown: 1, hits: hit ? 1 : 0 }
+  }
+}
+
 // Whether a character-die effect row is still reachable while `fix` is in force.
 //
 // `fix.value === 1` pins the die TO the listed orientations, so a row is available only if it
@@ -76,18 +100,20 @@ function applyOneEffect(eff, ctx, answer) {
     ctx.dmgToOpp += answer * eff.value
     return null
   }
-  // サンダー「ダブルサンダー」/ ゲッコウガ「みずしゅりけん」: the move throws the character
-  // die a fixed number of times in total and pays per hit.
+  // 閃電鳥「雙重閃電」/ 甲賀忍蛙「水手裏劍」: the move throws the character die a fixed number
+  // of times in total and pays per hit.
   //
   // Asked one throw at a time, not as a single "how many hit?" count. At a table the player
   // throws, looks, throws again — batching it into one number asks them to do the bookkeeping
-  // the app is for, and it also hid an off-by-one: the throw that made this row selectable in
-  // the first place already happened and already hit, so only n-1 remain. The old prompt
-  // offered 0..n and let that first hit be counted twice or not at all.
+  // the app is for.
+  //
+  // The tally is seeded by whoever starts the queue (multiRollStart), not here, because only
+  // they know how the turn's own throw landed. The fallback below is for a context that
+  // somehow arrives without one: throw the whole N rather than assume a hit nobody saw.
   const charaDiceMatch = /^DAMAGE_EXTRA_(\d+)CHARADICE$/.exec(eff.type)
   if (charaDiceMatch) {
     const total = parseInt(charaDiceMatch[1], 10)
-    const st = ctx.multi || (ctx.multi = { thrown: 1, hits: 1 })
+    const st = ctx.multi || (ctx.multi = { thrown: 0, hits: 0 })
     if (answer !== undefined) {
       st.thrown += 1
       if (answer) st.hits += 1
