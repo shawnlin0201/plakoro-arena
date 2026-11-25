@@ -148,6 +148,7 @@
     "solo": "ソロタワー",
     "diceBuilder": "ダイス組立シミュレーター",
     "storeInfo": "店舗情報",
+    "themeCards": "テーマカード",
     "priceLog": "取引マーケット",
     "tournament": "トーナメント編成",
     "tierList": "技期待値ランキング",
@@ -429,6 +430,24 @@
     "colName": "店舗名",
     "colAddress": "住所",
     "colType": "タイプ"
+  },
+  "themeCards": {
+    "title": "テーマカード",
+    "themesHint": "オフラインイベント限定のルールカード。テーマを選んでから、持ち込むカードを選びます。",
+    "cardCount": "{n} 枚",
+    "pickedMark": "{n} 枚選択中",
+    "noSets": "公開中のテーマはまだありません。",
+    "noCards": "このテーマにはまだカードがありません。",
+    "limitLabel": "1 戦あたりの枚数",
+    "limitHint": "枚数は当日のルールに合わせて変えてください。各カードは 1 戦に 1 回だけ使えます。",
+    "confirm": "決定（{n}）",
+    "playTitle": "この試合に持ち込んだカード",
+    "playHint": "残り {n} 枚。使ったらタップして相手に見せましょう。",
+    "markUsed": "使用する",
+    "undoUse": "取り消す",
+    "usedStamp": "使用済",
+    "repick": "選び直す",
+    "newMatch": "次の試合へ"
   },
   "diceBuilder": {
     "title": "ダイス組立シミュレーター",

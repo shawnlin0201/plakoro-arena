@@ -48,6 +48,7 @@ import ModeSelect from './components/ModeSelect.vue'
 import SoloApp from './components/solo/SoloApp.vue'
 import DiceBuilderApp from './components/dice/DiceBuilderApp.vue'
 import StoreInfoApp from './components/StoreInfoApp.vue'
+import ThemeCardApp from './components/ThemeCardApp.vue'
 import TournamentApp from './components/tournament/TournamentApp.vue'
 import TierListApp from './components/TierListApp.vue'
 import TypeChartApp from './components/TypeChartApp.vue'
@@ -254,6 +255,7 @@ onBeforeUnmount(uninstallButtonSfx)
       <DiceBuilderApp v-else-if="mode === 'diceBuilder'" :open-odds="modeRequest" @back="leaveMode()" />
 
       <StoreInfoApp v-else-if="mode === 'storeInfo'" @back="leaveMode()" />
+      <ThemeCardApp v-else-if="mode === 'themeCards'" @back="leaveMode()" />
 
       <PriceLogApp v-else-if="mode === 'priceLog'" @back="leaveMode()" />
 

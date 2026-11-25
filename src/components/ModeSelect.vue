@@ -67,6 +67,8 @@ const MODES = [
   // up front pushed the front page past the point where every card still fit.
   // 哪裡買得到：找得到的人多半是已經決定要買的人，不是打開 app 要做的第一件事。
   { key: 'storeInfo', group: 'tools' },
+  // 主題卡只在實體聚會用得到，所以不佔首頁 —— 會翻到它的人是正要出門參賽的人。
+  { key: 'themeCards', group: 'tools' },
   { key: 'tournament', group: 'tools' },
   { key: 'tierMaker', group: 'tools' },
   // 所有人都看得到，數值只有後台改得動（調整鍵長在那張圖上，見 TraitChartApp）。

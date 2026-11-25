@@ -148,6 +148,7 @@
     "solo": "單人爬塔",
     "diceBuilder": "模擬組骰",
     "storeInfo": "店家資訊",
+    "themeCards": "主題卡",
     "priceLog": "交易市場",
     "tournament": "賽程編排",
     "tierList": "招式期望排行",
@@ -429,6 +430,24 @@
     "colName": "店家名稱",
     "colAddress": "地址",
     "colType": "類型"
+  },
+  "themeCards": {
+    "title": "主題卡",
+    "themesHint": "實體聚會限定的規則卡。先選主題，再挑這場要帶的卡。",
+    "cardCount": "{n} 張卡",
+    "pickedMark": "已選 {n}",
+    "noSets": "目前還沒有公開的主題。",
+    "noCards": "這個主題還沒有卡。",
+    "limitLabel": "一場帶幾張",
+    "limitHint": "張數依當場賽事規則調整。每張卡一場只能用一次。",
+    "confirm": "確定（{n}）",
+    "playTitle": "這場帶的卡",
+    "playHint": "還剩 {n} 張沒用。用掉時按一下，讓對手看得到。",
+    "markUsed": "使用",
+    "undoUse": "按錯了，收回",
+    "usedStamp": "已使用",
+    "repick": "重新選卡",
+    "newMatch": "開新的一場"
   },
   "diceBuilder": {
     "title": "模擬組骰",

@@ -148,6 +148,7 @@
     "solo": "Solo Tower",
     "diceBuilder": "Dice Assembly Sim",
     "storeInfo": "Stores",
+    "themeCards": "Theme Cards",
     "priceLog": "Market",
     "tournament": "Tournament Scheduler",
     "tierList": "Move value ranking",
@@ -429,6 +430,24 @@
     "colName": "Store",
     "colAddress": "Address",
     "colType": "Type"
+  },
+  "themeCards": {
+    "title": "Theme Cards",
+    "themesHint": "Rule cards for in-person meetups. Pick a theme, then the cards you are bringing.",
+    "cardCount": "{n} cards",
+    "pickedMark": "{n} picked",
+    "noSets": "No themes are open yet.",
+    "noCards": "This theme has no cards yet.",
+    "limitLabel": "Cards per match",
+    "limitHint": "Set this to whatever the event announced. Each card can be used once per match.",
+    "confirm": "Confirm ({n})",
+    "playTitle": "Your cards this match",
+    "playHint": "{n} still unused. Tap one as you play it so your opponent can see.",
+    "markUsed": "Use",
+    "undoUse": "Undo",
+    "usedStamp": "USED",
+    "repick": "Pick again",
+    "newMatch": "New match"
   },
   "diceBuilder": {
     "title": "Dice Assembly Simulator",
