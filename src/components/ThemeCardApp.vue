@@ -3,8 +3,8 @@ import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { asset } from '../data/assetPath'
 import {
-  DEFAULT_LIMIT, MAX_LIMIT, MIN_LIMIT,
-  loadState, saveState, themeCardAsset, visibleSets
+  DEFAULT_LIMIT, MAX_LIMIT, MIN_LIMIT, allCards,
+  factionOf, loadState, saveState, themeCardAsset, visibleSets
 } from '../data/themeCards'
 
 const emit = defineEmits(['back'])
@@ -18,26 +18,45 @@ const limit = ref(saved.limit || DEFAULT_LIMIT)
 // 同一天，而玩家會在兩個畫面之間來回對照。
 const bySet = ref(saved.bySet || {})
 
-/* 三層：主題列表 → 卡表（左右翻、選卡、按確定）→ 出陣（按使用）。
-   做成三層而不是一頁，是因為這三件事發生在不同時間：挑主題是賽前看的，選卡是開打
-   前做的，出陣是打到一半拿給對手看的。擠在同一頁的話，最後那個畫面上滿是當下不該
-   再按的按鈕。 */
+/* 四層：主題列表 → 選邊 → 卡表（左右翻、選卡、按確定）→ 出陣（按使用）。
+   做成一層一層而不是一頁，是因為這幾件事發生在不同時間：挑主題跟選邊是賽前決定的，
+   選卡是開打前做的，出陣是打到一半拿給對手看的。擠在同一頁的話，最後那個畫面上滿
+   是當下不該再按的按鈕。
+
+   選邊單獨一步，是因為它跟選卡不是同一種決定：卡可以邊看邊換，邊選錯了整手卡都要
+   重來。放在同一頁上就會變成卡表上方一排可以隨手點到的標籤。 */
 const view = ref('themes')
 const activeSetId = ref(null)
 
 const activeSet = computed(() => sets.find(s => s.id === activeSetId.value) || null)
 
 function slot(id) {
-  if (!bySet.value[id]) bySet.value[id] = { picked: [], used: [] }
+  if (!bySet.value[id]) bySet.value[id] = { faction: null, picked: [], used: [] }
   return bySet.value[id]
+}
+
+// 玩家站的那一邊。沒選邊就沒有卡表 —— 這個主題的卡全部都屬於某一邊。
+const activeFaction = computed(() =>
+  activeSet.value ? factionOf(activeSet.value, slot(activeSet.value.id).faction) : null)
+
+// 選邊。換邊等於整手卡重來，因為對面的卡本來就帶不走 —— 與其留著一份跨不過去的
+// 紀錄，不如在這裡就清乾淨，讓「我現在帶的是哪幾張」只有一個答案。
+function chooseFaction(faction) {
+  const s = slot(activeSetId.value)
+  if (s.faction !== faction.id) {
+    s.faction = faction.id
+    s.picked = []
+    s.used = []
+  }
+  view.value = 'pick'
 }
 
 const picked = computed(() => (activeSet.value ? slot(activeSet.value.id).picked : []))
 const used = computed(() => (activeSet.value ? slot(activeSet.value.id).used : []))
 
 const pickedCards = computed(() =>
-  activeSet.value
-    ? picked.value.map(id => activeSet.value.cards.find(c => c.id === id)).filter(Boolean)
+  activeFaction.value
+    ? picked.value.map(id => activeFaction.value.cards.find(c => c.id === id)).filter(Boolean)
     : []
 )
 
@@ -47,19 +66,24 @@ watch([limit, activeSetId, bySet], () => {
 
 function openSet(set) {
   activeSetId.value = set.id
+  const s = slot(set.id)
   // 已經選好、而且已經用掉其中幾張的那一組，直接回到出陣 —— 那代表上一場還沒打完，
   // 手機只是鎖了一次屏。重新選卡永遠按得到，但不該是回來時的預設動作。
-  const s = slot(set.id)
-  view.value = s.used.length > 0 ? 'play' : 'pick'
+  if (!factionOf(set, s.faction)) view.value = 'faction'
+  else view.value = s.used.length > 0 ? 'play' : 'pick'
 }
 
 function cardImage(card) {
   return card.image ? asset(themeCardAsset(card.image)) : ''
 }
 
-const frameImage = computed(() =>
-  activeSet.value && activeSet.value.frame ? asset(themeCardAsset(activeSet.value.frame)) : ''
-)
+// 陣營自己的框優先。警察跟歹徒的卡在桌上要一眼分得出來，而那通常就是框的差別。
+const frameImage = computed(() => {
+  const own = activeFaction.value && activeFaction.value.frame
+  const shared = activeSet.value && activeSet.value.frame
+  const file = own || shared
+  return file ? asset(themeCardAsset(file)) : ''
+})
 
 /* ── 左右翻卡 ──────────────────────────────────────────────────────────
    一次一張。卡是有正面的東西 —— 縮成兩欄的小方塊可以比較，但看不出那是一張卡，而
@@ -73,7 +97,7 @@ const activeIndex = ref(0)
 
 // 目前這個畫面在翻的是哪一疊。選卡翻的是整組卡表，出陣翻的只有自己帶的那幾張。
 const slides = computed(() => {
-  if (view.value === 'pick') return activeSet.value ? activeSet.value.cards : []
+  if (view.value === 'pick') return activeFaction.value ? activeFaction.value.cards : []
   if (view.value === 'play') return pickedCards.value
   return []
 })
@@ -182,10 +206,15 @@ const remaining = computed(() => pickedCards.value.filter(c => !isUsed(c)).lengt
         <button v-for="s in sets" :key="s.id" class="tcard-theme" @click="openSet(s)">
           <span class="tcard-theme-name">{{ s.name }}</span>
           <span class="tcard-theme-sub">
-            {{ s.tagline || t('themeCards.cardCount', { n: s.cards.length }) }}
+            {{ s.tagline || t('themeCards.cardCount', { n: allCards(s).length }) }}
           </span>
+          <!-- 標的是「你站哪邊、帶了幾張」。只報張數的話，回到這一頁最想確認的那
+               件事反而看不到。 -->
           <span v-if="slot(s.id).picked.length" class="tcard-theme-mark">
-            {{ t('themeCards.pickedMark', { n: slot(s.id).picked.length }) }}
+            {{ t('themeCards.pickedMark', {
+              side: factionOf(s, slot(s.id).faction)?.name || '',
+              n: slot(s.id).picked.length
+            }) }}
           </span>
         </button>
       </div>
@@ -195,11 +224,37 @@ const remaining = computed(() => pickedCards.value.filter(c => !isUsed(c)).lengt
       </div>
     </template>
 
+    <!-- ── 選邊 ── -->
+    <template v-else-if="view === 'faction'">
+      <div class="modal-title tcard-title">{{ activeSet.name }}</div>
+      <div class="tcard-hint">{{ t('themeCards.factionHint') }}</div>
+
+      <div class="tcard-list">
+        <button
+          v-for="f in activeSet.factions"
+          :key="f.id"
+          class="tcard-faction"
+          @click="chooseFaction(f)"
+        >
+          <span class="tcard-faction-name">{{ f.name }}</span>
+          <span class="tcard-faction-sub">{{ f.tagline }}</span>
+          <span class="tcard-faction-count">{{ t('themeCards.cardCount', { n: f.cards.length }) }}</span>
+        </button>
+      </div>
+
+      <div class="tcard-foot">
+        <button class="btn secondary" @click="view = 'themes'">{{ t('common.back') }}</button>
+      </div>
+    </template>
+
     <!-- ── 卡表／選卡與出陣共用同一疊卡，只有上下的字跟按鈕不同 ── -->
     <template v-else>
       <div class="modal-title tcard-title">
         {{ view === 'pick' ? activeSet.name : t('themeCards.playTitle') }}
       </div>
+      <!-- 站哪邊要一直看得到。選邊是在上一個畫面做的，走到這裡已經不在眼前了，而
+           它決定了這一整疊卡。 -->
+      <div v-if="activeFaction" class="tcard-side">{{ activeFaction.name }}</div>
 
       <div v-if="view === 'pick'" class="tcard-limit">
         <span class="tcard-limit-label">{{ t('themeCards.limitLabel') }}</span>
@@ -285,7 +340,7 @@ const remaining = computed(() => pickedCards.value.filter(c => !isUsed(c)).lengt
 
       <div class="tcard-foot">
         <template v-if="view === 'pick'">
-          <button class="btn secondary" @click="view = 'themes'">{{ t('common.back') }}</button>
+          <button class="btn secondary" @click="view = 'faction'">{{ t('themeCards.changeSide') }}</button>
           <button class="btn" :disabled="picked.length === 0" @click="view = 'play'">
             {{ t('themeCards.confirm', { n: picked.length }) }}
           </button>
@@ -380,6 +435,37 @@ const remaining = computed(() => pickedCards.value.filter(c => !isUsed(c)).lengt
 }
 
 .tcard-theme-name { font-size: 0.875rem; font-weight: 800; color: var(--ink); }
+
+/* 選邊的兩顆鈕比主題列更高，而且平分剩下的高度：這一頁只有一個決定，它該佔滿整
+   個畫面，而不是縮在上緣看起來像還有別的東西在底下。 */
+.tcard-faction {
+  flex: 1 1 0;
+  min-height: 4.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1875rem;
+  background: var(--card);
+  border: 0.125rem solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.75rem;
+  cursor: pointer;
+}
+
+.tcard-faction-name { font-size: 1.25rem; font-weight: 800; color: var(--ink); }
+.tcard-faction-sub { font-size: 0.6875rem; font-weight: 700; color: var(--sub); }
+.tcard-faction-count { font-size: 0.5625rem; font-weight: 800; color: var(--sub); }
+
+.tcard-side {
+  font-size: 0.625rem;
+  font-weight: 800;
+  color: var(--accent-strong);
+  background: var(--accent);
+  border-radius: 999px;
+  padding: 0.0625rem 0.5rem;
+  flex-shrink: 0;
+}
 .tcard-theme-sub { font-size: 0.625rem; font-weight: 700; color: var(--sub); }
 
 .tcard-theme-mark {

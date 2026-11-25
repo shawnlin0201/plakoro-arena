@@ -18,24 +18,66 @@ export const THEME_CARD_SETS = [
     id: 'sin-city',
     name: '罪惡城',
     // 主題列表上的一句話。不是卡表的摘要，是「這一場的世界長什麼樣」。
-    tagline: '',
+    tagline: '警匪對峙的一夜。先選邊站，再決定帶哪幾張上桌。',
     // 這一組共用的卡框。放在主題上而不是每張卡上，因為換主題才會換框 —— 同一組裡
-    // 十張卡各自記一次同樣的檔名，只是十個會不同步的地方。
+    // 十張卡各自記一次同樣的檔名，只是十個會不同步的地方。陣營要是有自己的框，寫
+    // 在陣營上就會蓋過這一個。
     // 檔案放 public/image/THEMECARD/ 底下，值寫相對路徑（例：'sin-city/frame.png'）。
     frame: '',
     enabled: true,
-    cards: [
+    // 一個主題分成兩邊，玩家只能選一邊。這是規則本身，不是分類方式 —— 兩邊的卡放
+    // 在同一個陣列裡再標一個 side 欄位也做得到，但那樣「只能選一邊」就變成畫面上
+    // 的一條規矩，而不是資料的形狀，之後很容易在某個地方忘記擋。
+    factions: [
       {
-        id: 'sin-city-police',
-        name: '警察！不准動！',
-        text: '對方的角色骰趴下。',
-        // 卡圖同樣相對於 public/image/THEMECARD/。沒填就只顯示文字 —— 卡表要能在
-        // 美術進來之前先排得出來，不然文案跟圖片就得綁在一起等。
-        image: ''
+        id: 'police',
+        name: '警察',
+        tagline: '壓制對手的行動',
+        frame: '',
+        cards: [
+          {
+            id: 'sin-city-police-freeze',
+            name: '「趴下！」',
+            text: '對手下回合角色骰固定為趴下。',
+            // 卡圖同樣相對於 public/image/THEMECARD/。沒填就只顯示文字 —— 卡表要
+            // 能在美術進來之前先排得出來，不然文案跟圖片就得綁在一起等。
+            image: ''
+          },
+          {
+            id: 'sin-city-police-shoot',
+            name: '「射擊」',
+            text: '對方下回合角色骰若不是左橫或右橫，立刻扣除 20 HP。',
+            image: ''
+          }
+        ]
+      },
+      {
+        id: 'crook',
+        name: '歹徒',
+        tagline: '改寫自己的運氣',
+        frame: '',
+        cards: [
+          {
+            id: 'sin-city-crook-loaded-dice',
+            name: '「作弊骰子」',
+            text: '從丟出的能量骰、角色骰挑選一個重新丟一次。',
+            image: ''
+          }
+        ]
       }
     ]
   }
 ]
+
+// 一組主題的全部卡，不分陣營。只有「這個 id 還存在嗎」這種問題該用它 —— 玩家看得
+// 到的任何一個畫面都是站在某一邊的，拿整組卡表去跑就會把另一邊的卡也端出來。
+export function allCards(set) {
+  return (set.factions || []).flatMap(f => f.cards || [])
+}
+
+export function factionOf(set, factionId) {
+  return (set && set.factions || []).find(f => f.id === factionId) || null
+}
 
 export const DEFAULT_LIMIT = 2
 
@@ -77,12 +119,15 @@ export function loadState() {
       for (const set of THEME_CARD_SETS) {
         const saved = data.bySet[set.id]
         if (!saved || typeof saved !== 'object') continue
-        // 只收現在這組卡表還認得的 id。卡表改過之後，舊紀錄裡那些已經不存在的卡會
-        // 在這裡被濾掉，而不是變成畫面上選不掉的幽靈。
-        const known = new Set(set.cards.map(c => c.id))
+        const faction = factionOf(set, saved.faction)
+        if (!faction) continue
+        // 只收這一邊還認得的 id。卡表改過、或者陣營從底下被換掉之後，舊紀錄裡那些
+        // 已經不存在的卡會在這裡被濾掉，而不是變成畫面上選不掉的幽靈。對面陣營的
+        // 卡也擋在這裡 —— 選邊是規則，不是上一次打開時的偏好。
+        const known = new Set(faction.cards.map(c => c.id))
         const picked = Array.isArray(saved.picked) ? saved.picked.filter(id => known.has(id)) : []
         const used = Array.isArray(saved.used) ? saved.used.filter(id => picked.includes(id)) : []
-        state.bySet[set.id] = { picked, used }
+        state.bySet[set.id] = { faction: faction.id, picked, used }
       }
     }
     return state
