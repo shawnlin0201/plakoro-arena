@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { asset } from '../data/assetPath'
 import {
@@ -18,7 +18,7 @@ const limit = ref(saved.limit || DEFAULT_LIMIT)
 // 同一天，而玩家會在兩個畫面之間來回對照。
 const bySet = ref(saved.bySet || {})
 
-/* 三層：主題列表 → 卡表（選卡、按確定）→ 出陣（按使用）。
+/* 三層：主題列表 → 卡表（左右翻、選卡、按確定）→ 出陣（按使用）。
    做成三層而不是一頁，是因為這三件事發生在不同時間：挑主題是賽前看的，選卡是開打
    前做的，出陣是打到一半拿給對手看的。擠在同一頁的話，最後那個畫面上滿是當下不該
    再按的按鈕。 */
@@ -61,19 +61,65 @@ const frameImage = computed(() =>
   activeSet.value && activeSet.value.frame ? asset(themeCardAsset(activeSet.value.frame)) : ''
 )
 
+/* ── 左右翻卡 ──────────────────────────────────────────────────────────
+   一次一張。卡是有正面的東西 —— 縮成兩欄的小方塊可以比較，但看不出那是一張卡，而
+   實體賽上玩家手裡拿的就是卡。
+
+   翻頁用的是原生的橫向捲動加 scroll-snap，不是自己算 transform：這樣手指滑、箭頭
+   點、鍵盤 Tab 過去都走同一條路，而慣性與回彈是瀏覽器原本就做好的。
+   ──────────────────────────────────────────────────────────────────── */
+const trackRef = ref(null)
+const activeIndex = ref(0)
+
+// 目前這個畫面在翻的是哪一疊。選卡翻的是整組卡表，出陣翻的只有自己帶的那幾張。
+const slides = computed(() => {
+  if (view.value === 'pick') return activeSet.value ? activeSet.value.cards : []
+  if (view.value === 'play') return pickedCards.value
+  return []
+})
+
+const activeCard = computed(() => slides.value[activeIndex.value] || null)
+
+// 一格的寬度就是可視區的寬度，所以第幾張 = 捲過幾個可視區寬。比起量每個元素的位
+// 置，這個算法不會因為間距或邊框改了就失準。
+function onScroll() {
+  const el = trackRef.value
+  if (!el || !el.clientWidth) return
+  activeIndex.value = Math.round(el.scrollLeft / el.clientWidth)
+}
+
+function go(i) {
+  const el = trackRef.value
+  if (!el) return
+  const n = Math.max(0, Math.min(slides.value.length - 1, i))
+  el.scrollTo({ left: n * el.clientWidth, behavior: 'smooth' })
+}
+
+// 換畫面要回到第一張，而且是瞬間回到 —— 這時候捲動動畫會變成「新畫面自己動了一
+// 下」，看起來像誤觸。等 DOM 換完才捲，不然捲的還是上一疊。
+watch(view, async () => {
+  activeIndex.value = 0
+  await nextTick()
+  if (trackRef.value) trackRef.value.scrollLeft = 0
+})
+
 /* ── 選卡 ── */
 
 function isPicked(card) {
-  return picked.value.includes(card.id)
+  return card ? picked.value.includes(card.id) : false
 }
 
 // 選到第幾張。現場講「我第一張出警察」要講得出口，所以卡上標的是順序而不是一個勾。
 function pickOrder(card) {
+  if (!card) return null
   const i = picked.value.indexOf(card.id)
   return i < 0 ? null : i + 1
 }
 
+// 選取是底下那顆鈕，不是點卡本身：在一個要用滑的介面裡，點擊跟滑動只差幾個像素，
+// 而選錯卡在現場是要重講一次規則的。
 function toggle(card) {
+  if (!card) return
   const s = slot(activeSet.value.id)
   const i = s.picked.indexOf(card.id)
   if (i >= 0) {
@@ -85,6 +131,8 @@ function toggle(card) {
   if (s.picked.length >= limit.value) return
   s.picked.push(card.id)
 }
+
+const pickFull = computed(() => picked.value.length >= limit.value)
 
 // 調張數調到比已選的少時，從最後選的那張開始退。退最早選的那張會把玩家心裡的第一
 // 順位拿走，而他剛剛做的動作是「少帶一張」，不是「重選」。
@@ -102,9 +150,10 @@ function setLimit(n) {
 
 /* ── 出陣 ── */
 
-const isUsed = card => used.value.includes(card.id)
+const isUsed = card => (card ? used.value.includes(card.id) : false)
 
 function toggleUsed(card) {
+  if (!card) return
   const s = slot(activeSet.value.id)
   const i = s.used.indexOf(card.id)
   if (i >= 0) s.used.splice(i, 1)
@@ -128,7 +177,7 @@ const remaining = computed(() => pickedCards.value.filter(c => !isUsed(c)).lengt
       <div class="modal-title tcard-title">{{ t('themeCards.title') }}</div>
       <div class="tcard-hint">{{ t('themeCards.themesHint') }}</div>
 
-      <div class="tcard-scroll">
+      <div class="tcard-list">
         <div v-if="sets.length === 0" class="tcard-empty">{{ t('themeCards.noSets') }}</div>
         <button v-for="s in sets" :key="s.id" class="tcard-theme" @click="openSet(s)">
           <span class="tcard-theme-name">{{ s.name }}</span>
@@ -146,89 +195,107 @@ const remaining = computed(() => pickedCards.value.filter(c => !isUsed(c)).lengt
       </div>
     </template>
 
-    <!-- ── 卡表／選卡 ── -->
-    <template v-else-if="view === 'pick'">
-      <div class="modal-title tcard-title">{{ activeSet.name }}</div>
+    <!-- ── 卡表／選卡與出陣共用同一疊卡，只有上下的字跟按鈕不同 ── -->
+    <template v-else>
+      <div class="modal-title tcard-title">
+        {{ view === 'pick' ? activeSet.name : t('themeCards.playTitle') }}
+      </div>
 
-      <div class="tcard-limit">
+      <div v-if="view === 'pick'" class="tcard-limit">
         <span class="tcard-limit-label">{{ t('themeCards.limitLabel') }}</span>
         <button class="tcard-step" :disabled="limit <= MIN_LIMIT" @click="setLimit(limit - 1)">−</button>
         <span class="tcard-limit-n">{{ limit }}</span>
         <button class="tcard-step" :disabled="limit >= MAX_LIMIT" @click="setLimit(limit + 1)">＋</button>
       </div>
-      <div class="tcard-hint">{{ t('themeCards.limitHint') }}</div>
 
-      <div class="tcard-scroll grid">
-        <div v-if="activeSet.cards.length === 0" class="tcard-empty">{{ t('themeCards.noCards') }}</div>
-        <div
-          v-for="card in activeSet.cards"
-          :key="card.id"
-          class="tcard"
-          :class="{ on: isPicked(card), muted: !isPicked(card) && picked.length >= limit }"
-          role="button"
-          tabindex="0"
-          @click="toggle(card)"
-          @keydown.enter.prevent="toggle(card)"
-          @keydown.space.prevent="toggle(card)"
-        >
-          <span v-if="pickOrder(card)" class="tcard-order">{{ pickOrder(card) }}</span>
-          <!-- 卡框疊在卡圖上，兩者都還沒進來時整塊不佔位 —— 卡表要能在美術完成之前
-               先排得出來。 -->
-          <div v-if="cardImage(card) || frameImage" class="tcard-art">
-            <img v-if="cardImage(card)" class="tcard-art-img" :src="cardImage(card)" :alt="card.name">
-            <img v-if="frameImage" class="tcard-art-frame" :src="frameImage" alt="" aria-hidden="true">
-          </div>
-          <div class="tcard-name">{{ card.name }}</div>
-          <div class="tcard-text">{{ card.text }}</div>
-        </div>
+      <div class="tcard-hint">
+        {{ view === 'pick' ? t('themeCards.limitHint') : t('themeCards.playHint', { n: remaining }) }}
       </div>
 
-      <div class="tcard-foot">
-        <button class="btn secondary" @click="view = 'themes'">{{ t('common.back') }}</button>
-        <button class="btn" :disabled="picked.length === 0" @click="view = 'play'">
-          {{ t('themeCards.confirm', { n: picked.length }) }}
-        </button>
-      </div>
-    </template>
+      <div v-if="slides.length === 0" class="tcard-empty">{{ t('themeCards.noCards') }}</div>
 
-    <!-- ── 出陣 ── -->
-    <template v-else>
-      <div class="modal-title tcard-title">{{ t('themeCards.playTitle') }}</div>
-      <div class="tcard-hint">{{ t('themeCards.playHint', { n: remaining }) }}</div>
+      <template v-else>
+        <div class="tcard-stage">
+          <button
+            class="tcard-arrow left"
+            :disabled="activeIndex <= 0"
+            :aria-label="t('themeCards.prev')"
+            @click="go(activeIndex - 1)"
+          >‹</button>
 
-      <div class="tcard-scroll">
-        <div
-          v-for="(card, i) in pickedCards"
-          :key="card.id"
-          class="tcard big"
-          :class="{ spent: isUsed(card) }"
-        >
-          <span class="tcard-order">{{ i + 1 }}</span>
-          <!-- 卡面跟按鈕分開包：章蓋的是卡，不是按鈕。兩者放在同一層時章會落在整張
-               的正中央，也就是壓在「收回」上面 —— 那顆鈕變得看不清楚，而且看起來
-               像是章在說那顆鈕已經用掉了。 -->
-          <div class="tcard-body">
-            <div v-if="cardImage(card) || frameImage" class="tcard-art">
-              <img v-if="cardImage(card)" class="tcard-art-img" :src="cardImage(card)" :alt="card.name">
-              <img v-if="frameImage" class="tcard-art-frame" :src="frameImage" alt="" aria-hidden="true">
+          <div ref="trackRef" class="tcard-track" @scroll.passive="onScroll">
+            <div v-for="card in slides" :key="card.id" class="tcard-slide">
+              <div class="tcard" :class="{ on: view === 'pick' && isPicked(card), spent: view === 'play' && isUsed(card) }">
+                <span v-if="pickOrder(card)" class="tcard-order">{{ pickOrder(card) }}</span>
+                <!-- 卡框疊在卡圖上，兩者都還沒進來時只剩文字 —— 卡表要能在美術完成
+                     之前先排得出來，不然文案跟圖片就得綁在一起等。 -->
+                <div class="tcard-art">
+                  <img v-if="cardImage(card)" class="tcard-art-img" :src="cardImage(card)" :alt="card.name">
+                  <img v-if="frameImage" class="tcard-art-frame" :src="frameImage" alt="" aria-hidden="true">
+                  <div v-if="!cardImage(card)" class="tcard-plain">
+                    <div class="tcard-name">{{ card.name }}</div>
+                    <div class="tcard-text">{{ card.text }}</div>
+                  </div>
+                  <!-- 用掉的那張要一眼看得出來，因為這個畫面是拿給對面的人看的，不
+                       是給自己記的。所以不是把按鈕變灰就算了，卡面本身要蓋上章。 -->
+                  <div v-if="view === 'play' && isUsed(card)" class="tcard-stamp">
+                    {{ t('themeCards.usedStamp') }}
+                  </div>
+                </div>
+                <!-- 卡圖進來之後，名稱與效果印在卡上，底下這行就只留名稱當標籤。 -->
+                <div v-if="cardImage(card)" class="tcard-caption">{{ card.name }}</div>
+              </div>
             </div>
-            <div class="tcard-name">{{ card.name }}</div>
-            <div class="tcard-text">{{ card.text }}</div>
-            <!-- 用掉的那張要一眼看得出來，因為這個畫面是拿給對面的人看的，不是給自
-                 己記的。所以不是把按鈕變灰就算了，卡面本身要蓋上章。 -->
-            <div v-if="isUsed(card)" class="tcard-stamp">{{ t('themeCards.usedStamp') }}</div>
           </div>
-          <button class="btn tcard-use" :class="{ secondary: isUsed(card) }" @click="toggleUsed(card)">
-            {{ isUsed(card) ? t('themeCards.undoUse') : t('themeCards.markUsed') }}
+
+          <button
+            class="tcard-arrow right"
+            :disabled="activeIndex >= slides.length - 1"
+            :aria-label="t('themeCards.next')"
+            @click="go(activeIndex + 1)"
+          >›</button>
+        </div>
+
+        <div class="tcard-count">{{ activeIndex + 1 }} / {{ slides.length }}</div>
+
+        <!-- 這一張的動作。固定在同一個位置，所以翻到哪張都是按同一個地方 —— 現場
+             不必每翻一張就重新找按鈕。 -->
+        <div class="tcard-act">
+          <button
+            v-if="view === 'pick'"
+            class="btn"
+            :class="{ secondary: isPicked(activeCard) }"
+            :disabled="!isPicked(activeCard) && pickFull"
+            @click="toggle(activeCard)"
+          >
+            {{ isPicked(activeCard)
+              ? t('themeCards.unpick', { n: pickOrder(activeCard) })
+              : pickFull ? t('themeCards.pickFull', { n: limit }) : t('themeCards.pick') }}
+          </button>
+          <button
+            v-else
+            class="btn"
+            :class="{ secondary: isUsed(activeCard) }"
+            @click="toggleUsed(activeCard)"
+          >
+            {{ isUsed(activeCard) ? t('themeCards.undoUse') : t('themeCards.markUsed') }}
           </button>
         </div>
-      </div>
+      </template>
 
       <div class="tcard-foot">
-        <button class="btn secondary" @click="view = 'pick'">{{ t('themeCards.repick') }}</button>
-        <button class="btn secondary" :disabled="used.length === 0" @click="newMatch">
-          {{ t('themeCards.newMatch') }}
-        </button>
+        <template v-if="view === 'pick'">
+          <button class="btn secondary" @click="view = 'themes'">{{ t('common.back') }}</button>
+          <button class="btn" :disabled="picked.length === 0" @click="view = 'play'">
+            {{ t('themeCards.confirm', { n: picked.length }) }}
+          </button>
+        </template>
+        <template v-else>
+          <button class="btn secondary" @click="view = 'pick'">{{ t('themeCards.repick') }}</button>
+          <button class="btn secondary" :disabled="used.length === 0" @click="newMatch">
+            {{ t('themeCards.newMatch') }}
+          </button>
+        </template>
       </div>
     </template>
   </div>
@@ -284,9 +351,8 @@ const remaining = computed(() => pickedCards.value.filter(c => !isUsed(c)).lengt
   flex-shrink: 0;
 }
 
-/* 列表自己捲，上面的標題與張數跟下面的按鈕都留在原地 —— 現場要改張數時不必先把列
-   表捲回最上面。 */
-.tcard-scroll {
+/* ── 主題列表 ── */
+.tcard-list {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
@@ -298,18 +364,6 @@ const remaining = computed(() => pickedCards.value.filter(c => !isUsed(c)).lengt
   gap: 0.375rem;
 }
 
-/* 卡表兩欄。一欄的話一張卡佔滿整個寬度，十張卡要捲很久才看得完一輪；兩欄剛好讓一
-   組卡表在一個畫面裡比較得完。 */
-.tcard-scroll.grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-content: start;
-  gap: 0.5rem;
-}
-
-.tcard-scroll.grid .tcard-empty { grid-column: 1 / -1; }
-
-/* ── 主題列表 ── */
 .tcard-theme {
   position: relative;
   display: flex;
@@ -340,46 +394,94 @@ const remaining = computed(() => pickedCards.value.filter(c => !isUsed(c)).lengt
   padding: 0.0625rem 0.375rem;
 }
 
+/* ── 左右翻的卡台 ── */
+.tcard-stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  max-width: 24rem;
+  display: flex;
+  align-items: center;
+}
+
+/* 一格 = 一個可視區寬。卡本身置中、有自己的上限寬度，所以不必靠左右 padding 把卡
+   推到中間 —— 捲動容器的尾端 padding 在部分瀏覽器會被吃掉，最後一張就卡不到中間。 */
+.tcard-track {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tcard-track::-webkit-scrollbar { display: none; }
+
+.tcard-slide {
+  flex: 0 0 100%;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.375rem 0;
+}
+
+.tcard-arrow {
+  flex: 0 0 auto;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  border: 0.0625rem solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  font-size: 1.125rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.tcard-arrow:disabled { opacity: 0.25; cursor: default; }
+
 /* ── 卡 ── */
 .tcard {
   position: relative;
+  /* 高度優先：卡台剩多少就長多高，寬度跟著 63:88 算出來。反過來寫（先定寬）的話，
+     螢幕一矮卡就被切掉下緣。 */
+  height: 100%;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.tcard-art {
+  position: relative;
+  /* 實體卡 6.3 × 8.8 cm。 */
+  aspect-ratio: 63 / 88;
+  height: 100%;
+  min-height: 0;
+  max-width: 100%;
   background: var(--card);
   border: 0.125rem solid var(--line);
   border-radius: var(--radius);
-  padding: 0.5rem 0.625rem;
-  text-align: left;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.tcard.big { cursor: default; }
-
-.tcard.on {
-  border-color: var(--accent-strong);
-  background: var(--accent);
-}
-
-/* 選滿之後，沒選到的卡退到背景去。做成 disabled 的話點下去完全沒反應，玩家會以為
-   卡壞了；這樣是看得出來「不是不能點，是你已經選滿了」。 */
-.tcard.muted { opacity: 0.45; }
-
-/* 淡掉的是卡面，不包含底下那顆鈕 —— 收回是用掉之後唯一還要按得到的東西。 */
-.tcard.spent .tcard-art,
-.tcard.spent .tcard-name,
-.tcard.spent .tcard-text { opacity: 0.4; }
-
-.tcard-body { position: relative; }
-
-/* 卡框與卡圖都是同一個方框，疊在一起。框是上層，所以框的透明區域才是圖露出來的地
-   方 —— 等美術進來時不必改這裡，換檔案就好。 */
-.tcard-art {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 5 / 7;
-  margin-bottom: 0.375rem;
-  border-radius: var(--radius-sm);
   overflow: hidden;
 }
+
+.tcard.on .tcard-art {
+  border-color: var(--accent-strong);
+  box-shadow: 0 0 0 0.1875rem var(--accent);
+}
+
+.tcard.spent .tcard-art-img,
+.tcard.spent .tcard-plain { opacity: 0.4; }
 
 .tcard-art-img,
 .tcard-art-frame {
@@ -390,53 +492,93 @@ const remaining = computed(() => pickedCards.value.filter(c => !isUsed(c)).lengt
   object-fit: contain;
 }
 
+/* 還沒有卡圖時的卡面。不是佔位圖 —— 名稱跟效果本來就是這張卡要講的兩件事，美術進
+   來之後它們改印在圖上，這一塊就不顯示了。 */
+.tcard-plain {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 1rem 0.875rem;
+  text-align: center;
+}
+
+.tcard-name {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.3;
+}
+
+.tcard-text {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--sub);
+  line-height: 1.5;
+}
+
+.tcard-caption {
+  font-size: 0.6875rem;
+  font-weight: 800;
+  color: var(--ink);
+  flex-shrink: 0;
+}
+
 .tcard-order {
   position: absolute;
-  top: -0.375rem;
-  left: -0.375rem;
-  width: 1.125rem;
-  height: 1.125rem;
+  top: -0.25rem;
+  left: -0.25rem;
+  width: 1.375rem;
+  height: 1.375rem;
   border-radius: 50%;
   background: var(--accent-strong);
   color: var(--bg);
-  font-size: 0.625rem;
+  font-size: 0.75rem;
   font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1;
+  z-index: 2;
 }
 
-.tcard-name {
-  font-size: 0.8125rem;
-  font-weight: 800;
-  color: var(--ink);
-}
-
-.tcard-text {
-  font-size: 0.6875rem;
-  font-weight: 700;
-  color: var(--sub);
-  margin-top: 0.125rem;
-  line-height: 1.4;
-}
-
+/* 蓋在下三分之一，不是正中央。這個畫面是拿給對手看的，而他要看的是「你用掉了哪
+   一張」—— 章壓在卡名上的話，看得出有東西被用掉了，卻看不出是什麼。 */
 .tcard-stamp {
   position: absolute;
-  top: 50%;
+  top: 68%;
   left: 50%;
   transform: translate(-50%, -50%) rotate(-12deg);
-  border: 0.1875rem solid var(--danger);
+  border: 0.25rem solid var(--danger);
   color: var(--danger);
-  border-radius: 0.375rem;
-  padding: 0.125rem 0.75rem;
-  font-size: 1.125rem;
+  border-radius: 0.5rem;
+  padding: 0.25rem 1rem;
+  font-size: 1.75rem;
   font-weight: 800;
-  letter-spacing: 0.125rem;
+  letter-spacing: 0.1875rem;
+  white-space: nowrap;
   pointer-events: none;
 }
 
-.tcard-use { margin-top: 0.5rem; width: 100%; }
+.tcard-count {
+  font-size: 0.625rem;
+  font-weight: 800;
+  color: var(--sub);
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.tcard-act {
+  padding-top: 0.5rem;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  min-width: 11rem;
+}
+
+.tcard-act .btn { min-width: 11rem; }
 
 .tcard-empty {
   font-size: 0.6875rem;
@@ -444,6 +586,7 @@ const remaining = computed(() => pickedCards.value.filter(c => !isUsed(c)).lengt
   color: var(--sub);
   padding: 1.5rem 0.75rem;
   text-align: center;
+  flex: 1 1 auto;
 }
 
 .tcard-foot {
