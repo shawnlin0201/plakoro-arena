@@ -371,7 +371,7 @@
     "noticeEnded": "Ended",
     "emailLabel": "Email",
     "partsTitle": "Product parts",
-    "partsNote": "Both the player-facing Products page and the dice planner read this. Saving takes effect immediately — no redeploy.",
+    "partsNote": "Both the player-facing Products page and the dice planner read this. Saving takes effect immediately — no redeploy. | If nothing loads, check the backend first: this page needs /api/product-parts, which ships with migration 0038. You will see a connection error until the backend is running and deployed.",
     "partsAdd": "Add product",
     "partsAddDual": "+ Add a square chip",
     "partsUnnamed": "(unnamed)",

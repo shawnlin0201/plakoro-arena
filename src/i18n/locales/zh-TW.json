@@ -371,7 +371,7 @@
     "noticeEnded": "已結束",
     "emailLabel": "信箱",
     "partsTitle": "商品零件表",
-    "partsNote": "玩家端的「產品資訊」與「組骰規劃」讀的都是這一份。存檔後立刻生效，不必重新部署。",
+    "partsNote": "玩家端的「產品資訊」與「組骰規劃」讀的都是這一份。存檔後立刻生效，不必重新部署。｜讀不到資料時先確認後端：這一頁需要 /api/product-parts，而它來自 migration 0038。後端沒啟動或還沒部署時會看到連線錯誤。",
     "partsAdd": "新增商品",
     "partsAddDual": "＋ 加一種方晶片",
     "partsUnnamed": "（未命名）",
