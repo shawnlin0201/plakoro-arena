@@ -19,33 +19,107 @@ export const THEME_CARD_SETS = [
     name: '罪惡城',
     // 主題列表上的一句話。不是卡表的摘要，是「這一場的世界長什麼樣」。
     tagline: '',
-    // 這一組共用的卡框。放在主題上而不是每張卡上，因為換主題才會換框 —— 同一組裡
-    // 十張卡各自記一次同樣的檔名，只是十個會不同步的地方。
-    // 檔案放 public/image/THEMECARD/ 底下，值寫相對路徑（例：'sin-city/frame.png'）。
-    frame: '',
     enabled: true,
-    // 一個主題就是一疊卡，玩家從裡面挑幾張。曾經分成警察／歹徒兩邊各選一邊，後來
-    // 收斂成一律歹徒方，所以那一層拿掉了 —— 留著一個永遠只有一個選項的分支，只是
-    // 讓每個讀這段的人多問一次「另一邊呢」。
+    // 一個主題就是一疊卡，玩家從裡面挑幾張。帶幾張是當場賽事宣布的規矩，不是這個
+    // 工具的，所以這裡不設上限。
+    //
+    // `no` 是卡面上印的編號，跟 id 分開：id 要從卡還沒編號的時候就固定下來，而編號
+    // 是美術定稿時才給的，兩者綁在一起等於每次補編號都要去改一次存檔裡的紀錄。
+    //
+    // `text` 跟卡面上印的是同一句話。卡面寫的是骰面圖示，這裡寫成字 —— 讀螢幕的人、
+    // 以及卡圖還沒進來的時候，看到的要是同一條規則。
+    //
+    // `image` 是整張卡的成品圖（框、標題、內文都已經印在上面），相對於
+    // public/image/THEMECARD/。沒填就只顯示上面的文字 —— 卡表要能在美術進來之前先
+    // 排得出來，不然文案跟圖片就得綁在一起等。
     cards: [
       {
-        id: 'sin-city-loaded-dice',
-        name: '「作弊骰子」',
-        text: '從丟出的能量骰、角色骰挑選一個重新丟一次。',
-        // 卡圖同樣相對於 public/image/THEMECARD/。沒填就只顯示文字 —— 卡表要能在
-        // 美術進來之前先排得出來，不然文案跟圖片就得綁在一起等。
-        image: ''
+        id: 'gtavi-01',
+        no: 'GTAVI-01',
+        name: '警察！趴下！',
+        text: '對方下回合角色骰面固定為倒立。（無法用招式改判骰面）',
+        image: 'sin-city/GTAVI-01.webp'
+      },
+      {
+        id: 'gtavi-02',
+        no: 'GTAVI-02',
+        name: '故障骰子',
+        text: '對手下個回合擲骰結束後，由自己決定一顆對方的能量骰重擲一次。',
+        image: 'sin-city/GTAVI-02.webp'
+      },
+      {
+        id: 'gtavi-03',
+        no: 'GTAVI-03',
+        name: '黑吃黑',
+        text: '此回合我方攻擊後額外造成我方先減 20 血量，對方再減 20 血量。（無法用招式效果免除傷害）',
+        image: 'sin-city/GTAVI-03.webp'
+      },
+      {
+        id: 'gtavi-04',
+        no: 'GTAVI-04',
+        name: '趁火打劫',
+        text: '若對方上回合使出火屬性招式，本回合你造成傷害最後額外加上 20。',
+        image: 'sin-city/GTAVI-04.webp'
+      },
+      {
+        id: 'gtavi-05',
+        no: 'GTAVI-05',
+        name: '亡命狂飆',
+        text: '對手下回合擲骰時，對方需站起來投擲所有骰子，若骰子掉落骰盤、桌子外範圍則無效。（使用此卡的人決定使用哪個骰盤）',
+        image: 'sin-city/GTAVI-05.webp'
+      },
+      {
+        id: 'gtavi-06',
+        no: 'GTAVI-06',
+        name: '地下交易',
+        text: '由你選擇對方的一個能量骰，由對方選擇你的一個能量骰，兩邊互相交換。',
+        image: 'sin-city/GTAVI-06.webp'
+      },
+      {
+        id: 'gtavi-07',
+        no: 'GTAVI-07',
+        name: '武力威嚇',
+        text: '展示角色骰給對方看，對手下回合攻擊時，你減傷 20。',
+        image: 'sin-city/GTAVI-07.webp'
+      },
+      {
+        id: 'gtavi-08',
+        no: 'GTAVI-08',
+        name: '突破火線',
+        text: '對手下回合攻擊使你受到致命傷時，我方丟擲角色骰，若面朝左、右，則傷害減 20。',
+        image: 'sin-city/GTAVI-08.webp'
+      },
+      {
+        id: 'gtavi-09',
+        no: 'GTAVI-09',
+        name: '越獄計畫',
+        text: '免除對手上回合對你所有招式與卡片所帶來的控制。',
+        image: 'sin-city/GTAVI-09.webp'
+      },
+      {
+        id: 'gtavi-10',
+        no: 'GTAVI-10',
+        name: '十面埋伏',
+        text: '對方上回合若未造成傷害，本回合可重擲角色骰一次。',
+        image: 'sin-city/GTAVI-10.webp'
+      },
+      {
+        id: 'gtavi-11',
+        no: 'GTAVI-11',
+        name: '口頭警告',
+        text: '若本回合自己無造成傷害，則下回合傷害結算後額外增加 20 點傷害。',
+        image: 'sin-city/GTAVI-11.webp'
+      },
+      {
+        id: 'gtavi-12',
+        no: 'GTAVI-12',
+        name: '順手牽羊',
+        text: '若本回合自己無造成傷害，則下回合傷害結算後額外增加 20 點傷害。',
+        image: 'sin-city/GTAVI-12.webp'
       }
     ]
   }
 ]
-
-export const DEFAULT_LIMIT = 2
-
-// 上限給到 6：一組卡表目前就幾張，選超過等於全帶，那就不叫選卡了。但實際要帶幾張是
-// 主辦當場宣布的，不是程式說了算 —— 所以這裡只擋住明顯荒謬的數字，剩下交給玩家。
-export const MIN_LIMIT = 1
-export const MAX_LIMIT = 6
 
 const STORAGE_KEY = 'plakoro_theme_cards_v1'
 
@@ -58,7 +132,7 @@ export function visibleSets() {
 }
 
 function emptyState() {
-  return { limit: DEFAULT_LIMIT, lastSet: null, bySet: {} }
+  return { lastSet: null, bySet: {} }
 }
 
 /**
@@ -72,9 +146,8 @@ export function loadState() {
     const data = JSON.parse(raw)
     if (!data || typeof data !== 'object') return emptyState()
     const state = emptyState()
-    if (Number.isInteger(data.limit)) {
-      state.limit = Math.min(MAX_LIMIT, Math.max(MIN_LIMIT, data.limit))
-    }
+    // 舊版存過一個「一場帶幾張」的上限。那條規矩後來交還給當場的賽事了，所以讀回來
+    // 時直接忽略 —— 不必特地清掉，下一次存檔自然就不再寫它。
     if (typeof data.lastSet === 'string' && setById(data.lastSet)) state.lastSet = data.lastSet
     if (data.bySet && typeof data.bySet === 'object') {
       for (const set of THEME_CARD_SETS) {

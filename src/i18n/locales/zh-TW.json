@@ -471,11 +471,8 @@
     "pickedMark": "已選 {n}",
     "noSets": "目前還沒有公開的主題。",
     "noCards": "這個主題還沒有卡。",
-    "limitLabel": "一場帶幾張",
-    "limitHint": "張數依當場賽事規則調整。每張卡一場只能用一次。",
     "pick": "選這張",
     "unpick": "取消第 {n} 張",
-    "pickFull": "已選滿 {n} 張",
     "prev": "上一張",
     "next": "下一張",
     "confirm": "確定（{n}）",
@@ -489,17 +486,15 @@
   },
   "productInfo": {
     "title": "產品資訊",
-    "hint": "每一盒裡有哪些骰子蓋與晶片。點商品展開內容物。",
     "empty": "還沒有商品資料。",
-    "summary": "蓋 {halves}・晶片 {chips}",
-    "contentsUnknown": "這一盒的內容物還沒清點。",
     "releaseUnknown": "未定",
     "releaseMonth": "{month} 上市",
     "statusRandom": "盲盒",
     "statusUnknown": "待清點",
     "category": {
       "starter": "啟程套組",
-      "expeditionSmall": "探險盒組",
+      "expedition01": "探險 EBC01",
+      "expedition02": "探險 EBC02",
       "dx": "DX 套組"
     },
     "part": {
@@ -507,7 +502,13 @@
       "concave": "凹面骰蓋",
       "single": "圓晶片（單屬性）",
       "dual": "方晶片（雙屬性）"
-    }
+    },
+    "releaseOn": "{date} 上市",
+    "colName": "角色",
+    "colHalves": "蓋子",
+    "colChips": "晶片",
+    "exportImage": "匯出圖片",
+    "exporting": "匯出中…"
   },
   "diceBuilder": {
     "title": "模擬組骰",

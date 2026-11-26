@@ -471,11 +471,8 @@
     "pickedMark": "{n} 枚選択中",
     "noSets": "公開中のテーマはまだありません。",
     "noCards": "このテーマにはまだカードがありません。",
-    "limitLabel": "1 戦あたりの枚数",
-    "limitHint": "枚数は当日のルールに合わせて変えてください。各カードは 1 戦に 1 回だけ使えます。",
     "pick": "これにする",
     "unpick": "{n} 枚目を外す",
-    "pickFull": "すでに {n} 枚選択済み",
     "prev": "前のカード",
     "next": "次のカード",
     "confirm": "決定（{n}）",
@@ -489,17 +486,15 @@
   },
   "productInfo": {
     "title": "商品情報",
-    "hint": "各ボックスに入っているダイス半球とチップの一覧。商品をタップで展開。",
     "empty": "商品データがまだありません。",
-    "summary": "半球 {halves}・チップ {chips}",
-    "contentsUnknown": "このボックスの中身はまだ未集計です。",
     "releaseUnknown": "未定",
     "releaseMonth": "{month} 発売",
     "statusRandom": "ブラインド",
     "statusUnknown": "未集計",
     "category": {
       "starter": "スターターセット",
-      "expeditionSmall": "エクスペディションボックス",
+      "expedition01": "エクスペディション EBC01",
+      "expedition02": "エクスペディション EBC02",
       "dx": "DX セット"
     },
     "part": {
@@ -507,7 +502,13 @@
       "concave": "凹面half",
       "single": "丸チップ（単タイプ）",
       "dual": "角チップ（2タイプ）"
-    }
+    },
+    "releaseOn": "{date} 発売",
+    "colName": "キャラ",
+    "colHalves": "半球",
+    "colChips": "チップ",
+    "exportImage": "画像を書き出す",
+    "exporting": "書き出し中…"
   },
   "diceBuilder": {
     "title": "ダイス組立シミュレーター",

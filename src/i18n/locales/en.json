@@ -471,11 +471,8 @@
     "pickedMark": "{n} picked",
     "noSets": "No themes are open yet.",
     "noCards": "This theme has no cards yet.",
-    "limitLabel": "Cards per match",
-    "limitHint": "Set this to whatever the event announced. Each card can be used once per match.",
     "pick": "Pick this",
     "unpick": "Remove #{n}",
-    "pickFull": "{n} already picked",
     "prev": "Previous card",
     "next": "Next card",
     "confirm": "Confirm ({n})",
@@ -489,17 +486,15 @@
   },
   "productInfo": {
     "title": "Products",
-    "hint": "What half-dice and chips come in each box. Tap a product to expand.",
     "empty": "No product data yet.",
-    "summary": "{halves} halves · {chips} chips",
-    "contentsUnknown": "Contents not counted yet.",
     "releaseUnknown": "TBA",
     "releaseMonth": "Out {month}",
     "statusRandom": "Blind box",
     "statusUnknown": "Not counted",
     "category": {
       "starter": "Starter sets",
-      "expeditionSmall": "Expedition boxes",
+      "expedition01": "Expedition EBC01",
+      "expedition02": "Expedition EBC02",
       "dx": "DX sets"
     },
     "part": {
@@ -507,7 +502,13 @@
       "concave": "Concave halves",
       "single": "Round chips (single type)",
       "dual": "Square chips (dual type)"
-    }
+    },
+    "releaseOn": "Out {date}",
+    "colName": "Figure",
+    "colHalves": "Halves",
+    "colChips": "Chips",
+    "exportImage": "Export image",
+    "exporting": "Exporting…"
   },
   "diceBuilder": {
     "title": "Dice Assembly Simulator",
