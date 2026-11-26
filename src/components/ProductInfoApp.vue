@@ -1,19 +1,18 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { asset } from '../data/assetPath'
+import { exportElementAsPng } from '../data/exportImage'
 import {
   TYPE_TO_ZH, isReleased, productParts, releaseIsMonthOnly
 } from '../data/productParts'
+import ChipIcon from './dice/ChipIcon.vue'
 
 const emit = defineEmits(['back'])
 const { t } = useI18n()
 
 // 分類的順序寫死，不是從資料裡推出來的：啟程 → 探險 → DX 是由小到大，而一份「我該
 // 買什麼」的清單照這個順序讀才有意義。資料裡出現沒列到的分類時排在最後，不會消失。
-const CATEGORY_ORDER = ['starter', 'expeditionSmall', 'dx']
-
-const open = ref(null)
+const CATEGORY_ORDER = ['starter', 'expedition01', 'expedition02', 'dx']
 
 const groups = computed(() => {
   const seen = []
@@ -29,89 +28,116 @@ const groups = computed(() => {
     .map(key => ({ key, items: productParts.value.filter(p => p.category === key) }))
 })
 
-/** 一盒裡的零件，排成畫面要的四段。數量是 0 的型別不列 —— 那是一張清單，不是一張表格。 */
-function sections(p) {
-  const row = (counts, label) => ({
-    label,
-    parts: Object.entries(counts || {})
-      .filter(([, n]) => n > 0)
-      .map(([ja, n]) => ({ ja, zh: TYPE_TO_ZH[ja] || ja, n }))
-      // 多的排前面。要回答的問題是「這盒主要補什麼」，而那就是數量最多的那幾個。
-      .sort((a, b) => b.n - a.n || a.zh.localeCompare(b.zh))
+function entries(counts) {
+  return Object.entries(counts || {})
+    .filter(([, n]) => n > 0)
+    // 多的排前面。一格裡要回答的是「這盒主要補什麼」，而那就是數量最多的那幾個。
+    .sort((a, b) => b[1] - a[1])
+}
+
+/** 骰蓋。凸在前、凹在後 —— 一顆骰子要一凸一凹，分開看才知道缺的是哪一半。 */
+function halves(p) {
+  const one = (counts, kind) => entries(counts).map(([ja, n]) => ({
+    key: `${kind}${ja}`, types: [ja], zh: TYPE_TO_ZH[ja] || ja, n
+  }))
+  return [...one(p.convex, 'cv'), ...one(p.concave, 'cc')]
+}
+
+/**
+ * 晶片。圓（單屬性）在前、方（雙屬性）在後，跟盒子裡分裝的順序一致。
+ *
+ * `types` 直接交給 ChipIcon —— 雙屬性是一片斜角分成兩色的晶片，不是兩片。組骰模擬器
+ * 已經是這樣畫的，這裡用同一個元件，兩個畫面講的才會是同一種東西。
+ */
+function chips(p) {
+  const single = entries(p.single).map(([ja, n]) => ({
+    key: `s${ja}`, types: [ja], zh: TYPE_TO_ZH[ja] || ja, n
+  }))
+  const dual = entries(p.dual).map(([pair, n]) => {
+    const [a, b] = pair.split('+')
+    return {
+      key: `d${pair}`, types: [a, b],
+      zh: `${TYPE_TO_ZH[a] || a}／${TYPE_TO_ZH[b] || b}`, n
+    }
   })
-  const dual = {
-    label: 'dual',
-    parts: Object.entries(p.dual || {})
-      .filter(([, n]) => n > 0)
-      .map(([pair, n]) => {
-        const [a, b] = pair.split('+')
-        return { ja: pair, zh: `${TYPE_TO_ZH[a] || a}／${TYPE_TO_ZH[b] || b}`, n, pair: [a, b] }
-      })
-      .sort((a, b) => b.n - a.n || a.zh.localeCompare(b.zh))
+  return [...single, ...dual]
+}
+
+function note(p) {
+  if (!isReleased(p)) {
+    if (!p.release) return t('productInfo.releaseUnknown')
+    return releaseIsMonthOnly(p)
+      ? t('productInfo.releaseMonth', { month: p.release })
+      : t('productInfo.releaseOn', { date: p.release })
   }
-  return [row(p.convex, 'convex'), row(p.concave, 'concave'), row(p.single, 'single'), dual]
-    .filter(s => s.parts.length)
+  if (p.status === 'random') return t('productInfo.statusRandom')
+  if (p.status === 'unknown') return t('productInfo.statusUnknown')
+  return ''
 }
 
-function total(p) {
-  const sum = o => Object.values(o || {}).reduce((a, b) => a + b, 0)
-  return { halves: sum(p.convex) + sum(p.concave), chips: sum(p.single) + sum(p.dual) }
-}
+/* ── 匯出圖片 ────────────────────────────────────────────────────────────
+   截的是標題加整份清單。這一頁沒有任何可切換的狀態 —— 看到什麼就是什麼 —— 所以不像
+   招式期望排行那樣要把操作用的按鈕排除掉，只要把底下那排留在框外就好。
+   ──────────────────────────────────────────────────────────────────── */
+const exportTargetRef = ref(null)
+const exporting = ref(false)
 
-function releaseText(p) {
-  if (!p.release) return t('productInfo.releaseUnknown')
-  if (releaseIsMonthOnly(p)) return t('productInfo.releaseMonth', { month: p.release })
-  return p.release
-}
-
-function icon(ja) {
-  return asset(`image/ICON/${ja}.png`)
+async function exportImage() {
+  if (!exportTargetRef.value || exporting.value) return
+  exporting.value = true
+  try {
+    await exportElementAsPng(exportTargetRef.value, 'plakoro-products')
+  } finally {
+    exporting.value = false
+  }
 }
 </script>
 
 <template>
   <div class="board select-board pi-board">
-    <div class="modal-title pi-title">{{ t('productInfo.title') }}</div>
-    <div class="pi-hint">{{ t('productInfo.hint') }}</div>
-
-    <div class="pi-scroll">
+    <!-- 匯出的範圍：標題加整份清單，底下那排按鈕留在框外。 -->
+    <div ref="exportTargetRef" class="pi-sheet">
+      <div class="modal-title pi-title">{{ t('productInfo.title') }}</div>
       <p v-if="!productParts.length" class="pi-empty">{{ t('productInfo.empty') }}</p>
 
       <template v-for="g in groups" :key="g.key">
         <h3 class="pi-group">{{ t(`productInfo.category.${g.key}`) }}</h3>
 
-        <div v-for="p in g.items" :key="p.key" class="pi-item">
-          <button class="pi-head" @click="open = open === p.key ? null : p.key">
-            <span class="pi-name">{{ p.shortName || p.name }}</span>
-            <span class="pi-meta">
-              <!-- 還沒上市的要先講，不然整段內容物讀起來像「現在買得到」。 -->
-              <span v-if="!isReleased(p)" class="pi-tag soon">{{ releaseText(p) }}</span>
-              <span v-if="p.status === 'random'" class="pi-tag">{{ t('productInfo.statusRandom') }}</span>
-              <span v-else-if="p.status === 'unknown'" class="pi-tag">{{ t('productInfo.statusUnknown') }}</span>
-              <span class="pi-sum">{{ t('productInfo.summary', total(p)) }}</span>
+        <!-- 一盒一列，內容物直接攤開 —— 要比較的是「哪一盒補的是我缺的那種」，而那
+             個比較只有在兩盒同時看得見的時候才做得成。摺起來的話每比一次就要開關
+             兩次。 -->
+        <div class="pi-table">
+          <div class="pi-row pi-head">
+            <span class="pi-c-name">{{ t('productInfo.colName') }}</span>
+            <span class="pi-c-halves">{{ t('productInfo.colHalves') }}</span>
+            <span class="pi-c-chips">{{ t('productInfo.colChips') }}</span>
+          </div>
+
+          <div v-for="p in g.items" :key="p.key" class="pi-row">
+            <span class="pi-c-name">
+              <span class="pi-name">{{ p.shortName || p.name }}</span>
+              <!-- 還沒上市、或還沒清點過的要先講，不然一列空白的內容物看起來就像
+                   「這盒什麼都沒有」。 -->
+              <span v-if="note(p)" class="pi-note">{{ note(p) }}</span>
             </span>
-            <span class="pi-caret" aria-hidden="true">{{ open === p.key ? '▴' : '▾' }}</span>
-          </button>
 
-          <div v-if="open === p.key" class="pi-body">
-            <!-- 還沒數過的那幾盒要說清楚是「不知道」，不是「沒有」。一張空的內容物
-                 清單看起來跟「這盒什麼都沒有」一模一樣。 -->
-            <p v-if="!sections(p).length" class="pi-none">{{ t('productInfo.contentsUnknown') }}</p>
+            <span class="pi-c-halves">
+              <span v-if="!halves(p).length" class="pi-dash">—</span>
+              <span v-for="h in halves(p)" :key="h.key" class="pi-part" :title="h.zh">
+                <ChipIcon :types="h.types" :size="1.375" />
+                <span v-if="h.n > 1" class="pi-n">{{ h.n }}</span>
+              </span>
+            </span>
 
-            <div v-for="sec in sections(p)" :key="sec.label" class="pi-sec">
-              <div class="pi-sec-label">{{ t(`productInfo.part.${sec.label}`) }}</div>
-              <div class="pi-parts">
-                <span v-for="part in sec.parts" :key="part.ja" class="pi-part">
-                  <template v-if="part.pair">
-                    <img class="pi-ic" :src="icon(part.pair[0])" :alt="part.zh">
-                    <img class="pi-ic" :src="icon(part.pair[1])" alt="">
-                  </template>
-                  <img v-else class="pi-ic" :src="icon(part.ja)" :alt="part.zh">
-                  <span class="pi-zh">{{ part.zh }}</span>
-                  <span class="pi-n">×{{ part.n }}</span>
-                </span>
-              </div>
-            </div>
+            <span class="pi-c-chips">
+              <span v-if="!chips(p).length" class="pi-dash">—</span>
+              <!-- 雙屬性是一片斜角分成兩色的晶片，不是兩片，所以交給 ChipIcon 畫 ——
+                   跟組骰模擬器同一個元件。並排兩個圖示會被讀成「兩片單屬性」。 -->
+              <span v-for="c in chips(p)" :key="c.key" class="pi-part" :title="c.zh">
+                <ChipIcon :types="c.types" :size="1.375" />
+                <span v-if="c.n > 1" class="pi-n">{{ c.n }}</span>
+              </span>
+            </span>
           </div>
         </div>
       </template>
@@ -119,133 +145,132 @@ function icon(ja) {
 
     <div class="pi-foot">
       <button class="btn secondary" @click="emit('back')">{{ t('common.back') }}</button>
+      <button class="btn secondary" :disabled="exporting" @click="exportImage">
+        {{ exporting ? t('productInfo.exporting') : t('productInfo.exportImage') }}
+      </button>
     </div>
   </div>
 </template>
 
 <style scoped>
-.pi-board { align-items: center; overflow: hidden; }
-.pi-title { margin: 0.5rem 0 0.25rem; flex-shrink: 0; }
+/* 整塊板自己捲，不是裡面那一欄 —— 匯出要截的是「整份清單」，而一個會捲的容器量到的
+   高度只有看得見的那一截。 */
+.pi-board { align-items: center; overflow-y: auto; }
+.pi-title { margin: 0.5rem 0 0.375rem; flex-shrink: 0; }
 
-.pi-hint {
-  font-size: 0.5625rem;
-  font-weight: 700;
-  color: var(--sub);
-  margin-bottom: 0.375rem;
-  padding: 0 0.75rem;
-  text-align: center;
-  flex-shrink: 0;
-}
 
-.pi-scroll {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
+.pi-sheet {
   width: 100%;
-  max-width: 28rem;
-  padding: 0 0.75rem 0.5rem;
+  max-width: 34rem;
+  padding: 0 0.625rem 0.5rem;
+  background: var(--bg);
 }
 
 .pi-group {
-  margin: 0.625rem 0 0.25rem;
+  margin: 0.625rem 0 0.1875rem;
   font-size: 0.625rem;
   font-weight: 800;
   color: var(--sub);
   letter-spacing: 0.0625rem;
 }
 
-.pi-item {
+.pi-table {
   background: var(--card);
   border: 0.0625rem solid var(--line);
   border-radius: var(--radius-sm);
-  margin-bottom: 0.25rem;
   overflow: hidden;
 }
 
+/* 名稱與蓋子兩欄固定寬，晶片欄吃掉剩下的 —— 晶片是三欄裡唯一會長到換行的，而名稱
+   與蓋子要在上下兩列之間對得齊，不然一整欄讀起來就不像一欄。 */
+.pi-row {
+  display: grid;
+  grid-template-columns: 5rem 5.75rem 1fr;
+  /* 沒有間距，欄與欄之間靠分隔線分開 —— 蓋子跟晶片都是一片片的方塊，只隔一段空白
+     的話兩欄會讀成同一串。線也讓每一欄的左緣對得齊。 */
+  gap: 0;
+  /* stretch 而不是 start：分隔線要從一列的上緣拉到下緣，而那要求格子本身就是滿高的。 */
+  align-items: stretch;
+  padding: 0.3125rem 0.5rem;
+  border-top: 0.0625rem solid var(--line);
+}
+
+.pi-row:first-child { border-top: 0; }
+
 .pi-head {
-  display: flex;
+  background: rgba(0, 0, 0, 0.03);
   align-items: center;
-  gap: 0.375rem;
-  width: 100%;
-  padding: 0.5rem 0.625rem;
-  border: 0;
-  background: none;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.pi-name {
-  flex: 1 1 auto;
-  min-width: 0;
-  font-size: 0.75rem;
-  font-weight: 800;
-  color: var(--ink);
-}
-
-.pi-meta { display: flex; align-items: center; gap: 0.25rem; flex-shrink: 0; }
-
-.pi-tag {
   font-size: 0.5rem;
   font-weight: 800;
   color: var(--sub);
-  background: rgba(0, 0, 0, 0.06);
-  border-radius: 999px;
-  padding: 0.0625rem 0.3125rem;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
-.pi-tag.soon { color: #A8571F; background: rgba(168, 87, 31, 0.14); }
-
-.pi-sum {
-  font-size: 0.5625rem;
-  font-weight: 700;
-  color: var(--sub);
-  font-variant-numeric: tabular-nums;
+.pi-c-name {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.0625rem;
+  min-width: 0;
+  padding-right: 0.5rem;
 }
 
-.pi-caret { flex-shrink: 0; font-size: 0.625rem; color: var(--sub); }
+.pi-c-halves, .pi-c-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  gap: 0.1875rem;
+  min-width: 0;
+  padding: 0 0.5rem;
+  border-left: 0.0625rem solid var(--line);
+}
 
-.pi-body { padding: 0 0.625rem 0.5rem; }
-
-.pi-sec { margin-top: 0.375rem; }
-
-.pi-sec-label {
-  font-size: 0.5625rem;
+.pi-name {
+  font-size: 0.625rem;
   font-weight: 800;
-  color: var(--sub);
-  margin-bottom: 0.1875rem;
+  color: var(--ink);
+  line-height: 1.3;
 }
 
-.pi-parts { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.pi-note { font-size: 0.5rem; font-weight: 800; color: #A8571F; }
 
 .pi-part {
   display: inline-flex;
   align-items: center;
-  gap: 0.125rem;
+  gap: 0.0625rem;
   background: var(--bg);
   border-radius: 999px;
-  padding: 0.125rem 0.375rem 0.125rem 0.25rem;
+  padding: 0.0625rem 0.25rem 0.0625rem 0.125rem;
 }
 
-/* 圖示是辨認零件最快的方式，但單憑顏色分不出九種屬性，所以中文名一起印。 */
-.pi-ic { width: 0.875rem; height: 0.875rem; display: block; }
-.pi-zh { font-size: 0.5625rem; font-weight: 800; color: var(--ink); }
-.pi-n { font-size: 0.5625rem; font-weight: 800; color: var(--sub); font-variant-numeric: tabular-nums; }
 
-.pi-none, .pi-empty {
-  font-size: 0.625rem;
+.pi-n {
+  font-size: 0.6875rem;
+  font-weight: 800;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  padding-left: 0.0625rem;
+}
+
+.pi-dash { font-size: 0.625rem; color: var(--sub); }
+
+
+.pi-empty {
+  font-size: 0.6875rem;
   font-weight: 700;
   color: var(--sub);
-  padding: 0.375rem 0;
+  text-align: center;
+  padding: 1.5rem 0.75rem;
 }
-
-.pi-empty { text-align: center; padding: 1.5rem 0.75rem; }
 
 .pi-foot {
   padding: 0.5rem 0 0.75rem;
   display: flex;
   justify-content: center;
   gap: 0.375rem;
+  flex-wrap: wrap;
   flex-shrink: 0;
 }
 </style>

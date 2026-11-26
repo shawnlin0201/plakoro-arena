@@ -58,6 +58,9 @@ const MODES = [
   // comingSoon 寫成函式而不是值：這一格要等伺服器答覆才知道，而 MODES 是模組層級的
   // 常數，寫成 `!shopOpen.value` 只會在載入那一刻算一次，之後開賣了卡片也不會活過來。
   { key: 'handbook', comingSoon: () => !shopOpen.value },
+  // 接在手冊右邊。哪一盒裡有什麼零件，是站在店裡拿著盒子時要查的 —— 那是會在手機上
+  // 臨時打開的那種問題，不該藏在第二層。
+  { key: 'productInfo' },
   { key: 'typeChart' },
   // A link out, not a mode. `url` is what tells the menu to render an anchor instead of a
   // button — the card looks the same either way, but one changes screen and one leaves.
@@ -67,9 +70,6 @@ const MODES = [
   // up front pushed the front page past the point where every card still fit.
   // 招式期望排行：查某一招平均打多少，是在想組牌時才會問的問題，不是開 app 的第一件事。
   { key: 'tierList', group: 'tools' },
-  // 哪一盒裡有什麼零件。跟組骰規劃是同一份資料的兩種讀法：規劃器回答「我該買什麼」，
-  // 這裡回答「這盒裡面有什麼」—— 站在店裡拿著盒子的人問的是後者。
-  { key: 'productInfo', group: 'tools' },
   // 哪裡買得到：找得到的人多半是已經決定要買的人，不是打開 app 要做的第一件事。
   { key: 'storeInfo', group: 'tools' },
   // 主題卡只在實體聚會用得到，所以不佔首頁 —— 會翻到它的人是正要出門參賽的人。

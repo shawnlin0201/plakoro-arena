@@ -91,21 +91,23 @@ const RAW = {
     single: { 格: 3, 惡: 1, 鋼: 2, 火: 1, 超: 1, 雷: 1 },
     dual: { '格+格': 5, '格+鋼': 2, '火+雷': 1, '鋼+鋼': 1 } },
 
-  // Expedition small boxes carry no half-dice at all — a figure and a handful of chips only, so
-  // they top up chips and can never supply a fixed face. Sold at retail as a blind box, but
+  // Expedition boxes carry no half-dice at all — a figure and a handful of chips only, so they
+  // top up chips and can never supply a fixed face. They ship in waves of six (EBC01, EBC02…),
+  // and the wave is the category: a wave is what goes on sale together and what sells out
+  // together, so "which wave is this from" is the question a buyer actually asks. Sold at retail as a blind box, but
   // players resell the ones they've opened as 確認款, so a specific figure is obtainable and the
   // planner treats it as any other product.
-  eb01s07: { id: 'eb01_07', name: '探險盒組 凱羅斯 07', category: 'expeditionSmall', jpy: 350, release: '2026-07-18', status: 'confirmed',
+  eb01s07: { id: 'eb01_07', name: '探險盒組 凱羅斯 07', category: 'expedition01', jpy: 350, release: '2026-07-18', status: 'confirmed',
     halves: {}, single: { 草: 2 }, dual: { '草+草': 1, '格+格': 1 } },
-  eb01s08: { id: 'eb01_08', name: '探險盒組 火焰鳥 08', category: 'expeditionSmall', jpy: 350, release: '2026-07-18', status: 'confirmed',
+  eb01s08: { id: 'eb01_08', name: '探險盒組 火焰鳥 08', category: 'expedition01', jpy: 350, release: '2026-07-18', status: 'confirmed',
     halves: {}, single: { 火: 1, 飛: 1 }, dual: { '火+火': 1, '飛+飛': 1 } },
-  eb01s09: { id: 'eb01_09', name: '探險盒組 急凍鳥 09', category: 'expeditionSmall', jpy: 350, release: '2026-07-18', status: 'confirmed',
+  eb01s09: { id: 'eb01_09', name: '探險盒組 急凍鳥 09', category: 'expedition01', jpy: 350, release: '2026-07-18', status: 'confirmed',
     halves: {}, single: { 水: 1, 飛: 1 }, dual: { '水+水': 1, '飛+飛': 1 } },
-  eb01s10: { id: 'eb01_10', name: '探險盒組 閃電鳥 10', category: 'expeditionSmall', jpy: 350, release: '2026-07-18', status: 'confirmed',
+  eb01s10: { id: 'eb01_10', name: '探險盒組 閃電鳥 10', category: 'expedition01', jpy: 350, release: '2026-07-18', status: 'confirmed',
     halves: {}, single: { 雷: 1, 飛: 1 }, dual: { '雷+雷': 1, '飛+飛': 1 } },
-  eb01s11: { id: 'eb01_11', name: '探險盒組 大岩蛇 11', category: 'expeditionSmall', jpy: 350, release: '2026-07-18', status: 'confirmed',
+  eb01s11: { id: 'eb01_11', name: '探險盒組 大岩蛇 11', category: 'expedition01', jpy: 350, release: '2026-07-18', status: 'confirmed',
     halves: {}, single: { 格: 2 }, dual: { '格+格': 2 } },
-  eb01s12: { id: 'eb01_12', name: '探險盒組 臭泥 12', category: 'expeditionSmall', jpy: 350, release: '2026-07-18', status: 'confirmed',
+  eb01s12: { id: 'eb01_12', name: '探險盒組 臭泥 12', category: 'expedition01', jpy: 350, release: '2026-07-18', status: 'confirmed',
     halves: {}, single: { 惡: 2 }, dual: { '惡+惡': 2 } },
 
   dx01: { id: '01_7285', name: 'DX 啟程套組 01（皮卡丘・伊布・夢幻）', category: 'dx', jpy: 4000, release: '2026-12', status: 'confirmed',

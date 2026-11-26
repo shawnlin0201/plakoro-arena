@@ -20,7 +20,7 @@ const ZH = Object.keys(TYPE_FROM_ZH)
 const CONVEX_ZH = ZH.filter(zh => CONVEX_TYPES.includes(TYPE_FROM_ZH[zh]))
 const CONCAVE_ZH = ZH.filter(zh => CONCAVE_TYPES.includes(TYPE_FROM_ZH[zh]))
 
-const CATEGORIES = ['starter', 'expeditionSmall', 'dx']
+const CATEGORIES = ['starter', 'expedition01', 'expedition02', 'dx']
 const STATUSES = ['confirmed', 'unknown', 'random']
 
 const list = ref([])
