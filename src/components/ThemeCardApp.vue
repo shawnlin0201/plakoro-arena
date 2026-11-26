@@ -54,14 +54,17 @@ function cardImage(card) {
 }
 
 /* ── 橫向卡台 ──────────────────────────────────────────────────────────
-   一次看得到三張：正在看的那張在中間，左右各露出一截。卡是有正面的東西，所以中間
-   那張要盡量大；但左右那兩截同樣要在，不然沒有任何東西告訴人這裡可以滑。
+   整疊卡排成一條，可以自由左右滑，不是一張一張翻頁。少了吸附之後，卡與卡之間停得
+   下來，兩張並排比較也就成立了 —— 而那是選卡時真正在做的事。
 
-   翻頁用原生的橫向捲動加 scroll-snap，不是自己算 transform：手指滑、箭頭點、鍵盤
-   走過去都是同一條路，而慣性與回彈是瀏覽器原本就做好的。
+   底下那排按鈕作用在「中間那一張」，所以仍然要知道現在中間是誰：取離可視區中心最
+   近的那張。箭頭只是幫忙推一段距離，不是跳到下一頁。
+
+   用原生的橫向捲動而不是自己算 transform：手指滑、滾輪、鍵盤走過去都是同一條路，
+   慣性與回彈也是瀏覽器原本就做好的。桌機沒有手指，所以另外補了一段「按著卡面拖」。
 
    兩端的留白是真的元素，不是容器的 padding —— 捲動容器的尾端 padding 在部分瀏覽器
-   會被吃掉，最後一張就停不到中間。
+   會被吃掉，最後一張就推不到中間。
    ──────────────────────────────────────────────────────────────────── */
 const trackRef = ref(null)
 const activeIndex = ref(0)
@@ -74,26 +77,65 @@ const slides = computed(() => {
 
 const activeCard = computed(() => slides.value[activeIndex.value] || null)
 
-// 一格的寬度要用量的，不能再假設它等於可視區 —— 現在一張卡只佔可視區的一部分。
-// 量的是第一張卡的外框寬度，所以間距或留白改了也不會失準。
+// 一格的寬度要用量的，不能假設它等於可視區 —— 一張卡只佔可視區的一部分。量的是第
+// 一張卡的外框寬度，所以間距或留白改了也不會失準。
 function stride(el) {
   const first = el.querySelector('.tcard-slide')
   return first ? first.getBoundingClientRect().width : el.clientWidth
 }
 
+// 中間是哪一張。比的是每一張的中心與可視區中心的距離，而不是從捲動距離除出來的 ——
+// 可以自由停在兩張之間之後，除法會在半格的位置來回跳。
 function onScroll() {
   const el = trackRef.value
   if (!el) return
-  const w = stride(el)
-  if (!w) return
-  activeIndex.value = Math.max(0, Math.min(slides.value.length - 1, Math.round(el.scrollLeft / w)))
+  const mid = el.getBoundingClientRect().left + el.clientWidth / 2
+  let best = 0
+  let bestDist = Infinity
+  el.querySelectorAll('.tcard-slide').forEach((node, i) => {
+    const r = node.getBoundingClientRect()
+    const d = Math.abs(r.left + r.width / 2 - mid)
+    if (d < bestDist) { bestDist = d; best = i }
+  })
+  activeIndex.value = best
 }
 
-function go(i) {
+// 箭頭推一段距離，不是跳到下一張。一張卡的寬度剛好是「看得出有東西移動、又不會把
+// 正在比較的那兩張一起推出畫面」的一段。
+function nudge(dir) {
   const el = trackRef.value
   if (!el) return
-  const n = Math.max(0, Math.min(slides.value.length - 1, i))
-  el.scrollTo({ left: n * stride(el), behavior: 'smooth' })
+  el.scrollBy({ left: dir * stride(el), behavior: 'smooth' })
+}
+
+/* 桌機上按著卡面拖。
+   手機本來就滑得動，但滑鼠在一個橫向捲動的容器上預設只會選到文字 —— 而這個畫面長
+   得就像一疊可以撥開的卡。
+   門檻設 4px：低於它的位移算點擊，不然按鈕會被輕微的手震吃掉。 */
+let drag = null
+
+function onPointerDown(e) {
+  // 只接主鍵，而且不攔箭頭那兩顆 —— 它們是按鈕，不是卡面。
+  if (e.button !== 0 || e.target.closest('.tcard-arrow')) return
+  const el = trackRef.value
+  if (!el) return
+  drag = { x: e.clientX, left: el.scrollLeft, moved: false }
+}
+
+function onPointerMove(e) {
+  if (!drag) return
+  const el = trackRef.value
+  if (!el) return
+  const dx = e.clientX - drag.x
+  if (!drag.moved && Math.abs(dx) < 4) return
+  drag.moved = true
+  el.scrollLeft = drag.left - dx
+  // 拖到一半時瀏覽器會想選字或拉圖，兩者都讓拖曳看起來壞掉。
+  e.preventDefault()
+}
+
+function endDrag() {
+  drag = null
 }
 
 // 換畫面要回到第一張，而且是瞬間回到 —— 這時候捲動動畫會變成「新畫面自己動了一
@@ -186,7 +228,17 @@ function newMatch() {
 
       <template v-else>
         <div class="tcard-stage">
-          <div ref="trackRef" class="tcard-track" @scroll.passive="onScroll">
+          <div
+            ref="trackRef"
+            class="tcard-track"
+            :class="{ dragging: !!drag }"
+            @scroll.passive="onScroll"
+            @pointerdown="onPointerDown"
+            @pointermove="onPointerMove"
+            @pointerup="endDrag"
+            @pointercancel="endDrag"
+            @pointerleave="endDrag"
+          >
             <div class="tcard-pad" aria-hidden="true"></div>
             <div
               v-for="(card, i) in slides"
@@ -221,13 +273,13 @@ function newMatch() {
             class="tcard-arrow left"
             :disabled="activeIndex <= 0"
             :aria-label="t('themeCards.prev')"
-            @click="go(activeIndex - 1)"
+            @click="nudge(-1)"
           >‹</button>
           <button
             class="tcard-arrow right"
             :disabled="activeIndex >= slides.length - 1"
             :aria-label="t('themeCards.next')"
-            @click="go(activeIndex + 1)"
+            @click="nudge(1)"
           >›</button>
         </div>
 
@@ -335,10 +387,19 @@ function newMatch() {
   align-items: center;
   overflow-x: auto;
   overflow-y: hidden;
-  scroll-snap-type: x mandatory;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
+  cursor: grab;
+  /* 橫向滑動交給這一條，不要讓瀏覽器當成翻頁／上一頁的手勢。 */
+  touch-action: pan-x;
 }
+
+.tcard-track.dragging { cursor: grabbing; }
+
+/* 拖的時候不要選到字，也不要把卡圖拉出來變成拖放。 */
+.tcard-track.dragging,
+.tcard-track.dragging * { user-select: none; }
+.tcard-art-img { -webkit-user-drag: none; user-select: none; }
 
 .tcard-track::-webkit-scrollbar { display: none; }
 
@@ -348,8 +409,6 @@ function newMatch() {
 
 .tcard-slide {
   flex: 0 0 86%;
-  scroll-snap-align: center;
-  scroll-snap-stop: always;
   height: 100%;
   display: flex;
   align-items: center;
