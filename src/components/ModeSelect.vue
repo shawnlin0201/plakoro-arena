@@ -13,6 +13,7 @@ import { shopOpen } from '../data/handbookTiers'
 import { giftCount, hasGifts, refreshGifts } from '../data/gifts'
 import { refreshAnnouncements, unreadCount } from '../data/announcements'
 import { refreshTicker, tickerText } from '../data/ticker'
+import { refreshProductParts } from '../data/productParts'
 import { refreshPoints } from '../data/points'
 import Icon from './Icon.vue'
 
@@ -66,6 +67,9 @@ const MODES = [
   // up front pushed the front page past the point where every card still fit.
   // 招式期望排行：查某一招平均打多少，是在想組牌時才會問的問題，不是開 app 的第一件事。
   { key: 'tierList', group: 'tools' },
+  // 哪一盒裡有什麼零件。跟組骰規劃是同一份資料的兩種讀法：規劃器回答「我該買什麼」，
+  // 這裡回答「這盒裡面有什麼」—— 站在店裡拿著盒子的人問的是後者。
+  { key: 'productInfo', group: 'tools' },
   // 哪裡買得到：找得到的人多半是已經決定要買的人，不是打開 app 要做的第一件事。
   { key: 'storeInfo', group: 'tools' },
   // 主題卡只在實體聚會用得到，所以不佔首頁 —— 會翻到它的人是正要出門參賽的人。
@@ -86,7 +90,9 @@ const MODES = [
   { key: 'adminCoupons', group: 'tools', adminOnly: true },
   { key: 'adminNotice', group: 'tools', adminOnly: true },
   // 跑馬燈跟公告分開：一個是一則一則要讀完的，一個是一行一直在跑的字。
-  { key: 'adminTicker', group: 'tools', adminOnly: true }
+  { key: 'adminTicker', group: 'tools', adminOnly: true },
+  // 商品零件表。玩家端的產品資訊與組骰規劃讀的都是它。
+  { key: 'adminParts', group: 'tools', adminOnly: true }
 ]
 
 const GROUPS = [{ key: 'tools' }]
@@ -196,6 +202,9 @@ onMounted(() => {
   refreshAnnouncements()
   // 跑馬燈同理，而且它是這個畫面上唯一會自己變的東西。
   refreshTicker()
+  // 商品零件表。在這裡拿而不是等進了組骰規劃才拿：規劃器一打開就要算，而那時候才去
+  // 要資料的話，第一份購物清單會是用建置時那一份算出來的，然後在眼前換掉。
+  refreshProductParts()
 })
 onBeforeUnmount(() => {
   tickerObserver?.disconnect()

@@ -149,6 +149,7 @@
     "diceBuilder": "Dice Assembly Sim",
     "storeInfo": "Stores",
     "themeCards": "Theme Cards",
+    "productInfo": "Products",
     "priceLog": "Market",
     "tournament": "Tournament Scheduler",
     "tierList": "Move value ranking",
@@ -170,7 +171,8 @@
     "adminSales": "Handbook Revenue",
     "adminCoupons": "Coupons",
     "adminNotice": "Notices",
-    "adminTicker": "Ticker"
+    "adminTicker": "Ticker",
+    "adminParts": "Product parts"
   },
   "admin": {
     "switchTitle": "Account Admin",
@@ -367,7 +369,35 @@
     "noticeGroupEnded": "Ended",
     "noticeEmpty": "Nothing here",
     "noticeEnded": "Ended",
-    "emailLabel": "Email"
+    "emailLabel": "Email",
+    "partsTitle": "Product parts",
+    "partsNote": "Both the player-facing Products page and the dice planner read this. Saving takes effect immediately — no redeploy.",
+    "partsAdd": "Add product",
+    "partsAddDual": "+ Add a square chip",
+    "partsUnnamed": "(unnamed)",
+    "partsCounts": "{halves} halves · {chips} chips",
+    "partsKey": "Key",
+    "partsProductId": "Product no.",
+    "partsName": "Name",
+    "partsCategory": "Category",
+    "partsStatus": "Count status",
+    "partsJpy": "JP price",
+    "partsRelease": "Release",
+    "partsConvex": "Convex halves",
+    "partsConcave": "Concave halves",
+    "partsSingle": "Round chips (single type)",
+    "partsDual": "Square chips (dual type)",
+    "partsStatus_confirmed": "Counted",
+    "partsStatus_unknown": "Not counted",
+    "partsStatus_random": "Blind box",
+    "partsSave": "Save all",
+    "partsSaving": "Saving…",
+    "partsSaved": "Saved — players see the new list already.",
+    "partsErrKey": "{where}: key is required",
+    "partsErrName": "{where}: name is required",
+    "partsErrRelease": "{where}: release must look like 2026-12 or 2026-12-05",
+    "partsErrDuplicate": "Duplicate key: {key}",
+    "partsErrEmpty": "At least one product is required"
   },
   "priceLog": {
     "title": {
@@ -456,6 +486,28 @@
     "usedStamp": "USED",
     "repick": "Pick again",
     "newMatch": "New match"
+  },
+  "productInfo": {
+    "title": "Products",
+    "hint": "What half-dice and chips come in each box. Tap a product to expand.",
+    "empty": "No product data yet.",
+    "summary": "{halves} halves · {chips} chips",
+    "contentsUnknown": "Contents not counted yet.",
+    "releaseUnknown": "TBA",
+    "releaseMonth": "Out {month}",
+    "statusRandom": "Blind box",
+    "statusUnknown": "Not counted",
+    "category": {
+      "starter": "Starter sets",
+      "expeditionSmall": "Expedition boxes",
+      "dx": "DX sets"
+    },
+    "part": {
+      "convex": "Convex halves",
+      "concave": "Concave halves",
+      "single": "Round chips (single type)",
+      "dual": "Square chips (dual type)"
+    }
   },
   "diceBuilder": {
     "title": "Dice Assembly Simulator",

@@ -6,7 +6,7 @@
 // A player deciding whether to buy another box has the opposite problem — they know what they
 // want and need to know what it costs. That's what this answers.
 import { FACE_KEYS, CONVEX_TYPES, CONCAVE_TYPES } from './diceParts'
-import { PRODUCT_PARTS, isReleased } from '../data/productParts'
+import { isReleased, productParts } from '../data/productParts'
 
 export const PART_KINDS = { convex: 'convex', concave: 'concave', single: 'single', dual: 'dual' }
 
@@ -220,7 +220,7 @@ function exactPlan(gap, usable, { costCeiling, maxBoxes, preferVariety = false }
 // worse than recommending nothing — the player goes looking and can't buy it — so the default
 // plan only ever contains what's on sale today. Pass `includeUnreleased` to see what an upcoming
 // product would change; `planWithUpcoming` below pairs the two.
-export function planPurchase(gap, { products = PRODUCT_PARTS, maxBoxes = 40, asOf = new Date(), includeUnreleased = false, preferVariety = false } = {}) {
+export function planPurchase(gap, { products = productParts.value, maxBoxes = 40, asOf = new Date(), includeUnreleased = false, preferVariety = false } = {}) {
   const usable = products
     .filter(p => p.status === 'confirmed' && (includeUnreleased || isReleased(p, asOf)))
     .sort((a, b) => a.jpy - b.jpy)
@@ -270,7 +270,7 @@ export function planPurchase(gap, { products = PRODUCT_PARTS, maxBoxes = 40, asO
 //
 // "Better" means strictly cheaper, not merely different: an upcoming box that costs more is not
 // worth waiting for, and offering it as an option would be noise.
-export function planWithUpcoming(gap, { products = PRODUCT_PARTS, asOf = new Date(), preferVariety = false } = {}) {
+export function planWithUpcoming(gap, { products = productParts.value, asOf = new Date(), preferVariety = false } = {}) {
   const now = planPurchase(gap, { products, asOf, preferVariety })
   const upcoming = planPurchase(gap, { products, asOf, preferVariety, includeUnreleased: true })
   const unreleasedUsed = upcoming.boxes
@@ -285,7 +285,7 @@ export function planWithUpcoming(gap, { products = PRODUCT_PARTS, asOf = new Dat
 
 // Which parts no confirmed product sells at all. A player staring at "you still need 3 of these"
 // deserves to know when the answer is "you can't buy that yet" rather than "buy more boxes".
-export function unbuyableParts(gap, products = PRODUCT_PARTS, asOf = new Date()) {
+export function unbuyableParts(gap, products = productParts.value, asOf = new Date()) {
   const usable = products.filter(p => p.status === 'confirmed' && isReleased(p, asOf))
   const out = { convex: {}, concave: {}, single: {}, dual: {} }
   GROUPS.forEach(kind => {

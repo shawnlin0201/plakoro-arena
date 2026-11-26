@@ -27,7 +27,10 @@
 //               is decided when you open it
 
 
+import { computed, ref } from 'vue'
 import { CONVEX_TYPES, CONCAVE_TYPES } from '../game/diceParts'
+
+const API_BASE = import.meta.env.VITE_API_URL || ''
 
 // The source site writes types in Chinese; the game data uses Japanese.
 export const TYPE_FROM_ZH = {
@@ -136,7 +139,7 @@ function shortName(name) {
   return name.replace(/^(啟程套組|探險盒組|DX 啟程套組)\s*/, '')
 }
 
-export const PRODUCT_PARTS = Object.entries(RAW).map(([key, p]) => {
+function normalise(key, p) {
   const halves = toJa(p.halves)
   const convex = {}
   const concave = {}
@@ -145,7 +148,49 @@ export const PRODUCT_PARTS = Object.entries(RAW).map(([key, p]) => {
     else if (halfKind(ja) === 'concave') concave[ja] = n
   })
   return { key, ...p, shortName: shortName(p.name), convex, concave, single: toJa(p.single), dual: dualToJa(p.dual) }
-})
+}
+
+/**
+ * 建置時就帶在身上的那一份。
+ *
+ * 這份資料現在住在資料庫（後台可以直接編輯，見 /api/product-parts），因為新商品每隔
+ * 一兩個月就出，而加一盒要做的事只有填幾個數字 —— 不該換來一次改檔、發版與部署。
+ *
+ * 這裡這一份降級成**拿不到伺服器時的退路**，跟方案階梯同一種分工：組骰規劃是一個
+ * 離線也該能用的工具，不該因為 API 連不上就變成一張空白的購物清單。退路看到的是上次
+ * 建置時的那一份，所以它會舊，但不會沒有。
+ */
+export const BUNDLED_PRODUCT_PARTS = Object.entries(RAW).map(([key, p]) => normalise(key, p))
+
+const serverParts = ref(null)
+
+/** 現在該用哪一份。伺服器給過就用伺服器的，否則用建置時帶著的那一份。 */
+export const productParts = computed(() => serverParts.value || BUNDLED_PRODUCT_PARTS)
+
+/** 伺服器那一份到手了沒。只影響要不要說「這份可能不是最新的」，不影響規劃本身。 */
+export const productPartsAreLive = ref(false)
+
+/**
+ * 去拿伺服器那一份。拿不到就沉默地留在退路上 —— 規劃器在飛機上也該算得出東西來，
+ * 而「你現在看到的清單是上個版本的」不是使用者此刻能處理的問題。
+ */
+export async function refreshProductParts() {
+  try {
+    const res = await fetch(`${API_BASE}/api/product-parts`)
+    if (!res.ok) throw new Error(String(res.status))
+    const d = await res.json()
+    const list = Array.isArray(d.products) ? d.products : []
+    // 空清單當成沒拿到。整張表真的空掉是個比「暫時連不上」嚴重得多的狀況，而兩者
+    // 在這裡能做的事一樣：拿出建置時帶著的那一份。
+    if (!list.length) throw new Error('empty')
+    serverParts.value = list.map(p => normalise(p.key, p))
+    productPartsAreLive.value = true
+  } catch (e) {
+    serverParts.value = null
+    productPartsAreLive.value = false
+  }
+}
+
 
 // Whether a product is on sale as of `asOf`. Month-only dates count from the 1st: BANDAI hasn't
 // named a day, so the first of the month is the earliest it could be out, and treating it as
@@ -161,5 +206,3 @@ export function isReleased(product, asOf = new Date()) {
 export function releaseIsMonthOnly(product) {
   return !!product.release && product.release.split('-').length === 2
 }
-
-export const PRODUCT_PARTS_BY_KEY = Object.fromEntries(PRODUCT_PARTS.map(p => [p.key, p]))

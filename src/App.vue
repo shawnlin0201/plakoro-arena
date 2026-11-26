@@ -41,6 +41,7 @@ import AdminCouponsApp from './components/admin/AdminCouponsApp.vue'
 import AdminSalesApp from './components/admin/AdminSalesApp.vue'
 import AdminNoticeApp from './components/admin/AdminNoticeApp.vue'
 import AdminTickerApp from './components/admin/AdminTickerApp.vue'
+import AdminProductPartsApp from './components/admin/AdminProductPartsApp.vue'
 import { isSignedIn } from './data/currentPlayer'
 import { tapVersion } from './data/betaMode'
 import { refreshHandbookShop } from './data/handbookTiers'
@@ -49,6 +50,7 @@ import SoloApp from './components/solo/SoloApp.vue'
 import DiceBuilderApp from './components/dice/DiceBuilderApp.vue'
 import StoreInfoApp from './components/StoreInfoApp.vue'
 import ThemeCardApp from './components/ThemeCardApp.vue'
+import ProductInfoApp from './components/ProductInfoApp.vue'
 import TournamentApp from './components/tournament/TournamentApp.vue'
 import TierListApp from './components/TierListApp.vue'
 import TypeChartApp from './components/TypeChartApp.vue'
@@ -256,6 +258,7 @@ onBeforeUnmount(uninstallButtonSfx)
 
       <StoreInfoApp v-else-if="mode === 'storeInfo'" @back="leaveMode()" />
       <ThemeCardApp v-else-if="mode === 'themeCards'" @back="leaveMode()" />
+      <ProductInfoApp v-else-if="mode === 'productInfo'" @back="leaveMode()" />
 
       <PriceLogApp v-else-if="mode === 'priceLog'" @back="leaveMode()" />
 
@@ -300,6 +303,7 @@ onBeforeUnmount(uninstallButtonSfx)
       <AdminCouponsApp v-else-if="mode === 'adminCoupons'" @back="leaveMode()" />
       <AdminNoticeApp v-else-if="mode === 'adminNotice'" @back="leaveMode()" />
       <AdminTickerApp v-else-if="mode === 'adminTicker'" @back="leaveMode()" />
+      <AdminProductPartsApp v-else-if="mode === 'adminParts'" @back="leaveMode()" />
 
       <SoloApp v-else />
 
