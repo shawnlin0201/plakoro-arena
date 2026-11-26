@@ -57,14 +57,21 @@ function halves(p) {
   return [...pieces(p.convex, 'cv'), ...pieces(p.concave, 'cc')]
 }
 
-/**
- * 晶片。圓（單屬性）在前、方（雙屬性）在後，跟盒子裡分裝的順序一致。
+/*
+ * 晶片分兩段：圓（單屬性）一段、方（雙屬性）另起一段，跟盒子裡分裝的方式一致。
+ *
+ * 分開是因為這兩種是不同的東西，而排在同一串裡時它們只差「有沒有斜線」——
+ * 掃過去的時候要一片一片認，而不是看兩段各有多少。
  *
  * `types` 直接交給 ChipIcon —— 雙屬性是一片斜角分成兩色的晶片，不是兩片。組骰模擬器
  * 已經是這樣畫的，這裡用同一個元件，兩個畫面講的才會是同一種東西。
  */
-function chips(p) {
-  return [...pieces(p.single, 's'), ...pieces(p.dual, 'd')]
+function singles(p) {
+  return pieces(p.single, 's')
+}
+
+function duals(p) {
+  return pieces(p.dual, 'd')
 }
 
 function note(p) {
@@ -131,10 +138,15 @@ async function exportImage() {
             </span>
 
             <span class="pi-c-chips">
-              <span v-if="!chips(p).length" class="pi-dash">—</span>
+              <span v-if="!singles(p).length && !duals(p).length" class="pi-dash">—</span>
               <!-- 雙屬性是一片斜角分成兩色的晶片，不是兩片，所以交給 ChipIcon 畫 ——
                    跟組骰模擬器同一個元件。並排兩個圖示會被讀成「兩片單屬性」。 -->
-              <ChipIcon v-for="c in chips(p)" :key="c.key" :types="c.types" :size="1.375" />
+              <span v-if="singles(p).length" class="pi-chip-row">
+                <ChipIcon v-for="c in singles(p)" :key="c.key" :types="c.types" :size="1.375" />
+              </span>
+              <span v-if="duals(p).length" class="pi-chip-row">
+                <ChipIcon v-for="c in duals(p)" :key="c.key" :types="c.types" :size="1.375" />
+              </span>
             </span>
           </div>
         </div>
@@ -236,10 +248,19 @@ async function exportImage() {
   justify-content: start;
 }
 
+/* 單屬性一段、雙屬性一段，各自換行。兩段之間的間距大一點，讓「這是兩種東西」不必
+   靠讀圖案上有沒有斜線才看得出來。 */
 .pi-c-chips {
   display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.375rem;
+}
+
+.pi-chip-row {
+  display: flex;
   flex-wrap: wrap;
-  align-content: center;
+  gap: 0.1875rem;
 }
 
 .pi-name {
