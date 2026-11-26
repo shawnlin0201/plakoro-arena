@@ -48,7 +48,6 @@ const MODES = [
   // Hidden 2026-08-28: the market data behind it isn't maintainable by hand yet — most listing
   // sources need a login to snapshot, so the figures would go stale without anyone noticing.
   { key: 'priceLog', enabled: false },
-  { key: 'tierList' },
   // Paid content, so the card is always shown and the chapters behind it are not: what a
   // player owns is checked when a chapter is opened, never by hiding the shelf.
   //
@@ -65,6 +64,8 @@ const MODES = [
   // `group` moves a mode one level down. The top level is what a player opens the app to do;
   // these three are things an organiser or a theorycrafter comes looking for, and keeping them
   // up front pushed the front page past the point where every card still fit.
+  // 招式期望排行：查某一招平均打多少，是在想組牌時才會問的問題，不是開 app 的第一件事。
+  { key: 'tierList', group: 'tools' },
   // 哪裡買得到：找得到的人多半是已經決定要買的人，不是打開 app 要做的第一件事。
   { key: 'storeInfo', group: 'tools' },
   // 主題卡只在實體聚會用得到，所以不佔首頁 —— 會翻到它的人是正要出門參賽的人。
