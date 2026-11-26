@@ -152,15 +152,19 @@ async function exportImage() {
 
 <style scoped>
 /* 整塊板自己捲，不是裡面那一欄 —— 匯出要截的是「整份清單」，而一個會捲的容器量到的
-   高度只有看得見的那一截。 */
-.pi-board { align-items: center; overflow-y: auto; }
+   高度只有看得見的那一截。
+   底部 padding 清掉，改由懸浮的那排自己帶：sticky 的 `bottom: 0` 貼的是捲動區的
+   padding 內緣，留著 .board 原本那一截就會在按鈕底下露出一條還在動的內容。 */
+.pi-board { align-items: center; overflow-y: auto; padding-bottom: 0; }
 .pi-title { margin: 0.5rem 0 0.375rem; flex-shrink: 0; }
 
 
 .pi-sheet {
   width: 100%;
   max-width: 34rem;
-  padding: 0 0.625rem 0.5rem;
+  /* 底下那排是懸浮的，會蓋住最後一列 —— 留出它的高度，不然捲到底時最後一盒被壓在
+     按鈕底下，而那正是會被誤認成「清單就到這裡」的位置。 */
+  padding: 0 0.625rem 3rem;
   background: var(--bg);
 }
 
@@ -261,12 +265,22 @@ async function exportImage() {
   padding: 1.5rem 0.75rem;
 }
 
+/* 懸浮在畫面下緣，不是躺在清單的尾巴。這一頁是可以捲很久的 —— 返回要是跟著內容捲
+   走，想離開就得先捲到底。
+   自己帶底色：底下是會動的內容，半透明的話字會疊在圖示上。 */
 .pi-foot {
-  padding: 0.5rem 0 0.75rem;
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  width: 100%;
+  margin-top: auto;
+  padding: 0.5rem 0 calc(0.75rem + env(safe-area-inset-bottom, 0px));
   display: flex;
   justify-content: center;
   gap: 0.375rem;
   flex-wrap: wrap;
   flex-shrink: 0;
+  background: var(--bg);
+  border-top: 0.0625rem solid var(--line);
 }
 </style>

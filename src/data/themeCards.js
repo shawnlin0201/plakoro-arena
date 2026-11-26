@@ -114,7 +114,7 @@ export const THEME_CARD_SETS = [
         id: 'gtavi-12',
         no: 'GTAVI-12',
         name: '順手牽羊',
-        text: '若本回合自己無造成傷害，則下回合傷害結算後額外增加 20 點傷害。',
+        text: '本回合選擇對手一招來使用，同樣需達成招式指定能量與角色骰面。',
         image: 'sin-city/GTAVI-12.webp'
       }
     ]

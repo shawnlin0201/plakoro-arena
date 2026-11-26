@@ -5,6 +5,11 @@
 // white glyph — so it's shown as-is. Wrapping it in another bordered box, as this used to, framed
 // something that was already framed.
 //
+// The tile underneath is still painted in the type's colour rather than left transparent. The
+// badge's own rounded corners don't trace the tile's exactly, so a transparent tile let the page
+// show through at the corners — a pale hairline between the border and the artwork. Painting it
+// the same colour as the badge makes that gap invisible instead of trying to match two radii.
+//
 // Dual chip: one square printed with two types split corner to corner. The tile is filled with a
 // hard-edged diagonal gradient of the two type colours and a white glyph is laid in each half.
 // The glyphs come from image/ICON/glyph/ — the same artwork with its coloured plate and outline
@@ -48,7 +53,7 @@ const hairline = computed(() => `${Math.max(0.0625, props.size * 0.038).toFixed(
     :style="{
       position: 'relative', width: box, height: box, borderRadius: radius, flexShrink: 0,
       border: hairline + ' solid rgba(0,0,0,.18)', overflow: 'hidden',
-      background: isDual ? split : (lowData ? typeChipColor(types[0]) : 'transparent')
+      background: isDual ? split : typeChipColor(types[0])
     }"
   >
     <!-- 代號疊在同一個位置上，所以雙色晶片仍然看得出是哪兩種。 -->
