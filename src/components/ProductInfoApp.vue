@@ -74,6 +74,22 @@ function duals(p) {
   return pieces(p.dual, 'd')
 }
 
+/*
+ * 少到一眼數得完的時候就不分段。
+ *
+ * 分段是為了讓「單屬性幾片、雙屬性幾片」不必一片片去認，但探險盒一共才四片 —— 那個
+ * 問題本來就不存在，分段只是多佔一行，而這一頁是上下比較用的，每一列多一行就少看到
+ * 一盒。
+ *
+ * 門檻取八：晶片欄一排大約放得下五片，八片是「一排放不下、但兩排也還看得完」的那個
+ * 區間的上緣。再多就值得分段了。
+ */
+const ONE_ROW_MAX = 8
+
+function splitRows(p) {
+  return singles(p).length + duals(p).length > ONE_ROW_MAX
+}
+
 function note(p) {
   if (!isReleased(p)) {
     if (!p.release) return t('productInfo.releaseUnknown')
@@ -141,11 +157,21 @@ async function exportImage() {
               <span v-if="!singles(p).length && !duals(p).length" class="pi-dash">—</span>
               <!-- 雙屬性是一片斜角分成兩色的晶片，不是兩片，所以交給 ChipIcon 畫 ——
                    跟組骰模擬器同一個元件。並排兩個圖示會被讀成「兩片單屬性」。 -->
-              <span v-if="singles(p).length" class="pi-chip-row">
-                <ChipIcon v-for="c in singles(p)" :key="c.key" :types="c.types" :size="1.375" />
-              </span>
-              <span v-if="duals(p).length" class="pi-chip-row">
-                <ChipIcon v-for="c in duals(p)" :key="c.key" :types="c.types" :size="1.375" />
+              <template v-if="splitRows(p)">
+                <span v-if="singles(p).length" class="pi-chip-row">
+                  <ChipIcon v-for="c in singles(p)" :key="c.key" :types="c.types" :size="1.375" />
+                </span>
+                <span v-if="duals(p).length" class="pi-chip-row">
+                  <ChipIcon v-for="c in duals(p)" :key="c.key" :types="c.types" :size="1.375" />
+                </span>
+              </template>
+              <span v-else class="pi-chip-row">
+                <ChipIcon
+                  v-for="c in [...singles(p), ...duals(p)]"
+                  :key="c.key"
+                  :types="c.types"
+                  :size="1.375"
+                />
               </span>
             </span>
           </div>

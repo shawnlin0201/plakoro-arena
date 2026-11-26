@@ -91,9 +91,14 @@ const RAW = {
     single: { 格: 3, 惡: 1, 鋼: 2, 火: 1, 超: 1, 雷: 1 },
     dual: { '格+格': 5, '格+鋼': 2, '火+雷': 1, '鋼+鋼': 1 } },
 
-  // 編號是 01–06，跟卡表 EBW01 的順序一致（凱羅斯、火焰鳥、急凍鳥、閃電鳥、大岩蛇、
-  // 臭泥）。這一批原本寫成 07–12 —— 那是 2026-09 從 pla-koro.com 點算內容物時一起抄
-  // 下來的號碼，跟官方那一波的盒號對不上。
+  // 官方只有一個商品：「PLAKORO 探險盒組 01」，品番 01_7172，六隻共用同一個品番，開了
+  // 才知道是哪一隻（https://global.bandai-hobby.net/tw/item/01_7172/，內含角色骰子 ×1、
+  // 改裝晶片 ×4）。所以「01」是**盒號**，不是寶可夢的編號 —— 這裡的六列是同一盒的六種
+  // 內容，不是六個商品。
+  //
+  // 仍然分成六列，是因為購物規劃需要知道「拿到哪一隻會得到哪四片晶片」。玩家轉賣開封
+  // 過的確認款，所以指定某一隻是買得到的；但在店頭買它是盲盒，planner 的建議要照這個
+  // 前提讀。
   //
   // Expedition boxes carry no half-dice at all — a figure and a handful of chips only, so they
   // top up chips and can never supply a fixed face. They ship in waves of six (EBC01, EBC02…),
@@ -101,17 +106,17 @@ const RAW = {
   // together, so "which wave is this from" is the question a buyer actually asks. Sold at retail as a blind box, but
   // players resell the ones they've opened as 確認款, so a specific figure is obtainable and the
   // planner treats it as any other product.
-  eb01s01: { id: 'eb01_01', name: '探險盒組 凱羅斯 01', category: 'expedition01', jpy: 350, release: '2026-07-18', status: 'confirmed',
+  eb01s01: { id: '01_7172', name: '探險盒組 凱羅斯', category: 'expedition01', jpy: 350, release: '2026-07-18', status: 'confirmed',
     halves: {}, single: { 草: 2 }, dual: { '草+草': 1, '格+格': 1 } },
-  eb01s02: { id: 'eb01_02', name: '探險盒組 火焰鳥 02', category: 'expedition01', jpy: 350, release: '2026-07-18', status: 'confirmed',
+  eb01s02: { id: '01_7172', name: '探險盒組 火焰鳥', category: 'expedition01', jpy: 350, release: '2026-07-18', status: 'confirmed',
     halves: {}, single: { 火: 1, 飛: 1 }, dual: { '火+火': 1, '飛+飛': 1 } },
-  eb01s03: { id: 'eb01_03', name: '探險盒組 急凍鳥 03', category: 'expedition01', jpy: 350, release: '2026-07-18', status: 'confirmed',
+  eb01s03: { id: '01_7172', name: '探險盒組 急凍鳥', category: 'expedition01', jpy: 350, release: '2026-07-18', status: 'confirmed',
     halves: {}, single: { 水: 1, 飛: 1 }, dual: { '水+水': 1, '飛+飛': 1 } },
-  eb01s04: { id: 'eb01_04', name: '探險盒組 閃電鳥 04', category: 'expedition01', jpy: 350, release: '2026-07-18', status: 'confirmed',
+  eb01s04: { id: '01_7172', name: '探險盒組 閃電鳥', category: 'expedition01', jpy: 350, release: '2026-07-18', status: 'confirmed',
     halves: {}, single: { 雷: 1, 飛: 1 }, dual: { '雷+雷': 1, '飛+飛': 1 } },
-  eb01s05: { id: 'eb01_05', name: '探險盒組 大岩蛇 05', category: 'expedition01', jpy: 350, release: '2026-07-18', status: 'confirmed',
+  eb01s05: { id: '01_7172', name: '探險盒組 大岩蛇', category: 'expedition01', jpy: 350, release: '2026-07-18', status: 'confirmed',
     halves: {}, single: { 格: 2 }, dual: { '格+格': 2 } },
-  eb01s06: { id: 'eb01_06', name: '探險盒組 臭泥 06', category: 'expedition01', jpy: 350, release: '2026-07-18', status: 'confirmed',
+  eb01s06: { id: '01_7172', name: '探險盒組 臭泥', category: 'expedition01', jpy: 350, release: '2026-07-18', status: 'confirmed',
     halves: {}, single: { 惡: 2 }, dual: { '惡+惡': 2 } },
 
   dx01: { id: '01_7285', name: 'DX 啟程套組 01（皮卡丘・伊布・夢幻）', category: 'dx', jpy: 4000, release: '2026-12', status: 'confirmed',
