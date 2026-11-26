@@ -35,12 +35,26 @@ function entries(counts) {
     .sort((a, b) => b[1] - a[1])
 }
 
+/**
+ * 一片一片攤開，不是「一片加一個數字」。
+ *
+ * 盒子裡裝的就是三片草晶片，那一欄看起來也該是三片 —— 寫成「草 ×3」要讀的人自己把
+ * 數字換回畫面，而這一頁存在的理由正是省掉那一步。同一型別的排在一起，所以「這盒
+ * 主要補什麼」仍然一眼看得出來。
+ */
+function pieces(counts, kind) {
+  const out = []
+  for (const [key, n] of entries(counts)) {
+    const types = key.split('+')
+    const zh = types.map(ja => TYPE_TO_ZH[ja] || ja).join('／')
+    for (let i = 0; i < n; i++) out.push({ key: `${kind}${key}-${i}`, types, zh })
+  }
+  return out
+}
+
 /** 骰蓋。凸在前、凹在後 —— 一顆骰子要一凸一凹，分開看才知道缺的是哪一半。 */
 function halves(p) {
-  const one = (counts, kind) => entries(counts).map(([ja, n]) => ({
-    key: `${kind}${ja}`, types: [ja], zh: TYPE_TO_ZH[ja] || ja, n
-  }))
-  return [...one(p.convex, 'cv'), ...one(p.concave, 'cc')]
+  return [...pieces(p.convex, 'cv'), ...pieces(p.concave, 'cc')]
 }
 
 /**
@@ -50,17 +64,7 @@ function halves(p) {
  * 已經是這樣畫的，這裡用同一個元件，兩個畫面講的才會是同一種東西。
  */
 function chips(p) {
-  const single = entries(p.single).map(([ja, n]) => ({
-    key: `s${ja}`, types: [ja], zh: TYPE_TO_ZH[ja] || ja, n
-  }))
-  const dual = entries(p.dual).map(([pair, n]) => {
-    const [a, b] = pair.split('+')
-    return {
-      key: `d${pair}`, types: [a, b],
-      zh: `${TYPE_TO_ZH[a] || a}／${TYPE_TO_ZH[b] || b}`, n
-    }
-  })
-  return [...single, ...dual]
+  return [...pieces(p.single, 's'), ...pieces(p.dual, 'd')]
 }
 
 function note(p) {
@@ -123,20 +127,14 @@ async function exportImage() {
 
             <span class="pi-c-halves">
               <span v-if="!halves(p).length" class="pi-dash">—</span>
-              <span v-for="h in halves(p)" :key="h.key" class="pi-part" :title="h.zh">
-                <ChipIcon :types="h.types" :size="1.375" />
-                <span v-if="h.n > 1" class="pi-n">{{ h.n }}</span>
-              </span>
+              <ChipIcon v-for="h in halves(p)" :key="h.key" :types="h.types" :size="1.375" />
             </span>
 
             <span class="pi-c-chips">
               <span v-if="!chips(p).length" class="pi-dash">—</span>
               <!-- 雙屬性是一片斜角分成兩色的晶片，不是兩片，所以交給 ChipIcon 畫 ——
                    跟組骰模擬器同一個元件。並排兩個圖示會被讀成「兩片單屬性」。 -->
-              <span v-for="c in chips(p)" :key="c.key" class="pi-part" :title="c.zh">
-                <ChipIcon :types="c.types" :size="1.375" />
-                <span v-if="c.n > 1" class="pi-n">{{ c.n }}</span>
-              </span>
+              <ChipIcon v-for="c in chips(p)" :key="c.key" :types="c.types" :size="1.375" />
             </span>
           </div>
         </div>
@@ -185,7 +183,7 @@ async function exportImage() {
    與蓋子要在上下兩列之間對得齊，不然一整欄讀起來就不像一欄。 */
 .pi-row {
   display: grid;
-  grid-template-columns: 5rem 5.75rem 1fr;
+  grid-template-columns: 5rem 5.5rem 1fr;
   /* 沒有間距，欄與欄之間靠分隔線分開 —— 蓋子跟晶片都是一片片的方塊，只隔一段空白
      的話兩欄會讀成同一串。線也讓每一欄的左緣對得齊。 */
   gap: 0;
@@ -218,13 +216,26 @@ async function exportImage() {
 }
 
 .pi-c-halves, .pi-c-chips {
-  display: flex;
-  flex-wrap: wrap;
-  align-content: center;
-  gap: 0.1875rem;
   min-width: 0;
   padding: 0 0.5rem;
   border-left: 0.0625rem solid var(--line);
+  gap: 0.1875rem;
+}
+
+/* 蓋子固定三個一排。一顆骰子是三凸三凹，排成三個一列時上面那列就是凸、下面那列就
+   是凹 —— 版面自己把那件事說完了，不必再加標籤。用 grid 而不是讓它自己換行：換行
+   的位置會跟著字級與邊距飄，而「三個一排」是這一欄要表達的意思，不是剛好的結果。 */
+.pi-c-halves {
+  display: grid;
+  grid-template-columns: repeat(3, max-content);
+  align-content: center;
+  justify-content: start;
+}
+
+.pi-c-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
 }
 
 .pi-name {
@@ -236,23 +247,8 @@ async function exportImage() {
 
 .pi-note { font-size: 0.5rem; font-weight: 800; color: #A8571F; }
 
-.pi-part {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.0625rem;
-  background: var(--bg);
-  border-radius: 999px;
-  padding: 0.0625rem 0.25rem 0.0625rem 0.125rem;
-}
 
 
-.pi-n {
-  font-size: 0.6875rem;
-  font-weight: 800;
-  color: var(--ink);
-  font-variant-numeric: tabular-nums;
-  padding-left: 0.0625rem;
-}
 
 .pi-dash { font-size: 0.625rem; color: var(--sub); }
 
