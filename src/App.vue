@@ -41,7 +41,6 @@ import AdminCouponsApp from './components/admin/AdminCouponsApp.vue'
 import AdminSalesApp from './components/admin/AdminSalesApp.vue'
 import AdminNoticeApp from './components/admin/AdminNoticeApp.vue'
 import AdminTickerApp from './components/admin/AdminTickerApp.vue'
-import AdminProductPartsApp from './components/admin/AdminProductPartsApp.vue'
 import { isSignedIn } from './data/currentPlayer'
 import { tapVersion } from './data/betaMode'
 import { refreshHandbookShop } from './data/handbookTiers'
@@ -303,7 +302,6 @@ onBeforeUnmount(uninstallButtonSfx)
       <AdminCouponsApp v-else-if="mode === 'adminCoupons'" @back="leaveMode()" />
       <AdminNoticeApp v-else-if="mode === 'adminNotice'" @back="leaveMode()" />
       <AdminTickerApp v-else-if="mode === 'adminTicker'" @back="leaveMode()" />
-      <AdminProductPartsApp v-else-if="mode === 'adminParts'" @back="leaveMode()" />
 
       <SoloApp v-else />
 

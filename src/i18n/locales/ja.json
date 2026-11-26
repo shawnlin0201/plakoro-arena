@@ -171,8 +171,7 @@
     "adminSales": "手帳の売上",
     "adminCoupons": "クーポン",
     "adminNotice": "お知らせ管理",
-    "adminTicker": "ティッカー",
-    "adminParts": "商品パーツ表"
+    "adminTicker": "ティッカー"
   },
   "admin": {
     "switchTitle": "アカウント管理",
@@ -369,35 +368,7 @@
     "noticeGroupEnded": "終了",
     "noticeEmpty": "お知らせはありません",
     "noticeEnded": "終了",
-    "emailLabel": "メール",
-    "partsTitle": "商品パーツ表",
-    "partsNote": "プレイヤー側の「商品情報」と「ダイス組み立て」はこれを読みます。保存すると即反映され、再デプロイは不要です。｜読み込めないときはまずバックエンドを確認してください。このページは /api/product-parts（migration 0038）を使います。未起動・未デプロイの間は接続エラーになります。",
-    "partsAdd": "商品を追加",
-    "partsAddDual": "＋ 角チップを追加",
-    "partsUnnamed": "（名称未設定）",
-    "partsCounts": "半球 {halves}・チップ {chips}",
-    "partsKey": "コード",
-    "partsProductId": "品番",
-    "partsName": "商品名",
-    "partsCategory": "カテゴリ",
-    "partsStatus": "集計状況",
-    "partsJpy": "日本定価",
-    "partsRelease": "発売",
-    "partsConvex": "凸面half",
-    "partsConcave": "凹面half",
-    "partsSingle": "丸チップ（単タイプ）",
-    "partsDual": "角チップ（2タイプ）",
-    "partsStatus_confirmed": "集計済",
-    "partsStatus_unknown": "未集計",
-    "partsStatus_random": "ブラインド",
-    "partsSave": "まとめて保存",
-    "partsSaving": "保存中…",
-    "partsSaved": "保存しました。プレイヤー側は反映済みです。",
-    "partsErrKey": "{where}：コードは必須です",
-    "partsErrName": "{where}：商品名は必須です",
-    "partsErrRelease": "{where}：発売は 2026-12 または 2026-12-05 の形式で",
-    "partsErrDuplicate": "コードが重複：{key}",
-    "partsErrEmpty": "商品が最低 1 件必要です"
+    "emailLabel": "メール"
   },
   "priceLog": {
     "title": {

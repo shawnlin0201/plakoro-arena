@@ -27,10 +27,7 @@
 //               is decided when you open it
 
 
-import { computed, ref } from 'vue'
 import { CONVEX_TYPES, CONCAVE_TYPES } from '../game/diceParts'
-
-const API_BASE = import.meta.env.VITE_API_URL || ''
 
 // The source site writes types in Chinese; the game data uses Japanese.
 export const TYPE_FROM_ZH = {
@@ -162,45 +159,16 @@ function normalise(key, p) {
 }
 
 /**
- * 建置時就帶在身上的那一份。
+ * 這一份就是唯一的一份。
  *
- * 這份資料現在住在資料庫（後台可以直接編輯，見 /api/product-parts），因為新商品每隔
- * 一兩個月就出，而加一盒要做的事只有填幾個數字 —— 不該換來一次改檔、發版與部署。
+ * 曾經把它搬進資料庫、配一頁後台表單，想讓新商品不必改檔發版。那條路沒有省到人：九種
+ * 屬性各幾片是要對著官方商品照數出來的，數的人是誰，誰就在改這個檔 —— 後台只是把同
+ * 一件事多繞一圈伺服器，還讓「產品資訊」這頁多了一個連不上就空白的理由。
  *
- * 這裡這一份降級成**拿不到伺服器時的退路**，跟方案階梯同一種分工：組骰規劃是一個
- * 離線也該能用的工具，不該因為 API 連不上就變成一張空白的購物清單。退路看到的是上次
- * 建置時的那一份，所以它會舊，但不會沒有。
+ * 新商品一兩個月才一盒，跟著一次版本走完全來得及。
  */
-export const BUNDLED_PRODUCT_PARTS = Object.entries(RAW).map(([key, p]) => normalise(key, p))
+export const productParts = Object.entries(RAW).map(([key, p]) => normalise(key, p))
 
-const serverParts = ref(null)
-
-/** 現在該用哪一份。伺服器給過就用伺服器的，否則用建置時帶著的那一份。 */
-export const productParts = computed(() => serverParts.value || BUNDLED_PRODUCT_PARTS)
-
-/** 伺服器那一份到手了沒。只影響要不要說「這份可能不是最新的」，不影響規劃本身。 */
-export const productPartsAreLive = ref(false)
-
-/**
- * 去拿伺服器那一份。拿不到就沉默地留在退路上 —— 規劃器在飛機上也該算得出東西來，
- * 而「你現在看到的清單是上個版本的」不是使用者此刻能處理的問題。
- */
-export async function refreshProductParts() {
-  try {
-    const res = await fetch(`${API_BASE}/api/product-parts`)
-    if (!res.ok) throw new Error(String(res.status))
-    const d = await res.json()
-    const list = Array.isArray(d.products) ? d.products : []
-    // 空清單當成沒拿到。整張表真的空掉是個比「暫時連不上」嚴重得多的狀況，而兩者
-    // 在這裡能做的事一樣：拿出建置時帶著的那一份。
-    if (!list.length) throw new Error('empty')
-    serverParts.value = list.map(p => normalise(p.key, p))
-    productPartsAreLive.value = true
-  } catch (e) {
-    serverParts.value = null
-    productPartsAreLive.value = false
-  }
-}
 
 
 // Whether a product is on sale as of `asOf`. Month-only dates count from the 1st: BANDAI hasn't

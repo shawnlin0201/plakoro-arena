@@ -53,7 +53,7 @@ function clearOwned() {
 
 // The inventory list stays complete — an unreleased box is one you can't own yet, but an import
 // or an early copy isn't the planner's business to disallow. Only the recommendation is gated.
-const buyable = computed(() => productParts.value.filter(p => p.status === 'confirmed'))
+const buyable = computed(() => productParts.filter(p => p.status === 'confirmed'))
 // Grouped so the grid can carry a heading per kind — the categories are what a player thinks in
 // ("do I need another starter, or a small box?"), and the heading lets each tile drop the prefix.
 const CATEGORY_ORDER = ['starter', 'expeditionSmall', 'dx']
@@ -106,7 +106,7 @@ const now = () => new Date()
 const preferVariety = ref(false)
 const plans = computed(() => planWithUpcoming(gap.value, { asOf: now(), preferVariety: preferVariety.value }))
 const plan = computed(() => plans.value.now)
-const missing = computed(() => unbuyableParts(gap.value, productParts.value, now()))
+const missing = computed(() => unbuyableParts(gap.value, productParts, now()))
 const nothingToBuy = computed(() => totalPieces(gap.value) === 0)
 
 // Rows for a parts table: one line per distinct piece, with the wildcard halves last since

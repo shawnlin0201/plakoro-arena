@@ -16,7 +16,7 @@ const CATEGORY_ORDER = ['starter', 'expedition01', 'expedition02', 'dx']
 
 const groups = computed(() => {
   const seen = []
-  for (const p of productParts.value) {
+  for (const p of productParts) {
     if (!seen.includes(p.category)) seen.push(p.category)
   }
   return seen
@@ -25,7 +25,7 @@ const groups = computed(() => {
       const ib = CATEGORY_ORDER.indexOf(b)
       return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib)
     })
-    .map(key => ({ key, items: productParts.value.filter(p => p.category === key) }))
+    .map(key => ({ key, items: productParts.filter(p => p.category === key) }))
 })
 
 function entries(counts) {

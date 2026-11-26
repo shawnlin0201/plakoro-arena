@@ -171,8 +171,7 @@
     "adminSales": "Handbook Revenue",
     "adminCoupons": "Coupons",
     "adminNotice": "Notices",
-    "adminTicker": "Ticker",
-    "adminParts": "Product parts"
+    "adminTicker": "Ticker"
   },
   "admin": {
     "switchTitle": "Account Admin",
@@ -369,35 +368,7 @@
     "noticeGroupEnded": "Ended",
     "noticeEmpty": "Nothing here",
     "noticeEnded": "Ended",
-    "emailLabel": "Email",
-    "partsTitle": "Product parts",
-    "partsNote": "Both the player-facing Products page and the dice planner read this. Saving takes effect immediately — no redeploy. | If nothing loads, check the backend first: this page needs /api/product-parts, which ships with migration 0038. You will see a connection error until the backend is running and deployed.",
-    "partsAdd": "Add product",
-    "partsAddDual": "+ Add a square chip",
-    "partsUnnamed": "(unnamed)",
-    "partsCounts": "{halves} halves · {chips} chips",
-    "partsKey": "Key",
-    "partsProductId": "Product no.",
-    "partsName": "Name",
-    "partsCategory": "Category",
-    "partsStatus": "Count status",
-    "partsJpy": "JP price",
-    "partsRelease": "Release",
-    "partsConvex": "Convex halves",
-    "partsConcave": "Concave halves",
-    "partsSingle": "Round chips (single type)",
-    "partsDual": "Square chips (dual type)",
-    "partsStatus_confirmed": "Counted",
-    "partsStatus_unknown": "Not counted",
-    "partsStatus_random": "Blind box",
-    "partsSave": "Save all",
-    "partsSaving": "Saving…",
-    "partsSaved": "Saved — players see the new list already.",
-    "partsErrKey": "{where}: key is required",
-    "partsErrName": "{where}: name is required",
-    "partsErrRelease": "{where}: release must look like 2026-12 or 2026-12-05",
-    "partsErrDuplicate": "Duplicate key: {key}",
-    "partsErrEmpty": "At least one product is required"
+    "emailLabel": "Email"
   },
   "priceLog": {
     "title": {

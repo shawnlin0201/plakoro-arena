@@ -171,8 +171,7 @@
     "adminSales": "手冊營收",
     "adminCoupons": "折扣碼",
     "adminNotice": "公告管理",
-    "adminTicker": "跑馬燈",
-    "adminParts": "商品零件表"
+    "adminTicker": "跑馬燈"
   },
   "admin": {
     "switchTitle": "帳號管理",
@@ -369,35 +368,7 @@
     "noticeGroupEnded": "已結束",
     "noticeEmpty": "沒有公告",
     "noticeEnded": "已結束",
-    "emailLabel": "信箱",
-    "partsTitle": "商品零件表",
-    "partsNote": "玩家端的「產品資訊」與「組骰規劃」讀的都是這一份。存檔後立刻生效，不必重新部署。｜讀不到資料時先確認後端：這一頁需要 /api/product-parts，而它來自 migration 0038。後端沒啟動或還沒部署時會看到連線錯誤。",
-    "partsAdd": "新增商品",
-    "partsAddDual": "＋ 加一種方晶片",
-    "partsUnnamed": "（未命名）",
-    "partsCounts": "蓋 {halves}・晶片 {chips}",
-    "partsKey": "代號",
-    "partsProductId": "品番",
-    "partsName": "商品名稱",
-    "partsCategory": "分類",
-    "partsStatus": "清點狀態",
-    "partsJpy": "日本定價",
-    "partsRelease": "上市",
-    "partsConvex": "凸面骰蓋",
-    "partsConcave": "凹面骰蓋",
-    "partsSingle": "圓晶片（單屬性）",
-    "partsDual": "方晶片（雙屬性）",
-    "partsStatus_confirmed": "已清點",
-    "partsStatus_unknown": "待清點",
-    "partsStatus_random": "盲盒",
-    "partsSave": "整份存檔",
-    "partsSaving": "存檔中…",
-    "partsSaved": "已存檔，玩家端已經是新的了。",
-    "partsErrKey": "{where}：代號不能空白",
-    "partsErrName": "{where}：商品名稱不能空白",
-    "partsErrRelease": "{where}：上市日期要寫成 2026-12 或 2026-12-05",
-    "partsErrDuplicate": "代號重複：{key}",
-    "partsErrEmpty": "至少要有一項商品"
+    "emailLabel": "信箱"
   },
   "priceLog": {
     "title": {

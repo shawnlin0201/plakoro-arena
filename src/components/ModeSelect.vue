@@ -13,7 +13,6 @@ import { shopOpen } from '../data/handbookTiers'
 import { giftCount, hasGifts, refreshGifts } from '../data/gifts'
 import { refreshAnnouncements, unreadCount } from '../data/announcements'
 import { refreshTicker, tickerText } from '../data/ticker'
-import { refreshProductParts } from '../data/productParts'
 import { refreshPoints } from '../data/points'
 import Icon from './Icon.vue'
 
@@ -90,9 +89,7 @@ const MODES = [
   { key: 'adminCoupons', group: 'tools', adminOnly: true },
   { key: 'adminNotice', group: 'tools', adminOnly: true },
   // 跑馬燈跟公告分開：一個是一則一則要讀完的，一個是一行一直在跑的字。
-  { key: 'adminTicker', group: 'tools', adminOnly: true },
-  // 商品零件表。玩家端的產品資訊與組骰規劃讀的都是它。
-  { key: 'adminParts', group: 'tools', adminOnly: true }
+  { key: 'adminTicker', group: 'tools', adminOnly: true }
 ]
 
 const GROUPS = [{ key: 'tools' }]
@@ -202,9 +199,6 @@ onMounted(() => {
   refreshAnnouncements()
   // 跑馬燈同理，而且它是這個畫面上唯一會自己變的東西。
   refreshTicker()
-  // 商品零件表。在這裡拿而不是等進了組骰規劃才拿：規劃器一打開就要算，而那時候才去
-  // 要資料的話，第一份購物清單會是用建置時那一份算出來的，然後在眼前換掉。
-  refreshProductParts()
 })
 onBeforeUnmount(() => {
   tickerObserver?.disconnect()
