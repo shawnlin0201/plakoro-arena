@@ -116,6 +116,24 @@ const RAW = {
   eb01s06: { id: '01_7172', name: '探險盒組 臭泥', category: 'expedition01', jpy: 350, release: '2026-07-18', status: 'confirmed',
     halves: {}, single: { 惡: 2 }, dual: { '惡+惡': 2 } },
 
+  // 探險盒組 02（品番 01_7182、¥350、2026 年 11 月）。跟 01 一樣是盲盒：六隻共用同一
+  // 個品番，開到哪一隻是拆開才知道的，所以六列的 id 相同。官方只公布到月份，沒有給
+  // 到日，release 就照實寫成月份 —— isReleased 會從那個月的 1 號起算。
+  //
+  // 晶片數跟官方標示的「改裝晶片 × 4」一致：每一隻都是兩片圓的加兩片方的。
+  eb02s01: { id: '01_7182', name: '探險盒組 忍蛙', category: 'expedition02', jpy: 350, release: '2026-11', status: 'confirmed',
+    halves: {}, single: { 水: 2 }, dual: { '水+超': 1, '水+草': 1 } },
+  eb02s02: { id: '01_7182', name: '探險盒組 小緞匠', category: 'expedition02', jpy: 350, release: '2026-11', status: 'confirmed',
+    halves: {}, single: { 超: 1, 鋼: 1 }, dual: { '超+超': 2 } },
+  eb02s03: { id: '01_7182', name: '探險盒組 勾魂眼', category: 'expedition02', jpy: 350, release: '2026-11', status: 'confirmed',
+    halves: {}, single: { 惡: 2 }, dual: { '惡+惡': 1, '惡+水': 1 } },
+  eb02s04: { id: '01_7182', name: '探險盒組 波士可多拉', category: 'expedition02', jpy: 350, release: '2026-11', status: 'confirmed',
+    halves: {}, single: { 鋼: 2 }, dual: { '鋼+鋼': 2 } },
+  eb02s05: { id: '01_7182', name: '探險盒組 列空座', category: 'expedition02', jpy: 350, release: '2026-11', status: 'confirmed',
+    halves: {}, single: { 火: 1, 雷: 1 }, dual: { '火+雷': 2 } },
+  eb02s06: { id: '01_7182', name: '探險盒組 吉利蛋', category: 'expedition02', jpy: 350, release: '2026-11', status: 'confirmed',
+    halves: {}, single: { 飛: 2 }, dual: { '飛+飛': 2 } },
+
   dx01: { id: '01_7285', name: 'DX 啟程套組 01（皮卡丘・伊布・夢幻）', category: 'dx', jpy: 4000, release: '2026-12', status: 'confirmed',
     halves: { 鋼: 1, 格: 2, 水: 3, 飛: 2, 雷: 1, 惡: 3, 火: 2, 草: 2, 超: 2 },
     single: { 雷: 5, 超: 6, 火: 1, 草: 1, 鋼: 3, 惡: 3, 格: 3, 飛: 4, 水: 1 },
