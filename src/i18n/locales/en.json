@@ -439,7 +439,6 @@
     "title": "Theme Cards",
     "themesHint": "Rule cards for in-person meetups. Pick a theme, then the cards you are bringing.",
     "cardCount": "{n} cards",
-    "pickedMark": "{n} picked",
     "noSets": "No themes are open yet.",
     "noCards": "This theme has no cards yet.",
     "pick": "Pick this",

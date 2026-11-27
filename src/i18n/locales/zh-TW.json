@@ -439,7 +439,6 @@
     "title": "主題卡",
     "themesHint": "實體聚會限定的規則卡。先選主題，再挑這場要帶的卡。",
     "cardCount": "{n} 張卡",
-    "pickedMark": "已選 {n}",
     "noSets": "目前還沒有公開的主題。",
     "noCards": "這個主題還沒有卡。",
     "pick": "選這張",

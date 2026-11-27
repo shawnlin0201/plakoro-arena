@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { asset } from '../data/assetPath'
 import { loadState, saveState, themeCardAsset, visibleSets } from '../data/themeCards'
@@ -77,11 +77,14 @@ const slides = computed(() => {
 
 const activeCard = computed(() => slides.value[activeIndex.value] || null)
 
-// 一格的寬度要用量的，不能假設它等於可視區 —— 一張卡只佔可視區的一部分。量的是第
-// 一張卡的外框寬度，所以間距或留白改了也不會失準。
-function stride(el) {
-  const first = el.querySelector('.tcard-slide')
-  return first ? first.getBoundingClientRect().width : el.clientWidth
+// 把第 i 張推到正中央。算的是那一格的實際位置，不是「第幾格 × 一格寬」—— 兩端的
+// 留白跟間距都算在裡面了，所以不必在這裡重算一次版面。
+function centreOn(i) {
+  const el = trackRef.value
+  if (!el) return
+  const node = el.querySelectorAll('.tcard-slide')[i]
+  if (!node) return
+  el.scrollTo({ left: node.offsetLeft - (el.clientWidth - node.clientWidth) / 2, behavior: 'smooth' })
 }
 
 // 中間是哪一張。比的是每一張的中心與可視區中心的距離，而不是從捲動距離除出來的 ——
@@ -100,12 +103,18 @@ function onScroll() {
   activeIndex.value = best
 }
 
-// 箭頭推一段距離，不是跳到下一張。一張卡的寬度剛好是「看得出有東西移動、又不會把
-// 正在比較的那兩張一起推出畫面」的一段。
+// 箭頭剛好跳一張。基準是「現在中間是哪一張」而不是捲動距離，所以從兩張之間的位置
+// 按下去，落點一樣是隔壁那張的正中央，不會把半格的誤差一路累積下去。
 function nudge(dir) {
-  const el = trackRef.value
-  if (!el) return
-  el.scrollBy({ left: dir * stride(el), behavior: 'smooth' })
+  const next = Math.min(Math.max(activeIndex.value + dir, 0), slides.value.length - 1)
+  centreOn(next)
+}
+
+// 直接點一張就把它移到中央。整條卡同時看得到五六張，最近的那張不一定是中間那張 ——
+// 要選旁邊的卡時，點它比按兩下箭頭直覺。拖曳中的放開不算點擊。
+function onSlideClick(i) {
+  if (drag && drag.moved) return
+  centreOn(i)
 }
 
 /* 桌機上按著卡面拖。
@@ -138,10 +147,37 @@ function endDrag() {
   drag = null
 }
 
+/* 兩端留白的寬度。卡片是「高度撐滿卡台、寬度照 63:88 算」，所以卡有多寬要等版面
+   算完才知道 —— CSS 寫不出這個值，只能量完再填回去。
+   螢幕轉向、網址列收起來都會改變卡台高度，所以是持續觀察而不是量一次。 */
+const padW = ref(0)
+
+function measurePad() {
+  const el = trackRef.value
+  if (!el) return
+  const slide = el.querySelector('.tcard-slide')
+  const w = slide ? slide.getBoundingClientRect().width : 0
+  padW.value = Math.max(0, (el.clientWidth - w) / 2)
+}
+
+let trackObserver = null
+
+watch(trackRef, el => {
+  trackObserver?.disconnect()
+  trackObserver = null
+  if (!el || typeof ResizeObserver === 'undefined') return
+  trackObserver = new ResizeObserver(measurePad)
+  trackObserver.observe(el)
+})
+
+onBeforeUnmount(() => trackObserver?.disconnect())
+
 // 換畫面要回到第一張，而且是瞬間回到 —— 這時候捲動動畫會變成「新畫面自己動了一
 // 下」，看起來像誤觸。等 DOM 換完才捲，不然捲的還是上一疊。
 watch(view, async () => {
   activeIndex.value = 0
+  await nextTick()
+  measurePad()
   await nextTick()
   if (trackRef.value) trackRef.value.scrollLeft = 0
 })
@@ -207,9 +243,6 @@ function newMatch() {
           <span class="tcard-theme-sub">
             {{ s.tagline || t('themeCards.cardCount', { n: s.cards.length }) }}
           </span>
-          <span v-if="slot(s.id).picked.length" class="tcard-theme-mark">
-            {{ t('themeCards.pickedMark', { n: slot(s.id).picked.length }) }}
-          </span>
         </button>
       </div>
 
@@ -239,12 +272,13 @@ function newMatch() {
             @pointercancel="endDrag"
             @pointerleave="endDrag"
           >
-            <div class="tcard-pad" aria-hidden="true"></div>
+            <div class="tcard-pad" :style="{ flex: `0 0 ${padW}px` }" aria-hidden="true"></div>
             <div
               v-for="(card, i) in slides"
               :key="card.id"
               class="tcard-slide"
               :class="{ off: i !== activeIndex }"
+              @click="onSlideClick(i)"
             >
               <div class="tcard" :class="{ on: view === 'pick' && isPicked(card), spent: view === 'play' && isUsed(card) }">
                 <span v-if="pickOrder(card)" class="tcard-order">{{ pickOrder(card) }}</span>
@@ -265,7 +299,7 @@ function newMatch() {
                 </div>
               </div>
             </div>
-            <div class="tcard-pad" aria-hidden="true"></div>
+            <div class="tcard-pad" :style="{ flex: `0 0 ${padW}px` }" aria-hidden="true"></div>
           </div>
 
           <!-- 箭頭疊在卡台上，不佔版面寬度 —— 中間那張卡要拿到的是所有剩下的空間。 -->
@@ -358,18 +392,6 @@ function newMatch() {
 .tcard-theme-name { font-size: 0.875rem; font-weight: 800; color: var(--ink); }
 .tcard-theme-sub { font-size: 0.625rem; font-weight: 700; color: var(--sub); }
 
-.tcard-theme-mark {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.625rem;
-  font-size: 0.5625rem;
-  font-weight: 800;
-  color: var(--accent-strong);
-  background: var(--accent);
-  border-radius: 999px;
-  padding: 0.0625rem 0.375rem;
-}
-
 /* ── 卡台 ── */
 .tcard-stage {
   position: relative;
@@ -380,6 +402,7 @@ function newMatch() {
 }
 
 .tcard-track {
+  gap: 0.375rem;
   flex: 1 1 auto;
   min-width: 0;
   height: 100%;
@@ -405,19 +428,22 @@ function newMatch() {
 
 /* 兩端的留白，讓第一張與最後一張也停得到正中央。用真的元素而不是容器的 padding：
    捲動容器的尾端 padding 在部分瀏覽器會被吃掉。 */
-.tcard-pad { flex: 0 0 7%; height: 1px; }
+/* 兩端的留白要剛好等於「可視區一半 − 半張卡」，第一張與最後一張才停得到正中央。
+   卡寬是從卡台高度算出來的，CSS 這裡拿不到，所以由 padW 量好之後送進來。 */
+.tcard-pad { height: 1px; }
 
 .tcard-slide {
-  flex: 0 0 86%;
+  flex: 0 0 auto;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.25rem;
+  cursor: pointer;
 }
 
-/* 左右那兩截退到背景去 —— 它們的工作是告訴人「這裡可以滑」，不是跟中間那張搶注意。 */
-.tcard-slide.off { opacity: 0.45; transform: scale(0.94); }
+/* 旁邊那幾張只是淡一點。原本還會縮小，那是「一次只給你看一張」時代的做法 —— 現在
+   整排都要看得清楚，縮小只會讓人以為它們是另一種東西。 */
+.tcard-slide.off { opacity: 0.55; }
 .tcard-slide { transition: opacity 0.2s, transform 0.2s; }
 
 @media (prefers-reduced-motion: reduce) {
@@ -450,7 +476,6 @@ function newMatch() {
 .tcard {
   position: relative;
   height: 100%;
-  max-height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -458,12 +483,11 @@ function newMatch() {
 
 .tcard-art {
   position: relative;
-  /* 實體卡 6.3 × 8.8 cm。高度優先、寬度跟著比例算 —— 反過來先定寬的話，螢幕一矮卡
-     就被切掉下緣。 */
+  /* 實體卡 6.3 × 8.8 cm。高度吃滿卡台、寬度照比例算 —— 這一頁要讓人讀得到卡面上
+     印的字，所以決定大小的是縱向剩多高，不是橫向排得下幾張。 */
   aspect-ratio: 63 / 88;
   height: 100%;
-  min-height: 0;
-  max-width: 100%;
+  width: auto;
   background: var(--card);
   border-radius: var(--radius);
   overflow: hidden;
