@@ -401,7 +401,7 @@ function goBack() {
     <div class="dr-top-row">
       <div
         class="dr-move-card"
-        :style="{ backgroundColor: typeBgColor(mv.type), backgroundImage: `url('${asset(`image/BACK/back_${mv.type}.png`)}')` }"
+        :style="{ backgroundColor: typeBgColor(mv.type), backgroundImage: `url('${asset(`image/BACK/back_${mv.type}.webp`)}')` }"
       >
         <div class="dr-cost-row">
           <div v-for="(costType, i) in mv.cost" :key="i" class="cost-dot"><img :src="asset(`image/ICON/${costType}.png`)" class="img-icon" :alt="costType"></div>
@@ -464,7 +464,7 @@ function goBack() {
     <div class="dr-top-row">
       <div
         class="dr-move-card"
-        :style="{ backgroundColor: typeBgColor(mv.type), backgroundImage: `url('${asset(`image/BACK/back_${mv.type}.png`)}')` }"
+        :style="{ backgroundColor: typeBgColor(mv.type), backgroundImage: `url('${asset(`image/BACK/back_${mv.type}.webp`)}')` }"
       >
         <div class="dr-cost-row">
           <div v-for="(costType, i) in mv.cost" :key="i" class="cost-dot"><img :src="asset(`image/ICON/${costType}.png`)" class="img-icon" :alt="costType"></div>

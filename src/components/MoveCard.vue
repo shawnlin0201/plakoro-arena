@@ -66,7 +66,7 @@ function onClick() {
       :class="{ low: lowData }"
       :style="lowData
         ? {}
-        : { backgroundColor: typeBgColor(mv.type), backgroundImage: `url('${asset(`image/BACK/back_${mv.type}.png`)}')`, backgroundSize: 'cover', backgroundPosition: 'center' }"
+        : { backgroundColor: typeBgColor(mv.type), backgroundImage: `url('${asset(`image/BACK/back_${mv.type}.webp`)}')`, backgroundSize: 'cover', backgroundPosition: 'center' }"
     >
       <div class="mc-top-row">
         <div class="mc-typename">

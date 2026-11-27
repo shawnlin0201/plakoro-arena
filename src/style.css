@@ -12,16 +12,23 @@
    機器會蓋掉系統原本更合適的字。 */
 :root:lang(zh){ --ui-cjk:'PingFang TC','Microsoft JhengHei','Noto Sans TC',sans-serif; }
 
+/* 兩支字型都只提供 woff2。原始的 .otf／.ttf 收在 src/assets/_original/font/，不進
+   public —— 它們不會被下載，留在 public 只是讓每次建置多搬 4MB 進 docs/。
+
+   Corporate-Logo 的原始 .otf 另外有個問題：它的 cmap 帶了一張排序壞掉的 format 14
+   （異體字選擇器）子表，Chrome 的 OTS 會因此判定整張 cmap 無效、連帶拒收整支字型。
+   也就是說那 2.7MB 在 Chrome 上一直是白下載的，畫面上看到的其實是後面的系統字型。
+   轉 woff2 時把那張子表拿掉了，現在它才真的生效。 */
 @font-face{
   font-family:'851Gkktt';
-  src:url('/851Gkktt_005.ttf') format('truetype');
+  src:url('/851Gkktt_005.woff2') format('woff2');
   font-weight:normal;
   font-style:normal;
   font-display:block;
 }
 @font-face{
   font-family:'CorporateLogoBold';
-  src:url('/Corporate-Logo-Bold-ver3.otf') format('opentype');
+  src:url('/Corporate-Logo-Bold-ver3.woff2') format('woff2');
   font-weight:normal;
   font-style:normal;
   font-display:block;
