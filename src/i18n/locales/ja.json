@@ -509,7 +509,7 @@
     "applyToAll": "すべてに適用",
     "probButton": "確率表を見る",
     "probTitle": "各タイプの出現確率",
-    "probHint": "3つのダイスを一緒に振り、最終的に揃うエネルギータイプの組み合わせごとに確率を集計（確率順）",
+    "probHint": "ダイスをまとめて振り、最終的に揃うエネルギータイプの組み合わせごとに確率を集計（確率順）",
     "probFilterLabel": "絞り込み",
     "probGroupLabel": "個数で並び替え",
     "moveOddsButton": "ワザ成功率",
@@ -576,8 +576,6 @@
       "rampUpTo": "ダイス 1–{n}",
       "rampAll": "全ダイス"
     },
-    "showCumulativeProb": "累計確率で表示",
-    "showExactProb": "ちょうどの確率で表示",
     "showCountsLabel": "回数も表示",
     "picker": {
       "convexTitle": "凸面のエネルギーを選択",

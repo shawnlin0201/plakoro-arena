@@ -509,7 +509,7 @@
     "applyToAll": "全部套用",
     "probButton": "結果機率表",
     "probTitle": "各類型出現機率",
-    "probHint": "三顆骰子一起擲，依最終集齊的能量種類組合統計機率（依機率高低排序）",
+    "probHint": "一組骰子一起擲，依最終集齊的能量種類組合統計機率（依機率高低排序）",
     "probFilterLabel": "只看",
     "probGroupLabel": "依數量排序",
     "moveOddsButton": "招式機率",
@@ -576,8 +576,6 @@
       "rampUpTo": "骰 1–{n}",
       "rampAll": "全部骰子"
     },
-    "showCumulativeProb": "顯示累計機率",
-    "showExactProb": "顯示恰好機率",
     "showCountsLabel": "顯示次數",
     "picker": {
       "convexTitle": "選擇凸面能量",

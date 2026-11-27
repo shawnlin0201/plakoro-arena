@@ -509,7 +509,7 @@
     "applyToAll": "Apply to all",
     "probButton": "Probability Table",
     "probTitle": "Type Odds",
-    "probHint": "All 3 dice rolled together, tallied by the resulting energy-type combo (sorted by odds)",
+    "probHint": "A set is rolled together, tallied by the resulting energy-type combo (sorted by odds)",
     "probFilterLabel": "Only show",
     "probGroupLabel": "Sort by count",
     "moveOddsButton": "Move Odds",
@@ -576,8 +576,6 @@
       "rampUpTo": "Dice 1–{n}",
       "rampAll": "All dice"
     },
-    "showCumulativeProb": "Show cumulative odds",
-    "showExactProb": "Show exact odds",
     "showCountsLabel": "Show counts",
     "picker": {
       "convexTitle": "Choose convex energy",

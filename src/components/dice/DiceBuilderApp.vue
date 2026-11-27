@@ -618,16 +618,12 @@ function pct(count, si) {
   return total ? (count / total * 100).toFixed(1) : '0.0'
 }
 
-// A grouped bucket has two figures worth knowing: how often it comes up exactly, and how often
-// it comes up at all ("n or more"). Showing both at once doubles every row's width, so the two
-// share one column and a toggle picks which is on screen. Exact is the default, matching what
-// the table showed before cumulative figures existed. Only meaningful while grouping is on —
-// an individual combination has no "or more".
-const showCumulative = ref(false)
-
-function groupFigure(group, setIndex) {
-  return showCumulative.value ? group.cumulative[setIndex] : group.totals[setIndex]
-}
+// 一個分組桶有兩個都要看的數字：剛好 n 個的機率，以及 n 個以上的機率。後者通常才是
+// 真正要的 —— 一招要三個火，擲出四個火一樣付得起。
+//
+// 原本兩者共用一欄、靠一顆鍵切換，因為並排會讓每一列變寬一倍。但那顆鍵等於要人記住
+// 「現在看的是哪一種」，而這兩個數字的意義是要互相對照的：恰好四個很罕見、四個以上
+// 卻未必，分開看就讀不出這件事。所以改成上下兩行並存，欄寬跟著放寬。
 
 // The percentage is what a player actually reads; the raw "n/216" tally is opt-in detail. With
 // it off the figure is just the percentage, so the parenthesis only belongs there when the
@@ -641,7 +637,9 @@ function pctText(count, si) {
 // Narrower when only the percentage is on screen, so the column doesn't sit in dead space.
 const figureColWidth = computed(() => {
   if (!hasCompare.value) return 'auto'
-  return showCounts.value ? '7.5rem' : '4.5rem'
+  // 分組時每一格是上下兩行，第二行多了「≥n」這個前綴，所以要比單行時寬一截。
+  if (showCounts.value) return groupByType.value ? '9.5rem' : '7.5rem'
+  return groupByType.value ? '5.75rem' : '4.5rem'
 })
 
 function openProbTable() {
@@ -663,6 +661,25 @@ async function exportDiceImage() {
     await exportElementAsPng(diceGridRef.value, 'plakoro-dice-build')
   } finally {
     exportingDiceImage.value = false
+  }
+}
+
+// 機率表要能帶走 —— 這張表是拿去跟人討論「這組骰到底行不行」的東西，而討論通常不在
+// 這個畫面前面發生。
+//
+// 匯出的是表格本身，不是整個畫面：上面那排篩選鍵與勾選框是用來操作的，不是結論的
+// 一部分。截出來的是整張表而不只是看得到的那一截 —— 捲動的是外層的 board，這個元
+// 素自己是完整攤開的。
+const probTableRef = ref(null)
+const exportingProbImage = ref(false)
+
+async function exportProbImage() {
+  if (!probTableRef.value || exportingProbImage.value) return
+  exportingProbImage.value = true
+  try {
+    await exportElementAsPng(probTableRef.value, 'plakoro-dice-odds')
+  } finally {
+    exportingProbImage.value = false
   }
 }
 </script>
@@ -748,12 +765,6 @@ async function exportDiceImage() {
         >
           <img :src="asset(`image/ICON/${ty}.png`)" class="img-icon" :alt="ty">
         </div>
-        <button
-          v-if="groupByType"
-          class="btn secondary"
-          style="padding:0.25rem 0.5rem; font-size:0.6875rem; flex-shrink:0;"
-          @click="showCumulative = !showCumulative"
-        >{{ showCumulative ? t('diceBuilder.showExactProb') : t('diceBuilder.showCumulativeProb') }}</button>
         <label style="display:flex; align-items:center; gap:0.1875rem; font-size:0.625rem; font-weight:800; color:var(--sub); cursor:pointer; flex-shrink:0;">
           <input type="checkbox" v-model="showCounts" style="width:0.75rem; height:0.75rem; margin:0;">
           {{ t('diceBuilder.showCountsLabel') }}
@@ -761,7 +772,7 @@ async function exportDiceImage() {
       </div>
     </div>
 
-    <div style="width:100%; max-width:40rem; padding:0 0.625rem;">
+    <div ref="probTableRef" style="width:100%; max-width:40rem; padding:0 0.625rem;">
       <div v-if="hasCompare" style="display:flex; align-items:center; justify-content:space-between; gap:0.625rem; padding:0 0.125rem 0.25rem; border-bottom:0.125rem solid var(--line);">
         <span style="font-size:0.6875rem; font-weight:800; color:var(--sub);">{{ t('diceBuilder.probTypeHeader') }}</span>
         <div style="display:flex; gap:0.5rem; flex-shrink:0;">
@@ -787,7 +798,12 @@ async function exportDiceImage() {
                 v-for="(_, si) in group.totals"
                 :key="si"
                 :style="{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--sub)', width: figureColWidth, textAlign: 'right', whiteSpace: 'nowrap' }"
-              ><span v-if="showCounts">{{ groupFigure(group, si) }}/{{ totalRolls(si) }}</span><span :style="{ fontWeight: 900, color: groupFigure(group, si) === 0 ? 'var(--line)' : 'var(--ink)' }">{{ pctText(groupFigure(group, si), si) }}</span></div>
+              >
+                <div><span v-if="showCounts">{{ group.totals[si] }}/{{ totalRolls(si) }}</span><span :style="{ fontWeight: 900, color: group.totals[si] === 0 ? 'var(--line)' : 'var(--ink)' }">{{ pctText(group.totals[si], si) }}</span></div>
+                <!-- 「n 個以上」。≥ 不必翻譯，而且比「以上」窄 —— 這一欄每多一個字，
+                     兩組並排時就少一點空間。 -->
+                <div :style="{ fontSize: '0.6875rem', fontWeight: 700, opacity: 0.85 }">≥{{ group.n }} <span v-if="showCounts">{{ group.cumulative[si] }}/{{ totalRolls(si) }}</span><span :style="{ fontWeight: 900, color: group.cumulative[si] === 0 ? 'var(--line)' : 'var(--sub)' }">{{ pctText(group.cumulative[si], si) }}</span></div>
+              </div>
             </div>
           </div>
           <template v-if="expandedGroupCounts.has(group.n)">
@@ -827,8 +843,9 @@ async function exportDiceImage() {
       </div>
     </div>
 
-    <div style="display:flex; justify-content:center; padding:0.875rem 0 0.25rem;">
+    <div style="display:flex; justify-content:center; gap:0.5rem; padding:0.875rem 0 0.25rem;">
       <button class="btn secondary" @click="showProbTable = false">{{ t('common.back') }}</button>
+      <button class="btn secondary" :disabled="exportingProbImage" @click="exportProbImage">{{ exportingProbImage ? t('diceBuilder.exportingImage') : t('diceBuilder.exportImage') }}</button>
     </div>
   </div>
 
