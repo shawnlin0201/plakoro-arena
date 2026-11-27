@@ -613,9 +613,21 @@ function totalRolls(si) {
   return set ? ALL_FACE_KEYS.length ** set.dice.length : 0
 }
 
+// 小數位數不是固定的。骰子愈多，分母愈大（六面的顆數次方），而一位小數的下限是
+// 0.05% —— 五顆骰的 1/7776 是 0.0129%，會被四捨五入成 0.0%，跟「這個組合根本擲不
+// 出來」顯示成一模一樣。對組骰的人來說那是兩件完全不同的事：一個是要賭，一個是沒
+// 得賭。
+//
+// 所以只要次數不是 0，就一直加位數直到看得見第一個有效數字為止。真正的 0 才顯示
+// 0.0，而且它本來就是用灰色標出來的。
 function pct(count, si) {
   const total = totalRolls(si)
-  return total ? (count / total * 100).toFixed(1) : '0.0'
+  if (!total || count === 0) return '0.0'
+  const p = count / total * 100
+  if (p >= 0.1) return p.toFixed(1)
+  let digits = 2
+  while (digits < 8 && Number(p.toFixed(digits)) === 0) digits += 1
+  return p.toFixed(digits)
 }
 
 // 一個分組桶有兩個都要看的數字：剛好 n 個的機率，以及 n 個以上的機率。後者通常才是
