@@ -111,12 +111,16 @@ function addCompareSet(fromIndex = 0) {
   charaRollResult.value = null
 }
 
-// 這一組多一顆骰。新的一顆是隨機的，不是複製骰1 —— 複製的話它會跟骰1一模一樣，看
-// 起來像「鏡像」那個勾選框的效果，而那是兩回事。
+// 這一組多一顆骰。新的一顆是複製最後那一顆，不是隨機生一顆 —— 會按這顆按鈕的人正
+// 在把一套配置往外加，隨機的話等於每加一顆都要從頭挑六個面。複製的是最後一顆而不
+// 是骰1：往下加的時候，手邊最近調好的就是它。
+//
+// 複製出來的那顆不打勾「與骰1相同」。它現在跟誰一樣是這一刻的事實，勾起來則是從今
+// 以後跟著骰1變，兩者不同 —— 真要鏡像，旁邊那個勾選框就是在做這件事。
 function addDie(si) {
   const set = sets.value[si]
   if (!set || set.dice.length >= MAX_DICE) return
-  set.dice.push(randomDie())
+  set.dice.push(cloneDie(set.dice[set.dice.length - 1]))
   set.sameAsDie1.push(false)
   // 上一次擲骰少一顆，接著渲染會是一列對不上標頭的結果。
   rollResults.value = null
