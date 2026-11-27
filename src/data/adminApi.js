@@ -257,20 +257,6 @@ export function deleteHandbookCoupon(token, code) {
    概念 —— 那份資料從來不會離開那台瀏覽器。
 */
 
-// 商品零件表。整份讀、整份存 —— 編輯器刪掉一盒時沒有差異可以送，只有每次重來才保證
-// 舊的一定不在（跟方案階梯、獎品組合同一種做法）。
-export function getProductParts(token) {
-  return request('/api/product-parts', { headers: authHeader(token) })
-}
-
-export function saveProductParts(token, products) {
-  return request('/api/admin/product-parts', {
-    method: 'PUT',
-    headers: authHeader(token),
-    body: JSON.stringify({ products })
-  })
-}
-
 export function listAnnouncements(token) {
   return request('/api/admin/announcements', { headers: authHeader(token) })
 }
