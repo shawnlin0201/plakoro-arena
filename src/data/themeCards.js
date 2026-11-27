@@ -37,84 +37,84 @@ export const THEME_CARD_SETS = [
         id: 'gtavi-01',
         no: 'GTAVI-01',
         name: '警察！趴下！',
-        text: '對方下回合角色骰面固定為倒立。（無法用招式改判骰面）',
+        text: '對手下回合角色骰面固定為倒立。（無法用招式改判骰面）',
         image: 'sin-city/GTAVI-01.webp'
       },
       {
         id: 'gtavi-02',
         no: 'GTAVI-02',
-        name: '故障骰子',
-        text: '對手下個回合擲骰結束後，由自己決定一顆對方的能量骰重擲一次。',
+        name: '故障的作弊骰子',
+        text: '本回合我方擲骰結束後，由我方決定一顆能量骰，由對方重擲一次。',
         image: 'sin-city/GTAVI-02.webp'
       },
       {
         id: 'gtavi-03',
         no: 'GTAVI-03',
         name: '黑吃黑',
-        text: '此回合我方攻擊後額外造成我方先減 20 血量，對方再減 20 血量。（無法用招式效果免除傷害）',
+        text: '此回合我方攻擊後執行以下：我方先減 20 血量，對方再減 20 血量。（無法用招式效果免除傷害）',
         image: 'sin-city/GTAVI-03.webp'
       },
       {
         id: 'gtavi-04',
         no: 'GTAVI-04',
         name: '趁火打劫',
-        text: '若對方上回合使出火屬性招式，本回合你造成傷害最後額外加上 20。',
+        text: '若對手上回合使出火屬性招式，本回合我方造成對手傷害額外加上 20。',
         image: 'sin-city/GTAVI-04.webp'
       },
       {
         id: 'gtavi-05',
         no: 'GTAVI-05',
-        name: '亡命狂飆',
-        text: '對手下回合擲骰時，對方需站起來投擲所有骰子，若骰子掉落骰盤、桌子外範圍則無效。（使用此卡的人決定使用哪個骰盤）',
+        name: '直升機追緝',
+        text: '對手下回合擲骰時，對手需站起來投擲所有骰子，若骰子掉落骰盤外或桌子底下則該骰無效。（使用此卡的人決定使用哪個骰盤）',
         image: 'sin-city/GTAVI-05.webp'
       },
       {
         id: 'gtavi-06',
         no: 'GTAVI-06',
-        name: '地下交易',
-        text: '由你選擇對方的一個能量骰，由對方選擇你的一個能量骰，兩邊互相交換。',
+        name: '不公平的交易',
+        text: '先由你選擇對方的一個能量骰，再由對方選擇你的一個能量骰，兩邊同時交換後繼續進行遊戲。',
         image: 'sin-city/GTAVI-06.webp'
       },
       {
         id: 'gtavi-07',
         no: 'GTAVI-07',
-        name: '武力威嚇',
-        text: '展示角色骰給對方看，對手下回合攻擊時，你減傷 20。',
+        name: '武力支援',
+        text: '本回合我方角色骰可重擲一次。',
         image: 'sin-city/GTAVI-07.webp'
       },
       {
         id: 'gtavi-08',
         no: 'GTAVI-08',
         name: '突破火線',
-        text: '對手下回合攻擊使你受到致命傷時，我方丟擲角色骰，若面朝左、右，則傷害減 20。',
+        text: '對手下回合攻擊使我方受到致命傷時，我方丟擲角色骰一次，若面朝左、右，則傷害減 20。',
         image: 'sin-city/GTAVI-08.webp'
       },
       {
         id: 'gtavi-09',
         no: 'GTAVI-09',
         name: '越獄計畫',
-        text: '免除對手上回合對你所有招式與卡片所帶來的控制。',
+        text: '免除對手上回合對你所有招式與主題卡所帶來的控制。',
         image: 'sin-city/GTAVI-09.webp'
       },
       {
         id: 'gtavi-10',
         no: 'GTAVI-10',
-        name: '十面埋伏',
-        text: '對方上回合若未造成傷害，本回合可重擲角色骰一次。',
+        name: '有福同享',
+        text: '對手下回合與我方下個回合角色骰固定為立。（無法用招式改判骰面）',
         image: 'sin-city/GTAVI-10.webp'
       },
       {
         id: 'gtavi-11',
         no: 'GTAVI-11',
         name: '口頭警告',
-        text: '若本回合自己無造成傷害，則下回合傷害結算後額外增加 20 點傷害。',
+        text: '若本回合無造成對手傷害，則下回合傷害結算時，額外造成對手 20 點傷害。',
         image: 'sin-city/GTAVI-11.webp'
       },
       {
         id: 'gtavi-12',
         no: 'GTAVI-12',
         name: '順手牽羊',
-        text: '本回合選擇對手一招來使用，同樣需達成招式指定能量與角色骰面。',
+        text: '本回合選擇對手一個招式來使用，需達成招式指定能量與角色骰面。',
         image: 'sin-city/GTAVI-12.webp'
       }
     ]
