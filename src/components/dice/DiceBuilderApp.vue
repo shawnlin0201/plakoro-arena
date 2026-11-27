@@ -40,12 +40,21 @@ function cloneDie(die) {
   }
 }
 
+// 目前的遊戲是三顆能量骰，所以新的一組從三顆開始 —— 但數量是可以改的，之後出了用
+// 更多顆的玩法，這裡不必跟著改。
+const DEFAULT_DICE = 3
+
+// 上限。機率表要窮舉每一顆骰的每一面，六面 ^ 顆數，所以這不是畫面擠不擠的問題，是第
+// 七顆開始整張表要算 28 萬種組合、按下去會卡住。
+const MAX_DICE = 6
+
 function newDiceSet() {
   return {
-    dice: [randomDie(), randomDie(), randomDie()],
-    // Whether die 2 / die 3 (indices 1 and 2) are locked to always mirror die 1's setup.
+    dice: Array.from({ length: DEFAULT_DICE }, () => randomDie()),
+    // Whether die 2 onwards are locked to always mirror die 1's setup. One flag per die after
+    // the first, so this array is always one shorter than `dice`.
     // Scoped per set — set B's checkboxes mirror set B's own die 1, never set A's.
-    sameAsDie1: [false, false]
+    sameAsDie1: Array.from({ length: DEFAULT_DICE - 1 }, () => false)
   }
 }
 
@@ -65,7 +74,7 @@ const hasCompare = computed(() => sets.value.length > 1)
 
 function syncCheckedDice() {
   sets.value.forEach(set => {
-    for (let i = 1; i <= 2; i++) {
+    for (let i = 1; i < set.dice.length; i++) {
       if (set.sameAsDie1[i - 1]) set.dice[i] = cloneDie(set.dice[0])
     }
   })
@@ -74,7 +83,7 @@ function syncCheckedDice() {
 // Keep die 2 / die 3 mirroring die 1 live — any edit to die 1 (picking a new energy on one of
 // its faces, or a quick pure-type apply) should immediately propagate to the locked dice.
 // Watching only each set's die 1 keeps this from re-triggering itself: the handler writes to
-// dice[1]/dice[2], which aren't part of the watched source.
+// dice[1] onwards, which aren't part of the watched source.
 watch(() => sets.value.map(s => s.dice[0]), syncCheckedDice, { deep: true })
 
 // Every edit (a face repick, toggling compare on/off, adding/clearing set B) persists
@@ -102,11 +111,44 @@ function addCompareSet(fromIndex = 0) {
   charaRollResult.value = null
 }
 
+// 這一組多一顆骰。新的一顆是隨機的，不是複製骰1 —— 複製的話它會跟骰1一模一樣，看
+// 起來像「鏡像」那個勾選框的效果，而那是兩回事。
+function addDie(si) {
+  const set = sets.value[si]
+  if (!set || set.dice.length >= MAX_DICE) return
+  set.dice.push(randomDie())
+  set.sameAsDie1.push(false)
+  // 上一次擲骰少一顆，接著渲染會是一列對不上標頭的結果。
+  rollResults.value = null
+  charaRollResult.value = null
+}
+
+// 拿掉其中一顆。最後一顆不能拿掉 —— 沒有骰子的骰組沒有東西可以算。
+function removeDie(si, di) {
+  const set = sets.value[si]
+  if (!set || set.dice.length <= 1) return
+  set.dice.splice(di, 1)
+  // 刪掉的是骰1的話，後面那些「與骰1相同」指的已經是另一顆骰了。與其默默把它們改寫
+  // 成新骰1的拷貝，不如把勾選全部放掉 —— 玩家留在畫面上的骰面不該因為刪了別的一顆
+  // 而跟著變。
+  if (di === 0) set.sameAsDie1 = set.dice.slice(1).map(() => false)
+  else set.sameAsDie1.splice(di - 1, 1)
+  // 還指著這一顆的狀態要跟著收掉或往前挪。
+  const es = editingSlot.value
+  if (es && es.setIndex === si) {
+    if (es.dieIndex === di) editingSlot.value = null
+    else if (es.dieIndex > di) editingSlot.value = { ...es, dieIndex: es.dieIndex - 1 }
+  }
+  rollResults.value = null
+  charaRollResult.value = null
+  closeQuickApply()
+}
+
 // Removes one specific set by index rather than always trimming back to set A — each card
-// owns its own ✕ now, so which one goes is whichever card it's clicked on. Set A (index 0)
-// can't be removed: there's always at least one build on screen.
+// owns its own ✕ now, so which one goes is whichever card it's clicked on. 只剩一組的時候
+// 不能刪：畫面上永遠要有一組可以編輯的骰。
 function removeSet(index) {
-  if (index === 0 || sets.value.length <= 1) return
+  if (sets.value.length <= 1) return
   sets.value.splice(index, 1)
   // Drop or reindex any state still pointing at a set index, now that one's gone.
   if (editingSlot.value) {
@@ -373,7 +415,7 @@ async function rollDice() {
       waitForCanvas()
     ])
 
-    // Flatten every set's 3 dice plus the shared character die into one ordered list of face
+    // Flatten every set's dice plus the shared character die into one ordered list of face
     // textures — onDiceRolled() slices the eventual result back apart by this same order.
     const energyDice = sets.value.flatMap(set => set.dice)
     const [energyFaces, charaFaces] = await Promise.all([
@@ -425,10 +467,11 @@ function onDiceRolled(results) {
 }
 
 // --- probability table ---
-// All 3 dice of a set are rolled together (6x6x6 = 216 equally-likely face combinations).
-// Rather than listing all 216 permutations, each one collapses to the multiset of energy
-// types it grants (regardless of which die contributed which face or what order), and those
-// 216 outcomes get grouped/tallied by that resulting type set.
+// A set's dice are rolled together — 6 faces each, so a three-die set has 6^3 = 216 equally
+// likely face combinations, and a set with more dice has correspondingly more. Rather than
+// listing every permutation, each one collapses to the multiset of energy types it grants
+// (regardless of which die contributed which face or what order), and those outcomes get
+// grouped/tallied by that resulting type set.
 const showProbTable = ref(false)
 const showMoveOdds = ref(false)
 const showPartsPlan = ref(false)
@@ -443,31 +486,30 @@ if (props.openOdds) {
   set.dice = [cloneDie(die), cloneDie(die), cloneDie(die)]
   // Identical by construction, so the mirror locks say so rather than leaving three dice that
   // merely happen to match until the player edits one.
-  set.sameAsDie1 = [true, true]
+  set.sameAsDie1 = set.dice.slice(1).map(() => true)
   showMoveOdds.value = true
 }
-const TOTAL_ROLLS = ALL_FACE_KEYS.length ** 3
 
 function sortByChipOrder(types) {
   return [...types].sort((a, b) => CHIP_TYPES.indexOf(a) - CHIP_TYPES.indexOf(b))
 }
 
+// 窮舉每一顆骰的每一面。原本是三層迴圈寫死三顆，改成遞迴 —— 顆數現在是玩家可以改
+// 的，而「這一組有幾顆」不該是程式碼裡的巢狀深度。
 function combosForDice(dice) {
   const byKey = new Map()
-  for (const faceA of ALL_FACE_KEYS) {
-    for (const faceB of ALL_FACE_KEYS) {
-      for (const faceC of ALL_FACE_KEYS) {
-        const types = sortByChipOrder([
-          ...faceTypes(dice[0], faceA),
-          ...faceTypes(dice[1], faceB),
-          ...faceTypes(dice[2], faceC)
-        ])
-        const key = types.join(',')
-        if (!byKey.has(key)) byKey.set(key, { types, count: 0 })
-        byKey.get(key).count += 1
-      }
+  if (dice.length === 0) return byKey
+  const walk = (i, carried) => {
+    if (i === dice.length) {
+      const types = sortByChipOrder(carried)
+      const key = types.join(',')
+      if (!byKey.has(key)) byKey.set(key, { types, count: 0 })
+      byKey.get(key).count += 1
+      return
     }
+    for (const faceKey of ALL_FACE_KEYS) walk(i + 1, [...carried, ...faceTypes(dice[i], faceKey)])
   }
+  walk(0, [])
   return byKey
 }
 
@@ -560,8 +602,16 @@ const groupedProbCombos = computed(() => {
   return list
 })
 
-function pct(count) {
-  return (count / TOTAL_ROLLS * 100).toFixed(1)
+// 分母是「這一組」的總擲法。兩組骰子數不同的時候它們不一樣大，所以要指名是哪一組
+// —— 用同一個分母去除，比較出來的百分比會是錯的。
+function totalRolls(si) {
+  const set = sets.value[si]
+  return set ? ALL_FACE_KEYS.length ** set.dice.length : 0
+}
+
+function pct(count, si) {
+  const total = totalRolls(si)
+  return total ? (count / total * 100).toFixed(1) : '0.0'
 }
 
 // A grouped bucket has two figures worth knowing: how often it comes up exactly, and how often
@@ -580,8 +630,8 @@ function groupFigure(group, setIndex) {
 // tally precedes it.
 const showCounts = ref(false)
 
-function pctText(count) {
-  return showCounts.value ? `（${pct(count)}%）` : `${pct(count)}%`
+function pctText(count, si) {
+  return showCounts.value ? `（${pct(count, si)}%）` : `${pct(count, si)}%`
 }
 
 // Narrower when only the percentage is on screen, so the column doesn't sit in dead space.
@@ -733,7 +783,7 @@ async function exportDiceImage() {
                 v-for="(_, si) in group.totals"
                 :key="si"
                 :style="{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--sub)', width: figureColWidth, textAlign: 'right', whiteSpace: 'nowrap' }"
-              ><span v-if="showCounts">{{ groupFigure(group, si) }}/{{ TOTAL_ROLLS }}</span><span :style="{ fontWeight: 900, color: groupFigure(group, si) === 0 ? 'var(--line)' : 'var(--ink)' }">{{ pctText(groupFigure(group, si)) }}</span></div>
+              ><span v-if="showCounts">{{ groupFigure(group, si) }}/{{ totalRolls(si) }}</span><span :style="{ fontWeight: 900, color: groupFigure(group, si) === 0 ? 'var(--line)' : 'var(--ink)' }">{{ pctText(groupFigure(group, si), si) }}</span></div>
             </div>
           </div>
           <template v-if="expandedGroupCounts.has(group.n)">
@@ -748,7 +798,7 @@ async function exportDiceImage() {
                   v-for="(count, si) in combo.counts"
                   :key="si"
                   :style="{ fontSize: '0.6875rem', fontWeight: 600, color: count === 0 ? 'var(--line)' : 'var(--sub)', width: figureColWidth, textAlign: 'right', whiteSpace: 'nowrap' }"
-                ><span v-if="showCounts">{{ count }}/{{ TOTAL_ROLLS }}</span><span :style="{ fontWeight: 900, color: count === 0 ? 'var(--line)' : 'var(--ink)' }">{{ pctText(count) }}</span></div>
+                ><span v-if="showCounts">{{ count }}/{{ totalRolls(si) }}</span><span :style="{ fontWeight: 900, color: count === 0 ? 'var(--line)' : 'var(--ink)' }">{{ pctText(count, si) }}</span></div>
               </div>
             </div>
           </template>
@@ -767,7 +817,7 @@ async function exportDiceImage() {
               v-for="(count, si) in combo.counts"
               :key="si"
               :style="{ fontSize: '0.75rem', fontWeight: 600, color: count === 0 ? 'var(--line)' : 'var(--sub)', width: figureColWidth, textAlign: 'right', whiteSpace: 'nowrap' }"
-            ><span v-if="showCounts">{{ count }}/{{ TOTAL_ROLLS }}</span><span :style="{ fontWeight: 900, color: count === 0 ? 'var(--line)' : 'var(--ink)' }">{{ pctText(count) }}</span></div>
+            ><span v-if="showCounts">{{ count }}/{{ totalRolls(si) }}</span><span :style="{ fontWeight: 900, color: count === 0 ? 'var(--line)' : 'var(--ink)' }">{{ pctText(count, si) }}</span></div>
           </div>
         </div>
       </div>
@@ -790,8 +840,9 @@ async function exportDiceImage() {
           <div v-if="hasCompare" style="font-size:0.875rem; font-weight:800; color:var(--ink);">{{ t('diceBuilder.set', { label: SET_LABELS[si] }) }}</div>
           <div v-else></div>
           <div style="display:flex; gap:0.375rem; flex-shrink:0;">
+            <button class="btn secondary" style="padding:0.1875rem 0.5rem; font-size:0.625rem;" :disabled="set.dice.length >= MAX_DICE" @click="addDie(si)">{{ t('diceBuilder.addDie') }}</button>
             <button class="btn secondary" style="padding:0.1875rem 0.5rem; font-size:0.625rem;" @click="addCompareSet(si)">{{ t('diceBuilder.addCompare') }}</button>
-            <button v-if="si > 0" class="btn secondary" style="padding:0.1875rem 0.5rem; font-size:0.625rem;" @click="removeSet(si)">{{ t('diceBuilder.removeSet') }}</button>
+            <button v-if="sets.length > 1" class="btn secondary" style="padding:0.1875rem 0.5rem; font-size:0.625rem;" @click="removeSet(si)">{{ t('diceBuilder.removeSet') }}</button>
           </div>
         </div>
         <div style="display:grid; grid-template-columns: 4.375rem repeat(6, 1fr); gap:0.5rem 0.375rem; align-items:center;">
@@ -811,6 +862,13 @@ async function exportDiceImage() {
                 style="padding:0.125rem 0.375rem; font-size:0.625rem; line-height:1.3;"
                 @click="openQuickApply({ setIndex: si, dieIndex: di })"
               >{{ t('diceBuilder.quickApplyDieButton') }}</button>
+              <!-- 加得進來就要拿得掉，否則多按一下就回不去了 -->
+              <button
+                v-if="set.dice.length > 1"
+                class="btn secondary"
+                style="padding:0.125rem 0.375rem; font-size:0.625rem; line-height:1.3;"
+                @click="removeDie(si, di)"
+              >{{ t('diceBuilder.removeDie') }}</button>
             </div>
             <div v-for="row in FACE_ROWS" :key="row.key" style="display:flex; justify-content:center; cursor:pointer;" @click="openPicker(si, di, row.key)">
               <ChipIcon

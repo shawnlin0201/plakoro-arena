@@ -23,10 +23,13 @@ function isValidDie(die) {
     Array.isArray(die.dualSlots) && die.dualSlots.length === 2 && die.dualSlots.every(isValidDualSlot)
 }
 
+// 顆數是玩家可以改的，所以存檔不再要求剛好三顆 —— 但仍要求在範圍內、而且鏡像旗標
+// 剛好比骰子少一個，不然讀回來的會是一份對不起來的狀態。上限跟組骰頁一致：再多下去
+// 機率表要窮舉的組合數會爆開。
 function isValidSet(set) {
   return set &&
-    Array.isArray(set.dice) && set.dice.length === 3 && set.dice.every(isValidDie) &&
-    Array.isArray(set.sameAsDie1) && set.sameAsDie1.length === 2
+    Array.isArray(set.dice) && set.dice.length >= 1 && set.dice.length <= 6 && set.dice.every(isValidDie) &&
+    Array.isArray(set.sameAsDie1) && set.sameAsDie1.length === set.dice.length - 1
 }
 
 /**
