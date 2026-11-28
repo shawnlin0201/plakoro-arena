@@ -88,22 +88,51 @@ const RAW = {
     single: { 格: 3, 惡: 1, 鋼: 2, 火: 1, 超: 1, 雷: 1 },
     dual: { '格+格': 5, '格+鋼': 2, '火+雷': 1, '鋼+鋼': 1 } },
 
-  // Expedition small boxes carry no half-dice at all — a figure and a handful of chips only, so
-  // they top up chips and can never supply a fixed face. Sold at retail as a blind box, but
+  // 官方只有一個商品：「PLAKORO 探險盒組 01」，品番 01_7172，六隻共用同一個品番，開了
+  // 才知道是哪一隻（https://global.bandai-hobby.net/tw/item/01_7172/，內含角色骰子 ×1、
+  // 改裝晶片 ×4）。所以「01」是**盒號**，不是寶可夢的編號 —— 這裡的六列是同一盒的六種
+  // 內容，不是六個商品。
+  //
+  // 仍然分成六列，是因為購物規劃需要知道「拿到哪一隻會得到哪四片晶片」。玩家轉賣開封
+  // 過的確認款，所以指定某一隻是買得到的；但在店頭買它是盲盒，planner 的建議要照這個
+  // 前提讀。
+  //
+  // Expedition boxes carry no half-dice at all — a figure and a handful of chips only, so they
+  // top up chips and can never supply a fixed face. They ship in waves of six (EBC01, EBC02…),
+  // and the wave is the category: a wave is what goes on sale together and what sells out
+  // together, so "which wave is this from" is the question a buyer actually asks. Sold at retail as a blind box, but
   // players resell the ones they've opened as 確認款, so a specific figure is obtainable and the
   // planner treats it as any other product.
-  eb01s07: { id: 'eb01_07', name: '探險盒組 凱羅斯 07', category: 'expeditionSmall', jpy: 350, release: '2026-07-18', status: 'confirmed',
+  eb01s01: { id: '01_7172', name: '探險盒組 凱羅斯 01', category: 'expedition01', jpy: 350, release: '2026-07-18', status: 'confirmed',
     halves: {}, single: { 草: 2 }, dual: { '草+草': 1, '格+格': 1 } },
-  eb01s08: { id: 'eb01_08', name: '探險盒組 火焰鳥 08', category: 'expeditionSmall', jpy: 350, release: '2026-07-18', status: 'confirmed',
+  eb01s02: { id: '01_7172', name: '探險盒組 火焰鳥 02', category: 'expedition01', jpy: 350, release: '2026-07-18', status: 'confirmed',
     halves: {}, single: { 火: 1, 飛: 1 }, dual: { '火+火': 1, '飛+飛': 1 } },
-  eb01s09: { id: 'eb01_09', name: '探險盒組 急凍鳥 09', category: 'expeditionSmall', jpy: 350, release: '2026-07-18', status: 'confirmed',
+  eb01s03: { id: '01_7172', name: '探險盒組 急凍鳥 03', category: 'expedition01', jpy: 350, release: '2026-07-18', status: 'confirmed',
     halves: {}, single: { 水: 1, 飛: 1 }, dual: { '水+水': 1, '飛+飛': 1 } },
-  eb01s10: { id: 'eb01_10', name: '探險盒組 閃電鳥 10', category: 'expeditionSmall', jpy: 350, release: '2026-07-18', status: 'confirmed',
+  eb01s04: { id: '01_7172', name: '探險盒組 閃電鳥 04', category: 'expedition01', jpy: 350, release: '2026-07-18', status: 'confirmed',
     halves: {}, single: { 雷: 1, 飛: 1 }, dual: { '雷+雷': 1, '飛+飛': 1 } },
-  eb01s11: { id: 'eb01_11', name: '探險盒組 大岩蛇 11', category: 'expeditionSmall', jpy: 350, release: '2026-07-18', status: 'confirmed',
+  eb01s05: { id: '01_7172', name: '探險盒組 大岩蛇 05', category: 'expedition01', jpy: 350, release: '2026-07-18', status: 'confirmed',
     halves: {}, single: { 格: 2 }, dual: { '格+格': 2 } },
-  eb01s12: { id: 'eb01_12', name: '探險盒組 臭泥 12', category: 'expeditionSmall', jpy: 350, release: '2026-07-18', status: 'confirmed',
+  eb01s06: { id: '01_7172', name: '探險盒組 臭泥 06', category: 'expedition01', jpy: 350, release: '2026-07-18', status: 'confirmed',
     halves: {}, single: { 惡: 2 }, dual: { '惡+惡': 2 } },
+
+  // 探險盒組 02（品番 01_7182、¥350、2026 年 11 月）。跟 01 一樣是盲盒：六隻共用同一
+  // 個品番，開到哪一隻是拆開才知道的，所以六列的 id 相同。官方只公布到月份，沒有給
+  // 到日，release 就照實寫成月份 —— isReleased 會從那個月的 1 號起算。
+  //
+  // 晶片數跟官方標示的「改裝晶片 × 4」一致：每一隻都是兩片圓的加兩片方的。
+  eb02s01: { id: '01_7182', name: '探險盒組 甲賀忍蛙 01', category: 'expedition02', jpy: 350, release: '2026-11', status: 'confirmed',
+    halves: {}, single: { 水: 2 }, dual: { '水+超': 1, '水+草': 1 } },
+  eb02s02: { id: '01_7182', name: '探險盒組 小鍛匠 02', category: 'expedition02', jpy: 350, release: '2026-11', status: 'confirmed',
+    halves: {}, single: { 超: 1, 鋼: 1 }, dual: { '超+超': 2 } },
+  eb02s03: { id: '01_7182', name: '探險盒組 勾魂眼 03', category: 'expedition02', jpy: 350, release: '2026-11', status: 'confirmed',
+    halves: {}, single: { 惡: 2 }, dual: { '惡+惡': 1, '惡+水': 1 } },
+  eb02s04: { id: '01_7182', name: '探險盒組 波士可多拉 04', category: 'expedition02', jpy: 350, release: '2026-11', status: 'confirmed',
+    halves: {}, single: { 鋼: 2 }, dual: { '鋼+鋼': 2 } },
+  eb02s05: { id: '01_7182', name: '探險盒組 烈空坐 05', category: 'expedition02', jpy: 350, release: '2026-11', status: 'confirmed',
+    halves: {}, single: { 火: 1, 雷: 1 }, dual: { '火+雷': 2 } },
+  eb02s06: { id: '01_7182', name: '探險盒組 吉利蛋 06', category: 'expedition02', jpy: 350, release: '2026-11', status: 'confirmed',
+    halves: {}, single: { 飛: 2 }, dual: { '飛+飛': 2 } },
 
   dx01: { id: '01_7285', name: 'DX 啟程套組 01（皮卡丘・伊布・夢幻）', category: 'dx', jpy: 4000, release: '2026-12', status: 'confirmed',
     halves: { 鋼: 1, 格: 2, 水: 3, 飛: 2, 雷: 1, 惡: 3, 火: 2, 草: 2, 超: 2 },
@@ -136,7 +165,7 @@ function shortName(name) {
   return name.replace(/^(啟程套組|探險盒組|DX 啟程套組)\s*/, '')
 }
 
-export const PRODUCT_PARTS = Object.entries(RAW).map(([key, p]) => {
+function normalise(key, p) {
   const halves = toJa(p.halves)
   const convex = {}
   const concave = {}
@@ -145,7 +174,20 @@ export const PRODUCT_PARTS = Object.entries(RAW).map(([key, p]) => {
     else if (halfKind(ja) === 'concave') concave[ja] = n
   })
   return { key, ...p, shortName: shortName(p.name), convex, concave, single: toJa(p.single), dual: dualToJa(p.dual) }
-})
+}
+
+/**
+ * 這一份就是唯一的一份。
+ *
+ * 曾經把它搬進資料庫、配一頁後台表單，想讓新商品不必改檔發版。那條路沒有省到人：九種
+ * 屬性各幾片是要對著官方商品照數出來的，數的人是誰，誰就在改這個檔 —— 後台只是把同
+ * 一件事多繞一圈伺服器，還讓「產品資訊」這頁多了一個連不上就空白的理由。
+ *
+ * 新商品一兩個月才一盒，跟著一次版本走完全來得及。
+ */
+export const productParts = Object.entries(RAW).map(([key, p]) => normalise(key, p))
+
+
 
 // Whether a product is on sale as of `asOf`. Month-only dates count from the 1st: BANDAI hasn't
 // named a day, so the first of the month is the earliest it could be out, and treating it as
@@ -161,5 +203,3 @@ export function isReleased(product, asOf = new Date()) {
 export function releaseIsMonthOnly(product) {
   return !!product.release && product.release.split('-').length === 2
 }
-
-export const PRODUCT_PARTS_BY_KEY = Object.fromEntries(PRODUCT_PARTS.map(p => [p.key, p]))

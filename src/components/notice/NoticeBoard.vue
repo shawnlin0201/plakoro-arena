@@ -6,6 +6,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { announcements, isRead, markAllRead, markRead } from '../../data/announcements'
+import { linkifySegments } from '../../data/linkify'
 import { claimedGifts, giftCount, hasGifts, pendingGifts } from '../../data/gifts'
 import { describeAsset } from '../../data/assetCatalogue'
 import { pointReason } from '../../data/pointReason'
@@ -214,7 +215,20 @@ function takeAll() {
           <h3 class="nb-detail-title">{{ current.title }}</h3>
           <div class="nb-detail-date">{{ current.date }}</div>
           <img v-if="current.imageUrl" class="nb-img" :src="current.imageUrl" :alt="current.title">
-          <p v-for="(line, i) in (current.body || '').split('\n')" :key="i" class="nb-line">{{ line }}</p>
+          <!-- 內文裡的網址要點得到。片段是算好的，不是組一段 HTML —— 公告的內文
+               是後台打進去的，而 v-html 會把裡面的標籤當成標籤執行。 -->
+          <p v-for="(line, i) in (current.body || '').split('\n')" :key="i" class="nb-line">
+            <template v-for="(seg, j) in linkifySegments(line)" :key="j"
+              ><a
+                v-if="seg.href"
+                class="nb-link"
+                :href="seg.href"
+                target="_blank"
+                rel="noopener noreferrer"
+              >{{ seg.text }}</a
+              ><template v-else>{{ seg.text }}</template
+            ></template>
+          </p>
         </article>
       </div>
 
@@ -436,4 +450,12 @@ function takeAll() {
 .nb-img { display: block; width: 100%; border-radius: 0.5rem; margin-bottom: 0.625rem; }
 .nb-line { margin: 0 0 0.375rem; font-size: 0.8125rem; line-height: 1.8; color: #3A3A35; }
 .nb-line:empty { height: 0.5rem; }
+/* 連結要看得出是連結。底線而不是只換顏色 —— 這張紙是固定的淺色底，但顏色本身不該
+   是唯一的訊號。長網址在窄欄裡要能從中間斷行，不然會把整封信撐寬。 */
+.nb-link {
+  color: #1A5FB4;
+  text-decoration: underline;
+  text-underline-offset: 0.125rem;
+  word-break: break-all;
+}
 </style>

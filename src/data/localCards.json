@@ -9,8 +9,7 @@
       "weakness_damage1": 20,
       "weakness_type2": null,
       "weakness_damage2": null,
-      "image_URL": null,
-      "battle_ready": false
+      "image_URL": null
     },
     {
       "id": "STC11-001",
@@ -21,8 +20,7 @@
       "weakness_damage1": 20,
       "weakness_type2": null,
       "weakness_damage2": null,
-      "image_URL": null,
-      "battle_ready": false
+      "image_URL": null
     },
     {
       "id": "EBC02-001",
@@ -33,8 +31,7 @@
       "weakness_damage1": 20,
       "weakness_type2": null,
       "weakness_damage2": null,
-      "image_URL": null,
-      "battle_ready": false
+      "image_URL": null
     },
     {
       "id": "EBC02-002",
@@ -45,8 +42,7 @@
       "weakness_damage1": 20,
       "weakness_type2": null,
       "weakness_damage2": null,
-      "image_URL": null,
-      "battle_ready": false
+      "image_URL": null
     },
     {
       "id": "EBC02-003",
@@ -57,8 +53,7 @@
       "weakness_damage1": 20,
       "weakness_type2": null,
       "weakness_damage2": null,
-      "image_URL": null,
-      "battle_ready": false
+      "image_URL": null
     },
     {
       "id": "EBC02-004",
@@ -69,8 +64,7 @@
       "weakness_damage1": 20,
       "weakness_type2": null,
       "weakness_damage2": null,
-      "image_URL": null,
-      "battle_ready": false
+      "image_URL": null
     },
     {
       "id": "EBC02-005",
@@ -81,8 +75,7 @@
       "weakness_damage1": 20,
       "weakness_type2": null,
       "weakness_damage2": null,
-      "image_URL": null,
-      "battle_ready": false
+      "image_URL": null
     },
     {
       "id": "EBC02-006",
@@ -93,8 +86,7 @@
       "weakness_damage1": 20,
       "weakness_type2": null,
       "weakness_damage2": null,
-      "image_URL": null,
-      "battle_ready": false
+      "image_URL": null
     }
   ],
   "waza": [

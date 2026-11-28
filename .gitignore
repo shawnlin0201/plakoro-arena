@@ -35,3 +35,8 @@
 # Claude Code 的本機設定與裝進來的 skill。前者是這台機器的權限允許清單（檔名自己就寫著
 # local），後者是別人的專案 vendor 進來的文件集 —— 兩個都不是這個專案的程式碼。
 .claude/
+
+# 卡面美術的原始匯出（整包 PNG 加上壓縮檔）。進版控的是 public/image/THEMECARD/ 底下
+# 轉好的 WebP —— 同一批圖沒有理由在 repo 裡存兩份，而且 PNG 那一份是 WebP 的四倍大。
+/Meetup 主題規則卡/
+/Meetup 主題規則卡.zip

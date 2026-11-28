@@ -1,7 +1,8 @@
 <script setup>
-import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, provide, ref } from 'vue'
+import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useCharacterData } from './composables/useCharacterData'
+import { preloadBattleBackdrops } from './data/imagePreload'
 import { useBattleState } from './composables/useBattleState'
 import { useOnlineRoom } from './composables/useOnlineRoom'
 import { useStageLayout } from './composables/useStageLayout'
@@ -48,6 +49,8 @@ import ModeSelect from './components/ModeSelect.vue'
 import SoloApp from './components/solo/SoloApp.vue'
 import DiceBuilderApp from './components/dice/DiceBuilderApp.vue'
 import StoreInfoApp from './components/StoreInfoApp.vue'
+import ThemeCardApp from './components/ThemeCardApp.vue'
+import ProductInfoApp from './components/ProductInfoApp.vue'
 import TournamentApp from './components/tournament/TournamentApp.vue'
 import TierListApp from './components/TierListApp.vue'
 import TypeChartApp from './components/TypeChartApp.vue'
@@ -178,6 +181,11 @@ const activeModalKey = computed(() => {
 // PLAKORO ARENA is a name, not a phrase — translating it only meant the browser tab disagreed
 // with the wordmark on the screen below it.
 
+// 招式卡底圖等玩家離開首頁才補。只是看一眼首頁就關掉的人，不該為了他沒進去的畫面
+// 付流量 —— 手機上這是實際會痛的成本。選在「進任何一個模式」而不是「進對戰」，是
+// 因為補完要一點時間，太晚開始的話卡片會先空白一下才上色。
+watch(mode, m => { if (m) preloadBattleBackdrops() })
+
 onMounted(() => {
   characterData.loadData()
   // 首頁那張「秘笈手冊」卡片要不要顯示「即將上線」，由伺服器說了算。
@@ -254,6 +262,8 @@ onBeforeUnmount(uninstallButtonSfx)
       <DiceBuilderApp v-else-if="mode === 'diceBuilder'" :open-odds="modeRequest" @back="leaveMode()" />
 
       <StoreInfoApp v-else-if="mode === 'storeInfo'" @back="leaveMode()" />
+      <ThemeCardApp v-else-if="mode === 'themeCards'" @back="leaveMode()" />
+      <ProductInfoApp v-else-if="mode === 'productInfo'" @back="leaveMode()" />
 
       <PriceLogApp v-else-if="mode === 'priceLog'" @back="leaveMode()" />
 

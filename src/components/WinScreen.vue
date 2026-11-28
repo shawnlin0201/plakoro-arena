@@ -12,7 +12,7 @@ const picSrc = computed(() => winner.value.character.imageUrl || asset(`image/CH
 </script>
 
 <template>
-  <div class="win-screen" :style="{ backgroundImage: `url('${asset(`image/BACK/back_${winner.character.type}.png`)}')` }">
+  <div class="win-screen" :style="{ backgroundImage: `url('${asset(`image/BACK/back_${winner.character.type}.webp`)}')` }">
     <div class="win-mon-big"><img :src="picSrc" :alt="winner.character.name"></div>
     <div class="win-text-col">
       <div class="win-title">{{ winnerName }}<span class="hl">{{ t('win.victorySuffix') }}</span></div>

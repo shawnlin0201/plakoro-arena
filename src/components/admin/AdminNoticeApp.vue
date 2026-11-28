@@ -4,7 +4,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { deleteAnnouncement, listAnnouncements, saveAnnouncement } from '../../data/adminApi'
+import { deleteAnnouncement, getHandbookTiers, listAnnouncements, saveAnnouncement } from '../../data/adminApi'
 import { adminToken } from '../../data/adminSession'
 
 const emit = defineEmits(['back'])
@@ -27,7 +27,28 @@ async function run(fn) {
   }
 }
 
-const load = () => run(async () => { list.value = (await listAnnouncements(adminToken.value)).announcements })
+/* ── 收件對象 ──────────────────────────────────────────────────────────────
+   方案階梯是後台改得動的（AdminHandbookApp），所以這份清單去問伺服器，不在這裡自己
+   寫一份 —— 寫死的那一份遲早會跟實際的方案對不上，而對不上的下場是一封信沒有人收到。
+   拿不到就只剩「所有人」可選：少一個選項，總好過讓人挑一個伺服器不認得的對象。
+*/
+const tiers = ref([])
+
+const load = () => run(async () => {
+  list.value = (await listAnnouncements(adminToken.value)).announcements
+  try {
+    tiers.value = (await getHandbookTiers(adminToken.value)).tiers || []
+  } catch (e) {
+    tiers.value = []
+  }
+})
+
+// 'free' 不列：rank 0 是「沒有訂閱的人」，選它等於所有人，而所有人已經是另一個選項了。
+const audienceTiers = computed(() => tiers.value.filter(t => t.rank > 0).sort((a, b) => a.rank - b.rank))
+
+function audienceLabel(key) {
+  return audienceTiers.value.find(t => t.key === key)?.name || key
+}
 load()
 
 // 一則公告現在處於哪一段。
@@ -68,7 +89,7 @@ const tabs = computed(() => TABS
 const current = computed(() => tabs.value.find(g => g.key === tab.value) || tabs.value[0])
 
 function blank() {
-  return { id: null, title: '', body: '', imageUrl: '', category: 'notice', splash: false, pinned: false, published: true, startsAt: '', endsAt: '' }
+  return { id: null, title: '', body: '', imageUrl: '', category: 'notice', audience: 'all', splash: false, pinned: false, published: true, startsAt: '', endsAt: '' }
 }
 
 function edit(a) {
@@ -78,6 +99,7 @@ function edit(a) {
     body: a.body || '',
     imageUrl: a.imageUrl || '',
     category: a.category || 'notice',
+    audience: a.audience || 'all',
     splash: a.splash,
     pinned: a.pinned,
     published: a.published,
@@ -127,6 +149,18 @@ const remove = a => run(async () => {
           <option value="handbook">{{ t('mailbox.cat.handbook') }}</option>
         </select>
       </label>
+      <!-- 誰看得到。選了某一檔就是**那一檔以上**都收得到 —— 方案本來就是階梯，
+           付更多的人收不到付更少的人收得到的信會是個要解釋很久的意外。
+           對象是在玩家讀取的當下判定的，所以之後才升上來的人一樣看得到，不必為了
+           新買的人再發一次。 -->
+      <label class="an-f"><span>{{ t('admin.noticeAudience') }}</span>
+        <select v-model="editing.audience" class="an-in">
+          <option value="all">{{ t('admin.noticeAudienceAll') }}</option>
+          <option v-for="tr in audienceTiers" :key="tr.key" :value="tr.key">
+            {{ t('admin.noticeAudienceTier', { name: tr.name }) }}
+          </option>
+        </select>
+      </label>
       <label class="an-f"><span>{{ t('admin.noticeSplash') }}</span>
         <input v-model="editing.splash" type="checkbox"></label>
       <label class="an-f"><span>{{ t('admin.noticePinned') }}</span>
@@ -164,6 +198,9 @@ const remove = a => run(async () => {
           <span class="an-title">{{ a.title }}</span>
           <span class="an-grow"></span>
           <span class="an-tag">{{ t(`mailbox.cat.${a.category === 'handbook' ? 'handbook' : 'notice'}`) }}</span>
+          <!-- 只發給某一檔以上的，在清單上要看得出來：那是這一則跟其他則最大的差別，
+               而展開編輯器才看得到的話，很容易把一封指定的信誤認成公開的。 -->
+          <span v-if="a.audience && a.audience !== 'all'" class="an-tag aud">{{ audienceLabel(a.audience) }}+</span>
           <span v-if="a.splash" class="an-tag splash">{{ t('admin.noticeSplash') }}</span>
           <span v-if="a.pinned" class="an-tag">{{ t('admin.noticePinned') }}</span>
         </div>
@@ -245,6 +282,7 @@ const remove = a => run(async () => {
   font-weight: 800;
 }
 .an-tag.splash { background: rgba(168, 87, 31, 0.16); color: #A8571F; }
+.an-tag.aud { background: rgba(31, 95, 180, 0.16); color: #1A5FB4; }
 .an-tag.off { background: rgba(192, 57, 43, 0.14); color: #C0392B; }
 .an-sub { margin-top: 0.125rem; font-size: 0.625rem; color: var(--sub); }
 .an-act { display: flex; gap: 0.375rem; margin-top: 0.375rem; }

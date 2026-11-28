@@ -8,6 +8,7 @@
 // 之前，先想清楚有人重排、重填、或把舊的那列改寫成新公告會發生什麼事 —— 整批裝置會
 // 把新公告當成已經讀過的，而且沒有任何人會收到錯誤。
 import { computed, ref } from 'vue'
+import { getToken } from './session'
 
 const API_BASE = import.meta.env.VITE_API_URL || ''
 
@@ -69,7 +70,16 @@ export const isRead = key => readIds.value.includes(key)
  */
 export async function refreshAnnouncements() {
   try {
-    const res = await fetch(`${API_BASE}/api/announcements`)
+    // 有登入就帶著 token 去拿 —— 指定對象的那幾則（例如只發給 Master 以上的）要伺服器
+    // 知道現在是誰才給。沒登入照樣拿得到公開的那些，所以這裡不檢查有沒有 token，只是
+    // 有就附上。
+    //
+    // 不走 apiRequest()：那支在 401 時會把 session 判定成已失效並登出，而公告本來就是
+    // 「拿不到就當作沒有」的東西（見下面的 catch）。為了一則拿不到的公告把人踢出登入
+    // 狀態，是比看不到公告嚴重得多的失敗。
+    const token = getToken()
+    const res = await fetch(`${API_BASE}/api/announcements`,
+      token ? { headers: { Authorization: `Bearer ${token}` } } : undefined)
     if (!res.ok) throw new Error(String(res.status))
     const d = await res.json()
     list.value = d.announcements || []

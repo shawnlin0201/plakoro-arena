@@ -6,6 +6,7 @@
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { hideSplashToday, markRead, noticeKey } from '../../data/announcements'
+import { linkifySegments } from '../../data/linkify'
 import Icon from '../Icon.vue'
 
 const props = defineProps({
@@ -37,8 +38,20 @@ function close() {
 
       <div class="ns-body">
         <h2 class="ns-title">{{ notice.title }}</h2>
-        <!-- 換行照著後台打的走。公告常常是一行一件事，擠成一段就沒有人讀得下去。 -->
-        <p v-for="(line, i) in (notice.body || '').split('\n')" :key="i" class="ns-line">{{ line }}</p>
+        <!-- 換行照著後台打的走。公告常常是一行一件事，擠成一段就沒有人讀得下去。
+             網址切成片段再插進去，不是組一段 HTML —— 理由見 data/linkify.js。 -->
+        <p v-for="(line, i) in (notice.body || '').split('\n')" :key="i" class="ns-line">
+          <template v-for="(seg, j) in linkifySegments(line)" :key="j"
+            ><a
+              v-if="seg.href"
+              class="ns-link"
+              :href="seg.href"
+              target="_blank"
+              rel="noopener noreferrer"
+            >{{ seg.text }}</a
+            ><template v-else>{{ seg.text }}</template
+          ></template>
+        </p>
       </div>
 
       <label class="ns-skip">
@@ -91,6 +104,12 @@ function close() {
 }
 .ns-img { display: block; width: 100%; border-radius: 0.875rem 0.875rem 0 0; }
 .ns-body { padding: 0.875rem 1rem 0.25rem; }
+.ns-link {
+  color: #1A5FB4;
+  text-decoration: underline;
+  text-underline-offset: 0.125rem;
+  word-break: break-all;
+}
 .ns-title { margin: 0 0 0.5rem; font-size: 1rem; font-weight: 800; }
 .ns-line { margin: 0 0 0.375rem; font-size: 0.8125rem; line-height: 1.8; color: #3A3A35; }
 .ns-line:empty { height: 0.5rem; }

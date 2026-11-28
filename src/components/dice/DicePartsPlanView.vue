@@ -7,7 +7,7 @@
 // so the less painful input is also the more reliable one.
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { PRODUCT_PARTS, TYPE_TO_ZH, isReleased, releaseIsMonthOnly } from '../../data/productParts'
+import { TYPE_TO_ZH, isReleased, productParts, releaseIsMonthOnly } from '../../data/productParts'
 import { requiredParts, shortfall, planWithUpcoming, totalPieces, unbuyableParts } from '../../game/dicePartsPlan'
 import ChipIcon from './ChipIcon.vue'
 
@@ -53,7 +53,7 @@ function clearOwned() {
 
 // The inventory list stays complete — an unreleased box is one you can't own yet, but an import
 // or an early copy isn't the planner's business to disallow. Only the recommendation is gated.
-const buyable = computed(() => PRODUCT_PARTS.filter(p => p.status === 'confirmed'))
+const buyable = computed(() => productParts.filter(p => p.status === 'confirmed'))
 // Grouped so the grid can carry a heading per kind — the categories are what a player thinks in
 // ("do I need another starter, or a small box?"), and the heading lets each tile drop the prefix.
 const CATEGORY_ORDER = ['starter', 'expeditionSmall', 'dx']
@@ -106,7 +106,7 @@ const now = () => new Date()
 const preferVariety = ref(false)
 const plans = computed(() => planWithUpcoming(gap.value, { asOf: now(), preferVariety: preferVariety.value }))
 const plan = computed(() => plans.value.now)
-const missing = computed(() => unbuyableParts(gap.value, PRODUCT_PARTS, now()))
+const missing = computed(() => unbuyableParts(gap.value, productParts, now()))
 const nothingToBuy = computed(() => totalPieces(gap.value) === 0)
 
 // Rows for a parts table: one line per distinct piece, with the wildcard halves last since

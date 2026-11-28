@@ -48,7 +48,6 @@ const MODES = [
   // Hidden 2026-08-28: the market data behind it isn't maintainable by hand yet — most listing
   // sources need a login to snapshot, so the figures would go stale without anyone noticing.
   { key: 'priceLog', enabled: false },
-  { key: 'tierList' },
   // Paid content, so the card is always shown and the chapters behind it are not: what a
   // player owns is checked when a chapter is opened, never by hiding the shelf.
   //
@@ -58,6 +57,9 @@ const MODES = [
   // comingSoon 寫成函式而不是值：這一格要等伺服器答覆才知道，而 MODES 是模組層級的
   // 常數，寫成 `!shopOpen.value` 只會在載入那一刻算一次，之後開賣了卡片也不會活過來。
   { key: 'handbook', comingSoon: () => !shopOpen.value },
+  // 接在手冊右邊。哪一盒裡有什麼零件，是站在店裡拿著盒子時要查的 —— 那是會在手機上
+  // 臨時打開的那種問題，不該藏在第二層。
+  { key: 'productInfo' },
   { key: 'typeChart' },
   // A link out, not a mode. `url` is what tells the menu to render an anchor instead of a
   // button — the card looks the same either way, but one changes screen and one leaves.
@@ -65,8 +67,12 @@ const MODES = [
   // `group` moves a mode one level down. The top level is what a player opens the app to do;
   // these three are things an organiser or a theorycrafter comes looking for, and keeping them
   // up front pushed the front page past the point where every card still fit.
+  // 招式期望排行：查某一招平均打多少，是在想組牌時才會問的問題，不是開 app 的第一件事。
+  { key: 'tierList', group: 'tools' },
   // 哪裡買得到：找得到的人多半是已經決定要買的人，不是打開 app 要做的第一件事。
   { key: 'storeInfo', group: 'tools' },
+  // 主題卡只在實體聚會用得到，所以不佔首頁 —— 會翻到它的人是正要出門參賽的人。
+  { key: 'themeCards', group: 'tools' },
   { key: 'tournament', group: 'tools' },
   { key: 'tierMaker', group: 'tools' },
   // 所有人都看得到，數值只有後台改得動（調整鍵長在那張圖上，見 TraitChartApp）。
